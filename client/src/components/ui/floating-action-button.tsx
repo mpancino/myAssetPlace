@@ -16,6 +16,7 @@ import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Form,
   FormControl,
@@ -46,6 +47,7 @@ type AssetFormValues = z.infer<typeof assetFormSchema>;
 export default function FloatingActionButton() {
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   // Fetch asset classes
   const { data: assetClasses } = useQuery({
@@ -104,14 +106,17 @@ export default function FloatingActionButton() {
     <>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
-          <div className="fixed right-6 bottom-6 z-50">
-            <Button size="icon" className="h-14 w-14 rounded-full shadow-lg">
-              <Plus className="h-6 w-6" />
+          <div className={`fixed z-50 ${isMobile ? 'right-4 bottom-4' : 'right-6 bottom-6'}`}>
+            <Button 
+              size="icon" 
+              className={`${isMobile ? 'h-12 w-12' : 'h-14 w-14'} rounded-full shadow-lg`}
+            >
+              <Plus className={isMobile ? "h-5 w-5" : "h-6 w-6"} />
               <span className="sr-only">Add Asset</span>
             </Button>
           </div>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Asset</DialogTitle>
             <DialogDescription>
@@ -149,7 +154,7 @@ export default function FloatingActionButton() {
                 )}
               />
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="assetClassId"
@@ -221,7 +226,7 @@ export default function FloatingActionButton() {
                 )}
               />
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="purchasePrice"
@@ -251,7 +256,7 @@ export default function FloatingActionButton() {
                 />
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="growthRate"
@@ -281,9 +286,10 @@ export default function FloatingActionButton() {
                 />
               </div>
               
-              <DialogFooter>
+              <DialogFooter className="pt-4 sm:pt-0">
                 <Button
                   type="submit"
+                  className="w-full sm:w-auto"
                   disabled={createAsset.isPending}
                 >
                   {createAsset.isPending ? "Adding..." : "Add Asset"}

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface SidebarProps {
   className?: string;
@@ -21,6 +22,7 @@ interface SidebarProps {
 
 export default function Sidebar({ className }: SidebarProps) {
   const { user, logoutMutation } = useAuth();
+  const isMobile = useIsMobile();
   
   // Fetch asset holding types
   const { data: holdingTypes } = useQuery({
@@ -40,14 +42,18 @@ export default function Sidebar({ className }: SidebarProps) {
 
   return (
     <aside className={cn(
-      "hidden md:flex w-64 flex-col fixed inset-y-0 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 z-20",
+      "w-64 flex-col bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 z-20",
+      "md:fixed md:inset-y-0",
       className
     )}>
-      <div className="flex items-center justify-center h-16 border-b border-slate-200 dark:border-slate-700">
-        <h1 className="text-2xl font-heading font-bold text-primary-600">
-          myAssetPlace
-        </h1>
-      </div>
+      {/* Only show logo header in desktop mode or if not already included in mobile header */}
+      {!isMobile && (
+        <div className="flex items-center justify-center h-16 border-b border-slate-200 dark:border-slate-700">
+          <h1 className="text-2xl font-heading font-bold text-primary-600">
+            myAssetPlace
+          </h1>
+        </div>
+      )}
       
       <div className="flex-1 flex flex-col overflow-y-auto">
         <nav className="flex-1 px-4 py-4 space-y-1">

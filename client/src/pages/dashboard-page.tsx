@@ -7,11 +7,19 @@ import ModeToggle from "@/components/ui/mode-toggle";
 import { useQuery } from "@tanstack/react-query";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, MoreHorizontal, Filter } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
 
   // Fetch user subscription details
   const { data: subscription } = useQuery({
@@ -57,12 +65,14 @@ export default function DashboardPage() {
   return (
     <MainLayout>
       <div className="max-w-7xl mx-auto">
-        {/* Breadcrumbs */}
-        <Breadcrumb className="mb-5">
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
-          </BreadcrumbItem>
-        </Breadcrumb>
+        {/* Breadcrumbs - hide on mobile */}
+        <div className="hidden md:block">
+          <Breadcrumb className="mb-5">
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+            </BreadcrumbItem>
+          </Breadcrumb>
+        </div>
 
         {/* Header section */}
         <header className="bg-white shadow-sm rounded-lg p-4 md:p-6 mb-6">
@@ -71,7 +81,9 @@ export default function DashboardPage() {
               <h1 className="text-2xl font-heading font-bold text-slate-900">Financial Dashboard</h1>
               <p className="mt-1 text-sm text-slate-500">Overview of your financial health and assets</p>
             </div>
-            <div className="mt-4 md:mt-0 flex space-x-3">
+            
+            {/* Desktop actions */}
+            <div className="hidden md:flex mt-4 md:mt-0 space-x-3">
               <Button variant="outline" size="sm" onClick={handleExport}>
                 <Download className="mr-2 h-4 w-4" />
                 Export
@@ -81,11 +93,33 @@ export default function DashboardPage() {
                 allowedModes={(subscription?.plan?.allowedInterfaceModes as string[]) || ["basic"]} 
               />
             </div>
+            
+            {/* Mobile actions */}
+            <div className="flex md:hidden mt-4 justify-end">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <MoreHorizontal className="h-4 w-4" />
+                    <span className="ml-2">Actions</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleExport}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Export Data
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Filter className="mr-2 h-4 w-4" />
+                    Filter
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </header>
 
         {/* Dashboard stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6">
           <StatsCard 
             title="Net Worth" 
             value={netWorth} 
@@ -109,11 +143,18 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* Asset allocation */}
-        <AssetAllocation data={assetsByClass || []} />
+        {/* Asset allocation and Recent assets in different layouts based on screen size */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Asset allocation - full width on mobile/tablet, half width on desktop */}
+          <div className="lg:col-span-1">
+            <AssetAllocation data={assetsByClass || []} />
+          </div>
 
-        {/* Recent assets */}
-        <RecentAssets assets={assets || []} />
+          {/* Recent assets - full width on mobile/tablet, half width on desktop */}
+          <div className="lg:col-span-1">
+            <RecentAssets assets={assets || []} />
+          </div>
+        </div>
 
         {/* Add Asset FAB */}
         <FloatingActionButton />
