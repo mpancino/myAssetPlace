@@ -9,7 +9,23 @@ import { User } from "@shared/schema";
 
 declare global {
   namespace Express {
-    interface User extends User {}
+    // Using the User type from schema.ts
+    interface User {
+      id: number;
+      username: string;
+      email: string;
+      firstName?: string;
+      lastName?: string;
+      countryId?: number;
+      role: 'user' | 'admin';
+      preferredMode: 'basic' | 'advanced';
+      isDemo: boolean;
+      completedOnboarding: boolean;
+      age?: number;
+      targetRetirementAge?: number;
+      createdAt: Date;
+      updatedAt: Date;
+    }
   }
 }
 
@@ -95,6 +111,45 @@ export function setupAuth(app: Express) {
       const user = await storage.createUser({
         ...req.body,
         password: await hashPassword(req.body.password),
+      });
+
+      // Assign default subscription plan
+      const defaultPlan = await storage.getDefaultSubscriptionPlan();
+      if (defaultPlan) {
+        const today = new Date();
+        await storage.createUserSubscription({
+          userId: user.id,
+          subscriptionPlanId: defaultPlan.id,
+          startDate: today,
+          status: 'active',
+        });
+      }
+
+      req.login(user, (err) => {
+        if (err) return next(err);
+        res.status(201).json(user);
+      });
+    } catch (err) {
+      next(err);
+    }
+  });
+  
+  // Demo user creation endpoint
+  app.post("/api/register/demo", async (req, res, next) => {
+    try {
+      // Generate a unique username with timestamp
+      const timestamp = new Date().getTime();
+      const username = `demo_user_${timestamp}`;
+      const email = `demo_${timestamp}@myassetplace.demo`;
+      const password = Math.random().toString(36).slice(-10); // Generate a random password
+      
+      // Create a new demo user
+      const user = await storage.createUser({
+        username,
+        email,
+        password: await hashPassword(password),
+        isDemo: true,
+        preferredMode: 'basic',
       });
 
       // Assign default subscription plan

@@ -324,6 +324,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to update user profile" });
     }
   });
+  
+  // Demo user onboarding route
+  app.put("/api/user/onboarding", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      // Only allow this endpoint for demo users
+      if (!req.user.isDemo) {
+        return res.status(403).json({ message: "Only available for demo users" });
+      }
+      
+      const validatedData = z.object({
+        age: z.number().min(18).max(100),
+        targetRetirementAge: z.number().min(18).max(100),
+        completedOnboarding: z.boolean()
+      }).parse(req.body);
+      
+      // Ensure target retirement age is greater than current age
+      if (validatedData.targetRetirementAge && validatedData.age) {
+        if (validatedData.targetRetirementAge <= validatedData.age) {
+          return res.status(400).json({
+            message: "Target retirement age must be greater than current age"
+          });
+        }
+      }
+      
+      const user = await storage.updateUser(req.user.id, validatedData);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json(user);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ errors: err.errors });
+      }
+      res.status(500).json({ message: "Failed to update onboarding information" });
+    }
+  });
 
   const httpServer = createServer(app);
 

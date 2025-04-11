@@ -19,6 +19,10 @@ export const users = pgTable("users", {
   countryId: integer("country_id").references(() => countries.id),
   role: userRoleEnum("role").default('user').notNull(),
   preferredMode: interfaceModeEnum("preferred_mode").default('basic').notNull(),
+  isDemo: boolean("is_demo").default(false).notNull(),
+  completedOnboarding: boolean("completed_onboarding").default(false).notNull(),
+  age: integer("age"),
+  targetRetirementAge: integer("target_retirement_age"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -172,6 +176,9 @@ export const insertUserSchema = createInsertSchema(users).pick({
   lastName: true,
   countryId: true,
   preferredMode: true,
+  isDemo: true,
+  age: true,
+  targetRetirementAge: true,
 });
 
 export const loginUserSchema = z.object({
