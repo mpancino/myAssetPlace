@@ -30,16 +30,16 @@ The development is divided into 11 logical phases:
 
 ### Phase 0: Project Setup & Core Infrastructure
 
-- [ ] `[REQ-252]` Framework: React (latest stable version) with TypeScript
-- [ ] `[REQ-258]` UI Components: shadcn/ui built on Radix UI and styled with TailwindCSS
+- [x] `[REQ-252]` Framework: React (latest stable version) with TypeScript
+- [x] `[REQ-258]` UI Components: shadcn/ui built on Radix UI and styled with TailwindCSS
 - [ ] `[REQ-261]` Image Handling: Strategy for handling administrator-uploaded images
-- [ ] `[REQ-262]` Directory Structure: Organize components logically
-- [ ] `[REQ-281]` Framework: Node.js with Express.js and TypeScript
-- [ ] `[REQ-282]` API Style: RESTful API following standard conventions
-- [ ] `[REQ-292]` Database: PostgreSQL (latest stable version)
-- [ ] `[REQ-293]` ORM/Query Builder: Drizzle ORM
-- [ ] `[REQ-294]` Schema Management: Define the database schema using Drizzle schema files
-- [ ] `[REQ-298]` Migrations: Use Drizzle Kit
+- [x] `[REQ-262]` Directory Structure: Organize components logically
+- [x] `[REQ-281]` Framework: Node.js with Express.js and TypeScript
+- [x] `[REQ-282]` API Style: RESTful API following standard conventions
+- [x] `[REQ-292]` Database: PostgreSQL (latest stable version)
+- [x] `[REQ-293]` ORM/Query Builder: Drizzle ORM
+- [x] `[REQ-294]` Schema Management: Define the database schema using Drizzle schema files
+- [x] `[REQ-298]` Migrations: Use Drizzle Kit
 - [ ] `[REQ-385]` Calculation Test Suite: Set up testing framework
 - [ ] `[REQ-387]` Component & API Testing: Set up testing framework
 
