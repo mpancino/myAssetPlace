@@ -10,9 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DatePicker } from "@/components/ui/date-picker";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, ArrowRight, Save, Home, Check } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -22,6 +21,40 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { AssetClass, AssetHoldingType, insertAssetSchema, Asset } from "@shared/schema";
 import { formatCurrency } from "@/lib/utils";
 
+// Step indicator component
+const StepIndicator = ({ currentStep, totalSteps }: { currentStep: number; totalSteps: number }) => {
+  return (
+    <div className="flex items-center space-x-2 mb-6">
+      {Array.from({ length: totalSteps }).map((_, index) => (
+        <div 
+          key={index} 
+          className={`flex items-center ${index > 0 ? 'ml-2' : ''}`}
+        >
+          <div 
+            className={`rounded-full h-8 w-8 flex items-center justify-center ${
+              index < currentStep 
+                ? 'bg-primary text-primary-foreground' 
+                : index === currentStep 
+                  ? 'bg-primary/90 text-primary-foreground' 
+                  : 'bg-muted text-muted-foreground'
+            }`}
+          >
+            {index < currentStep ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <span>{index + 1}</span>
+            )}
+          </div>
+          {index < totalSteps - 1 && (
+            <div className={`h-[2px] w-12 ${index < currentStep ? 'bg-primary' : 'bg-muted'}`} />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// Main component
 export default function AddAssetPage() {
   const [location, setLocation] = useLocation();
   const searchParams = new URLSearchParams(window.location.search);
@@ -29,13 +62,17 @@ export default function AddAssetPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   
+  // Wizard state
+  const [currentStep, setCurrentStep] = useState(0);
+  const totalSteps = 3;
+  
   // Fetch asset classes
-  const { data: assetClasses } = useQuery<AssetClass[]>({
+  const { data: assetClasses = [] } = useQuery<AssetClass[]>({
     queryKey: ["/api/asset-classes"],
   });
   
   // Fetch asset holding types
-  const { data: holdingTypes } = useQuery<AssetHoldingType[]>({
+  const { data: holdingTypes = [] } = useQuery<AssetHoldingType[]>({
     queryKey: ["/api/asset-holding-types"],
   });
   
@@ -142,122 +179,192 @@ export default function AddAssetPage() {
     }
   };
   
-  return (
-    <MainLayout>
-      <div className="container mx-auto p-4">
-        <div className="flex items-center mb-6">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleCancel} 
-            className="mr-2"
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" /> Back
-          </Button>
-          <h1 className="text-2xl font-bold">Add New Asset</h1>
-        </div>
-        
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Asset Details</CardTitle>
-            <CardDescription>
-              Create a new asset to track in your portfolio
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Asset Name*</FormLabel>
+  // Move to next step
+  const handleNext = async () => {
+    let shouldProceed = false;
+    
+    // Validate fields based on current step
+    if (currentStep === 0) {
+      // Validate asset class selection
+      const assetClassId = form.getValues("assetClassId");
+      const assetHoldingTypeId = form.getValues("assetHoldingTypeId");
+      
+      const assetClassValid = await form.trigger("assetClassId");
+      const assetHoldingTypeValid = await form.trigger("assetHoldingTypeId");
+      
+      shouldProceed = assetClassValid && assetHoldingTypeValid;
+    } else if (currentStep === 1) {
+      // Validate asset details
+      const nameValid = await form.trigger("name");
+      const valueValid = await form.trigger("value");
+      
+      shouldProceed = nameValid && valueValid;
+    } else if (currentStep === 2) {
+      // Validate optional fields or just allow moving to final step
+      shouldProceed = true;
+    }
+    
+    if (shouldProceed && currentStep < totalSteps - 1) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+  
+  // Move to previous step
+  const handlePrevious = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+  
+  // Get selected asset class details
+  const getSelectedAssetClassDetails = () => {
+    const assetClassId = form.getValues("assetClassId");
+    return assetClasses.find(c => c.id === assetClassId);
+  };
+  
+  // Get selected holding type details
+  const getSelectedHoldingTypeDetails = () => {
+    const holdingTypeId = form.getValues("assetHoldingTypeId");
+    return holdingTypes.find(t => t.id === holdingTypeId);
+  };
+  
+  // Render form step based on current step
+  const renderFormStep = () => {
+    switch (currentStep) {
+      case 0:
+        return (
+          <>
+            <CardHeader>
+              <CardTitle>Select Asset Type</CardTitle>
+              <CardDescription>
+                First, choose the type of asset you want to add
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="assetClassId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Asset Class*</FormLabel>
+                      <Select 
+                        value={field.value?.toString()} 
+                        onValueChange={value => field.onChange(parseInt(value))}
+                      >
                         <FormControl>
-                          <Input placeholder="Enter asset name" {...field} />
+                          <SelectTrigger className="h-20">
+                            <SelectValue placeholder="Select an asset class" />
+                          </SelectTrigger>
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="value"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Current Value*</FormLabel>
+                        <SelectContent>
+                          {assetClasses?.map(assetClass => (
+                            <SelectItem 
+                              key={assetClass.id} 
+                              value={assetClass.id.toString()}
+                              className="h-16 py-2"
+                            >
+                              <div>
+                                <div className="font-semibold">{assetClass.name}</div>
+                                {assetClass.description && (
+                                  <div className="text-xs text-muted-foreground">{assetClass.description}</div>
+                                )}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="assetHoldingTypeId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Holding Type*</FormLabel>
+                      <Select 
+                        value={field.value?.toString()} 
+                        onValueChange={value => field.onChange(parseInt(value))}
+                      >
                         <FormControl>
-                          <Input 
-                            type="number" 
-                            step="0.01"
-                            placeholder="0.00" 
-                            {...field}
-                            onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                          />
+                          <SelectTrigger className="h-20">
+                            <SelectValue placeholder="Select a holding type" />
+                          </SelectTrigger>
                         </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="assetClassId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Asset Class*</FormLabel>
-                        <Select 
-                          value={field.value?.toString()} 
-                          onValueChange={value => field.onChange(parseInt(value))}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select an asset class" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {assetClasses?.map(assetClass => (
-                              <SelectItem key={assetClass.id} value={assetClass.id.toString()}>
-                                {assetClass.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="assetHoldingTypeId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Holding Type*</FormLabel>
-                        <Select 
-                          value={field.value?.toString()} 
-                          onValueChange={value => field.onChange(parseInt(value))}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a holding type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {holdingTypes?.map(type => (
-                              <SelectItem key={type.id} value={type.id.toString()}>
-                                {type.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                        <SelectContent>
+                          {holdingTypes?.map(type => (
+                            <SelectItem 
+                              key={type.id} 
+                              value={type.id.toString()}
+                              className="h-16 py-2"
+                            >
+                              <div>
+                                <div className="font-semibold">{type.name}</div>
+                                {type.description && (
+                                  <div className="text-xs text-muted-foreground">{type.description}</div>
+                                )}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardContent>
+          </>
+        );
+      case 1:
+        return (
+          <>
+            <CardHeader>
+              <CardTitle>
+                {getSelectedAssetClassDetails()?.name || "Asset"} Details
+              </CardTitle>
+              <CardDescription>
+                Enter the basic information for your {getSelectedAssetClassDetails()?.name.toLowerCase() || "asset"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Asset Name*</FormLabel>
+                      <FormControl>
+                        <Input placeholder={`Enter ${getSelectedAssetClassDetails()?.name.toLowerCase() || "asset"} name`} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="value"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Current Value*</FormLabel>
+                      <FormControl>
+                        <Input 
+                          type="number" 
+                          step="0.01"
+                          placeholder="0.00" 
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 
                 <FormField
                   control={form.control}
@@ -267,7 +374,7 @@ export default function AddAssetPage() {
                       <FormLabel>Description</FormLabel>
                       <FormControl>
                         <Textarea 
-                          placeholder="Enter a description for this asset (optional)" 
+                          placeholder={`Enter a description for this ${getSelectedAssetClassDetails()?.name.toLowerCase() || "asset"} (optional)`} 
                           className="min-h-[100px]"
                           {...field}
                         />
@@ -277,8 +384,35 @@ export default function AddAssetPage() {
                   )}
                 />
                 
-                <Separator />
+                {/* Dynamic fields based on asset class type */}
+                {getSelectedAssetClassDetails()?.name === "Property" && (
+                  <div className="space-y-4 p-4 border rounded-md">
+                    <h3 className="font-medium">Property Information</h3>
+                    {/* Additional property fields could be added here */}
+                  </div>
+                )}
                 
+                {getSelectedAssetClassDetails()?.name === "Shares" && (
+                  <div className="space-y-4 p-4 border rounded-md">
+                    <h3 className="font-medium">Stock Information</h3>
+                    {/* Additional shares fields could be added here */}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </>
+        );
+      case 2:
+        return (
+          <>
+            <CardHeader>
+              <CardTitle>Additional Details</CardTitle>
+              <CardDescription>
+                Add purchase information and performance metrics
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
                 <h3 className="text-lg font-medium">Purchase Information</h3>
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   <FormField
@@ -404,26 +538,78 @@ export default function AddAssetPage() {
                     </FormItem>
                   )}
                 />
+              </div>
+            </CardContent>
+          </>
+        );
+      default:
+        return null;
+    }
+  };
+  
+  return (
+    <MainLayout>
+      <div className="container mx-auto p-4">
+        <div className="flex items-center mb-6">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleCancel} 
+            className="mr-2"
+          >
+            <ArrowLeft className="h-4 w-4 mr-1" /> Cancel
+          </Button>
+          <h1 className="text-2xl font-bold">Add New Asset</h1>
+        </div>
+        
+        <StepIndicator currentStep={currentStep} totalSteps={totalSteps} />
+        
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <Card className="mb-8">
+              {renderFormStep()}
+              <CardFooter className="flex justify-between pt-6">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={currentStep === 0 ? handleCancel : handlePrevious}
+                >
+                  {currentStep === 0 ? (
+                    <>
+                      <Home className="mr-2 h-4 w-4" /> Dashboard
+                    </>
+                  ) : (
+                    <>
+                      <ArrowLeft className="mr-2 h-4 w-4" /> Back
+                    </>
+                  )}
+                </Button>
                 
-                <div className="flex justify-end space-x-2">
+                {currentStep < totalSteps - 1 ? (
                   <Button 
-                    variant="outline" 
-                    onClick={handleCancel}
-                    type="button"
+                    type="button" 
+                    onClick={handleNext}
                   >
-                    Cancel
+                    Next <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
+                ) : (
                   <Button 
                     type="submit"
                     disabled={createAssetMutation.isPending}
                   >
-                    {createAssetMutation.isPending ? "Saving..." : "Save Asset"}
+                    {createAssetMutation.isPending ? (
+                      "Saving..."
+                    ) : (
+                      <>
+                        Save Asset <Save className="ml-2 h-4 w-4" />
+                      </>
+                    )}
                   </Button>
-                </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+                )}
+              </CardFooter>
+            </Card>
+          </form>
+        </Form>
       </div>
     </MainLayout>
   );
