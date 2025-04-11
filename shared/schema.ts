@@ -175,10 +175,12 @@ export const insertUserSchema = createInsertSchema(users).pick({
   firstName: true,
   lastName: true,
   countryId: true,
+  role: true,
   preferredMode: true,
   isDemo: true,
   age: true,
   targetRetirementAge: true,
+  completedOnboarding: true,
 });
 
 export const loginUserSchema = z.object({

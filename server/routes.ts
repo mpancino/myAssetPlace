@@ -2,7 +2,7 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import path from "path";
 import { storage } from "./storage";
-import { setupAuth } from "./auth";
+import { setupAuth, setupDirectAdminLogin } from "./auth";
 import { loginUserSchema, insertAssetSchema, insertCountrySchema, insertAssetHoldingTypeSchema, insertAssetClassSchema, insertSubscriptionPlanSchema, updateSystemSettingsSchema, users } from "@shared/schema";
 import { z } from "zod";
 import { db } from "./db";
@@ -12,6 +12,9 @@ import { upload, getFileUrl, deleteFile } from "./utils/upload";
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
   setupAuth(app);
+  
+  // Set up direct admin login for easier testing
+  await setupDirectAdminLogin(app);
 
   // Custom middleware to check if user is admin
   const isAdmin = (req: any, res: any, next: any) => {

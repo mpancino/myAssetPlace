@@ -298,6 +298,46 @@ export default function AuthPage() {
                         {loginMutation.isPending ? "Logging in..." : "Try Admin Account"}
                       </Button>
                       
+                      <Button 
+                        variant="secondary"
+                        className="w-full bg-gradient-to-r from-green-600 to-green-500 text-white"
+                        onClick={async () => {
+                          try {
+                            const response = await fetch('/api/admin-login', {
+                              method: 'POST',
+                              credentials: 'include',
+                              headers: {
+                                'Content-Type': 'application/json'
+                              }
+                            });
+                            
+                            if (response.ok) {
+                              const data = await response.json();
+                              queryClient.setQueryData(["/api/user"], data);
+                              toast({
+                                title: "Admin login successful",
+                                description: "Welcome to the admin dashboard!",
+                              });
+                              navigate("/");
+                            } else {
+                              toast({
+                                title: "Admin login failed",
+                                description: "Please try again later.",
+                                variant: "destructive",
+                              });
+                            }
+                          } catch (error) {
+                            toast({
+                              title: "Admin login error",
+                              description: "Please try again later.",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                      >
+                        Direct Admin Login
+                      </Button>
+                      
                       <Button variant="outline" className="w-full">
                         <svg className="mr-2 h-4 w-4" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M20.283 10.356h-8.327v3.451h4.792c-.446 2.193-2.313 3.453-4.792 3.453a5.27 5.27 0 0 1-5.279-5.28 5.27 5.27 0 0 1 5.279-5.279c1.259 0 2.397.447 3.29 1.178l2.6-2.599c-1.584-1.381-3.615-2.233-5.89-2.233a8.908 8.908 0 0 0-8.934 8.934 8.907 8.907 0 0 0 8.934 8.934c4.467 0 8.529-3.249 8.529-8.934 0-.528-.081-1.097-.202-1.625z"></path>

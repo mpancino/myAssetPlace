@@ -45,6 +45,44 @@ export async function comparePasswords(supplied: string, stored: string) {
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
+// Admin direct login route for simplified admin access
+export async function setupDirectAdminLogin(app: Express) {
+  // Create an admin user if one doesn't exist with 'admin123' credentials
+  app.post("/api/admin-login", async (req, res, next) => {
+    try {
+      // Look for any existing admin user first
+      const adminUsername = "admin123"; 
+      const adminPassword = "admin123";
+      
+      // Check if admin user exists, if not create one
+      let adminUser = await storage.getUserByUsername(adminUsername);
+      
+      if (!adminUser) {
+        // Create the admin user with role='admin'
+        adminUser = await storage.createUser({
+          username: adminUsername,
+          email: "admin123@myassetplace.com",
+          password: await hashPassword(adminPassword),
+          role: 'admin',
+          preferredMode: 'advanced',
+          isDemo: false,
+          completedOnboarding: true
+        });
+        console.log("Created admin user:", adminUser.username);
+      }
+      
+      // Log in the user directly
+      req.login(adminUser, (err) => {
+        if (err) return next(err);
+        return res.status(200).json(adminUser);
+      });
+    } catch (err) {
+      console.error("Admin login error:", err);
+      next(err);
+    }
+  });
+}
+
 export function setupAuth(app: Express) {
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "myAssetPlaceSecretKey",
