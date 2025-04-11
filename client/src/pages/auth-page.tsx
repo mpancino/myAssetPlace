@@ -107,7 +107,8 @@ export default function AuthPage() {
       });
       
       // Redirect to dashboard - force window.location for a hard refresh
-      window.location.href = "/dashboard";
+      // Always redirect to root first to ensure the user is properly loaded
+      window.location.href = "/";
       
     } catch (error) {
       console.error("Demo user creation error:", error);
@@ -289,10 +290,49 @@ export default function AuthPage() {
                       <Button 
                         variant="secondary"
                         className="w-full bg-gradient-to-r from-amber-600 to-amber-500 text-white"
-                        onClick={() => {
-                          loginForm.setValue("username", "admin2");
-                          loginForm.setValue("password", "adminpassword123");
-                          loginForm.handleSubmit(onLoginSubmit)();
+                        onClick={async () => {
+                          console.log("Try Admin Account button clicked!");
+                          // Directly use fetch instead of form submission
+                          try {
+                            console.log("Sending admin account login request...");
+                            const response = await fetch('/api/login', {
+                              method: 'POST',
+                              credentials: 'include',
+                              headers: {
+                                'Content-Type': 'application/json'
+                              },
+                              body: JSON.stringify({
+                                username: "admin2",
+                                password: "adminpassword123"
+                              })
+                            });
+                            
+                            console.log("Admin account login response status:", response.status);
+                            if (response.ok) {
+                              const data = await response.json();
+                              console.log("Admin account login successful, user data:", data);
+                              queryClient.setQueryData(["/api/user"], data);
+                              toast({
+                                title: "Admin login successful",
+                                description: "Welcome to the admin dashboard!",
+                              });
+                              // Force a hard redirect
+                              window.location.href = "/";
+                            } else {
+                              toast({
+                                title: "Admin login failed",
+                                description: "Please try again with Direct Admin Login button",
+                                variant: "destructive",
+                              });
+                            }
+                          } catch (error) {
+                            console.error("Admin account login error:", error);
+                            toast({
+                              title: "Login error",
+                              description: "Please try Direct Admin Login instead",
+                              variant: "destructive",
+                            });
+                          }
                         }}
                         disabled={loginMutation.isPending}
                       >
@@ -323,7 +363,8 @@ export default function AuthPage() {
                                 title: "Admin login successful",
                                 description: "Welcome to the admin dashboard!",
                               });
-                              navigate("/");
+                              // Use a hard redirect instead of navigation hook
+                              window.location.href = "/";
                             } else {
                               console.error("Admin login failed with status:", response.status);
                               // Try to get error message from response
