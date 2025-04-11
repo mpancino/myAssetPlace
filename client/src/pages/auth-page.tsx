@@ -1,5 +1,5 @@
 import { useAuth } from "@/hooks/use-auth";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -18,7 +18,10 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useQuery } from "@tanstack/react-query";
+import DemoOnboardingDialog from "@/components/onboarding/demo-onboarding-dialog";
 
 // Extended login schema with remember me option
 const loginFormSchema = loginUserSchema.extend({
@@ -42,11 +45,45 @@ type RegisterFormValues = z.infer<typeof registerFormSchema>;
 export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
   const [, navigate] = useLocation();
+  const { toast } = useToast();
+  const [isCreatingDemo, setIsCreatingDemo] = useState(false);
 
   // Get login splash screen settings
   const { data: systemSettings } = useQuery({
     queryKey: ["/api/system-settings"],
   });
+  
+  // Function to create a demo user
+  const createDemoUser = async () => {
+    setIsCreatingDemo(true);
+    try {
+      const response = await apiRequest("POST", "/api/register/demo", {});
+      if (response.ok) {
+        const user = await response.json();
+        queryClient.setQueryData(["/api/user"], user);
+        toast({
+          title: "Demo Account Created",
+          description: "You're now using a demo account with sample data."
+        });
+        navigate("/dashboard");
+      } else {
+        const error = await response.json();
+        toast({
+          title: "Error",
+          description: error.message || "Failed to create demo account",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCreatingDemo(false);
+    }
+  };
 
   // Redirect if already logged in
   useEffect(() => {
@@ -203,12 +240,23 @@ export default function AuthPage() {
                       </div>
                     </div>
 
-                    <Button variant="outline" className="w-full">
-                      <svg className="mr-2 h-4 w-4" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M20.283 10.356h-8.327v3.451h4.792c-.446 2.193-2.313 3.453-4.792 3.453a5.27 5.27 0 0 1-5.279-5.28 5.27 5.27 0 0 1 5.279-5.279c1.259 0 2.397.447 3.29 1.178l2.6-2.599c-1.584-1.381-3.615-2.233-5.89-2.233a8.908 8.908 0 0 0-8.934 8.934 8.907 8.907 0 0 0 8.934 8.934c4.467 0 8.529-3.249 8.529-8.934 0-.528-.081-1.097-.202-1.625z"></path>
-                      </svg>
-                      Sign in with Google
-                    </Button>
+                    <div className="flex flex-col space-y-3">
+                      <Button 
+                        variant="default" 
+                        className="w-full bg-gradient-to-r from-primary-600 to-primary-500"
+                        onClick={createDemoUser}
+                        disabled={isCreatingDemo}
+                      >
+                        {isCreatingDemo ? "Creating Demo Account..." : "Try Demo Account"}
+                      </Button>
+                      
+                      <Button variant="outline" className="w-full">
+                        <svg className="mr-2 h-4 w-4" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M20.283 10.356h-8.327v3.451h4.792c-.446 2.193-2.313 3.453-4.792 3.453a5.27 5.27 0 0 1-5.279-5.28 5.27 5.27 0 0 1 5.279-5.279c1.259 0 2.397.447 3.29 1.178l2.6-2.599c-1.584-1.381-3.615-2.233-5.89-2.233a8.908 8.908 0 0 0-8.934 8.934 8.907 8.907 0 0 0 8.934 8.934c4.467 0 8.529-3.249 8.529-8.934 0-.528-.081-1.097-.202-1.625z"></path>
+                        </svg>
+                        Sign in with Google
+                      </Button>
+                    </div>
                   </form>
                 </Form>
               </TabsContent>

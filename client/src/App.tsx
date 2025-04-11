@@ -6,6 +6,7 @@ import HomePage from "@/pages/home-page";
 import DashboardPage from "@/pages/dashboard-page";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { AuthProvider } from "@/hooks/use-auth";
+import DemoOnboardingDialog from "@/components/onboarding/demo-onboarding-dialog";
 
 function Router() {
   return (
@@ -22,6 +23,7 @@ function App() {
   return (
     <AuthProvider>
       <Router />
+      <DemoOnboardingDialog />
       <Toaster />
     </AuthProvider>
   );

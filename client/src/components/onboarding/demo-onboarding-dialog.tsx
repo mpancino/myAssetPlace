@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -50,7 +50,7 @@ type OnboardingFormData = z.infer<typeof onboardingSchema>;
 export default function DemoOnboardingDialog() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const [, navigate] = useLocation();
   const [isOpen, setIsOpen] = useState(user?.isDemo && !user?.completedOnboarding);
 
   const form = useForm<OnboardingFormData>({
