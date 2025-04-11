@@ -46,10 +46,10 @@ The development is divided into 11 logical phases:
 ### Phase 1: Authentication & User Foundation
 
 - [x] `[REQ-002]` Modern, elegant and intuitive UI (initial application)
-- [ ] `[REQ-013]` Responsive design working on desktop, tablet, and mobile devices (initial layout)
+- [x] `[REQ-013]` Responsive design working on desktop, tablet, and mobile devices (initial layout)
 - [x] `[REQ-018]` Account creation via login screen (email/password)
 - [x] `[REQ-019]` User profile including country
-- [ ] `[REQ-027]` Persistent "+" sign on the UI to add assets (part of basic layout)
+- [x] `[REQ-027]` Persistent "+" sign on the UI to add assets (part of basic layout)
 - [ ] `[REQ-042]` Account details management (profile, password)
 - [x] `[REQ-090]` Secure email/password registration with validation
 - [x] `[REQ-092]` Secure session handling using industry best practices
@@ -63,12 +63,12 @@ The development is divided into 11 logical phases:
 - [x] `[REQ-217]` Standardized form controls
 - [x] `[REQ-221]` Consistent modal design
 - [x] `[REQ-222]` Consistent icon library
-- [ ] `[REQ-223]` Desktop layout (2-3 column)
-- [ ] `[REQ-224]` Tablet layout (1-2 column)
-- [ ] `[REQ-225]` Mobile layout (single column)
-- [ ] `[REQ-226]` Persistent sidebar navigation
-- [ ] `[REQ-229]` Breadcrumbs implementation
-- [ ] `[REQ-230]` Floating Action Button (FAB)
+- [x] `[REQ-223]` Desktop layout (2-3 column)
+- [x] `[REQ-224]` Tablet layout (1-2 column)
+- [x] `[REQ-225]` Mobile layout (single column)
+- [x] `[REQ-226]` Persistent sidebar navigation
+- [x] `[REQ-229]` Breadcrumbs implementation
+- [x] `[REQ-230]` Floating Action Button (FAB)
 - [x] `[REQ-237]` Login screen (basic structure)
 - [ ] `[REQ-248]` User profile settings page
 - [ ] `[REQ-250]` Onboarding flow screens (welcome, profile setup)
