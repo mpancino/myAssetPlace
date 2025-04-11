@@ -138,7 +138,7 @@ The development is divided into 11 logical phases:
 - [x] `[REQ-052]` Financial year end date configuration
 - [x] `[REQ-053]` External API availability configuration
 - [x] `[REQ-054]` Asset holding types management
-- [ ] `[REQ-055]` Initial holding types (Personal, Superannuation, Family Trust)
+- [x] `[REQ-055]` Initial holding types (Personal, Superannuation, Family Trust)
 - [x] `[REQ-056]` Tax rules and parameters for holding types
 - [x] `[REQ-057]` Administrator configurability for tax rules
 - [x] `[REQ-058]` Country/region applicability for holding types
@@ -342,7 +342,7 @@ The development is divided into 11 logical phases:
 - [ ] `[REQ-024]` First asset addition through onboarding wizard
 - [ ] `[REQ-025]` Dashboard introduction with visualizations
 - [ ] `[REQ-026]` Asset class exploration prompts
-- [ ] `[REQ-028]` Demo user onboarding
+- [x] `[REQ-028]` Demo user onboarding
 - [ ] `[REQ-043]` Subscription plan management
 - [ ] `[REQ-044]` Plan upgrading/downgrading affecting features
 - [ ] `[REQ-045]` Data export/import in JSON format
