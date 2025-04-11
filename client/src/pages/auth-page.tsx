@@ -64,7 +64,7 @@ export default function AuthPage() {
       console.log("Creating demo user...");
       
       // First, check if we have demo users already created that we can reuse
-      const existingDemoResponse = await apiRequest("GET", "/api/demo-user/available", {});
+      const existingDemoResponse = await apiRequest("GET", "/api/demo-user/available");
       let demoUserId = null;
       
       if (existingDemoResponse.ok) {

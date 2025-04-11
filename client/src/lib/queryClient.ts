@@ -12,12 +12,20 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  const res = await fetch(url, {
+  // Don't include body with GET requests
+  const options: RequestInit = {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
-  });
+    headers: {},
+  };
+
+  // Only add content-type header and body for non-GET requests with data
+  if (data && method !== 'GET') {
+    options.headers = { "Content-Type": "application/json" };
+    options.body = JSON.stringify(data);
+  }
+
+  const res = await fetch(url, options);
 
   await throwIfResNotOk(res);
   return res;
