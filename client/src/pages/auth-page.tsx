@@ -284,6 +284,19 @@ export default function AuthPage() {
                       >
                         {isCreatingDemo ? "Creating Demo Account..." : "Try Demo Account"}
                       </Button>
+
+                      <Button 
+                        variant="secondary"
+                        className="w-full bg-gradient-to-r from-amber-600 to-amber-500 text-white"
+                        onClick={() => {
+                          loginForm.setValue("username", "admin");
+                          loginForm.setValue("password", "adminpassword123");
+                          loginForm.handleSubmit(onLoginSubmit)();
+                        }}
+                        disabled={loginMutation.isPending}
+                      >
+                        {loginMutation.isPending ? "Logging in..." : "Try Admin Account"}
+                      </Button>
                       
                       <Button variant="outline" className="w-full">
                         <svg className="mr-2 h-4 w-4" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24">
