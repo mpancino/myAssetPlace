@@ -43,6 +43,7 @@ type LoginFormValues = z.infer<typeof loginFormSchema>;
 type RegisterFormValues = z.infer<typeof registerFormSchema>;
 
 export default function AuthPage() {
+  console.log("Rendering AuthPage component");
   const { user, loginMutation, registerMutation } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
@@ -302,7 +303,9 @@ export default function AuthPage() {
                         variant="secondary"
                         className="w-full bg-gradient-to-r from-green-600 to-green-500 text-white"
                         onClick={async () => {
+                          console.log("Direct admin login button clicked!");
                           try {
+                            console.log("Sending admin login request...");
                             const response = await fetch('/api/admin-login', {
                               method: 'POST',
                               credentials: 'include',
@@ -311,8 +314,10 @@ export default function AuthPage() {
                               }
                             });
                             
+                            console.log("Admin login response status:", response.status);
                             if (response.ok) {
                               const data = await response.json();
+                              console.log("Admin login successful, user data:", data);
                               queryClient.setQueryData(["/api/user"], data);
                               toast({
                                 title: "Admin login successful",
@@ -320,13 +325,23 @@ export default function AuthPage() {
                               });
                               navigate("/");
                             } else {
+                              console.error("Admin login failed with status:", response.status);
+                              // Try to get error message from response
+                              let errorMsg = "Please try again later.";
+                              try {
+                                const errorData = await response.json();
+                                errorMsg = errorData.message || errorMsg;
+                                console.error("Error details:", errorData);
+                              } catch (e) {}
+                              
                               toast({
                                 title: "Admin login failed",
-                                description: "Please try again later.",
+                                description: errorMsg,
                                 variant: "destructive",
                               });
                             }
                           } catch (error) {
+                            console.error("Admin login request error:", error);
                             toast({
                               title: "Admin login error",
                               description: "Please try again later.",
