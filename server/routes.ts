@@ -2,8 +2,10 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
-import { loginUserSchema, insertAssetSchema, insertCountrySchema, insertAssetHoldingTypeSchema, insertAssetClassSchema, insertSubscriptionPlanSchema, updateSystemSettingsSchema } from "@shared/schema";
+import { loginUserSchema, insertAssetSchema, insertCountrySchema, insertAssetHoldingTypeSchema, insertAssetClassSchema, insertSubscriptionPlanSchema, updateSystemSettingsSchema, users } from "@shared/schema";
 import { z } from "zod";
+import { db } from "./db";
+import { eq, and } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
@@ -322,6 +324,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ errors: err.errors });
       }
       res.status(500).json({ message: "Failed to update user profile" });
+    }
+  });
+  
+  // Demo user available endpoint
+  app.get("/api/demo-user/available", async (req, res) => {
+    try {
+      // Find a demo user that's not completed onboarding
+      const demoUsers = await db
+        .select()
+        .from(users)
+        .where(and(
+          eq(users.isDemo, true),
+          eq(users.completedOnboarding, false),
+        ))
+        .limit(1);
+      
+      if (demoUsers && demoUsers.length > 0) {
+        // Log the user in by creating a session
+        req.login(demoUsers[0], (err) => {
+          if (err) {
+            console.error("Error logging in demo user:", err);
+            return res.status(500).json({ message: "Error logging in demo user" });
+          }
+          
+          return res.status(200).json(demoUsers[0]);
+        });
+      } else {
+        // No available demo user
+        return res.status(404).json({ message: "No available demo users" });
+      }
+    } catch (error) {
+      console.error("Error finding available demo user:", error);
+      res.status(500).json({ message: "Internal server error" });
     }
   });
   

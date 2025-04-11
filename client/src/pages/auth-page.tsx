@@ -49,7 +49,11 @@ export default function AuthPage() {
   const [isCreatingDemo, setIsCreatingDemo] = useState(false);
 
   // Get login splash screen settings
-  const { data: systemSettings } = useQuery({
+  const { data: systemSettings } = useQuery<{
+    loginSplashTitle?: string;
+    loginSplashText?: string;
+    loginSplashImageUrl?: string;
+  }>({
     queryKey: ["/api/system-settings"],
   });
   
@@ -58,36 +62,52 @@ export default function AuthPage() {
     setIsCreatingDemo(true);
     try {
       console.log("Creating demo user...");
-      const response = await apiRequest("POST", "/api/register/demo", {});
       
-      if (response.ok) {
+      // First, check if we have demo users already created that we can reuse
+      const existingDemoResponse = await apiRequest("GET", "/api/demo-user/available", {});
+      let demoUserId = null;
+      
+      if (existingDemoResponse.ok) {
+        const existingDemoData = await existingDemoResponse.json();
+        if (existingDemoData && existingDemoData.id) {
+          // Use existing demo user if available
+          demoUserId = existingDemoData.id;
+        }
+      }
+      
+      // If no existing demo user, create new one
+      if (!demoUserId) {
+        const response = await apiRequest("POST", "/api/register/demo", {});
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("Demo user creation failed:", errorData);
+          toast({
+            title: "Error",
+            description: errorData.message || "Failed to create demo account",
+            variant: "destructive"
+          });
+          setIsCreatingDemo(false);
+          return;
+        }
+        
         const userData = await response.json();
         console.log("Demo user created:", userData);
-        
-        // Invalidate user query cache to trigger a refresh
-        queryClient.invalidateQueries({ queryKey: ["/api/user"] });
-        
-        // Set the user data directly in the query cache
-        queryClient.setQueryData(["/api/user"], userData);
-        
-        toast({
-          title: "Demo Account Created",
-          description: "You're now using a demo account with sample data."
-        });
-        
-        // Force a small delay to ensure the auth context updates
-        setTimeout(() => {
-          navigate("/dashboard");
-        }, 100);
-      } else {
-        const errorData = await response.json();
-        console.error("Demo user creation failed:", errorData);
-        toast({
-          title: "Error",
-          description: errorData.message || "Failed to create demo account",
-          variant: "destructive"
-        });
+        demoUserId = userData.id;
       }
+      
+      // Fully clear and refresh queries to ensure fresh data
+      await queryClient.resetQueries();
+      
+      // Show successful toast for better UX
+      toast({
+        title: "Demo Account Created",
+        description: "Welcome to myAssetPlace! You're now using a demo account."
+      });
+      
+      // Redirect to dashboard - force window.location for a hard refresh
+      window.location.href = "/dashboard";
+      
     } catch (error) {
       console.error("Demo user creation error:", error);
       toast({
