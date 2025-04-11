@@ -11,6 +11,8 @@ import {
   LineChart,
   Settings,
   LogOut,
+  BookOpenCheck,
+  Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
@@ -25,13 +27,13 @@ export default function Sidebar({ className }: SidebarProps) {
   const isMobile = useIsMobile();
   
   // Fetch asset holding types
-  const { data: holdingTypes } = useQuery({
+  const { data: holdingTypes = [] } = useQuery<AssetHoldingType[]>({
     queryKey: ["/api/asset-holding-types"],
     enabled: !!user,
   });
   
   // Fetch asset classes
-  const { data: assetClasses } = useQuery({
+  const { data: assetClasses = [] } = useQuery<AssetClass[]>({
     queryKey: ["/api/asset-classes"],
     enabled: !!user,
   });
@@ -145,6 +147,9 @@ export default function Sidebar({ className }: SidebarProps) {
                 <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4">
                   Financial Tools
                 </h3>
+                <NavLink href="/balance-sheet" icon={<BookOpenCheck className="h-5 w-5 mr-3" />}>
+                  Balance Sheet
+                </NavLink>
                 <NavLink href="/projections" icon={<BarChart3 className="h-5 w-5 mr-3" />}>
                   Projections
                 </NavLink>
