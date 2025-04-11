@@ -63,6 +63,7 @@ export interface IStorage {
   getAsset(id: number): Promise<Asset | undefined>;
   createAsset(asset: InsertAsset): Promise<Asset>;
   updateAsset(id: number, asset: Partial<Asset>): Promise<Asset | undefined>;
+  deleteAsset(id: number): Promise<boolean>;
   listAssets(userId: number, limit?: number): Promise<Asset[]>;
   getUserAssetsByClass(userId: number): Promise<{ assetClass: AssetClass, totalValue: number }[]>;
   
@@ -230,6 +231,18 @@ export class DatabaseStorage implements IStorage {
       .where(eq(assets.id, id))
       .returning();
     return updatedAsset;
+  }
+  
+  async deleteAsset(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(assets)
+        .where(eq(assets.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting asset:", error);
+      return false;
+    }
   }
 
   async listAssets(userId: number, limit?: number): Promise<Asset[]> {

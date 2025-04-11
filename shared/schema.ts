@@ -76,6 +76,8 @@ export const assetClasses = pgTable("asset_classes", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
+  isLiability: boolean("is_liability").default(false),
+  color: text("color"),
   defaultLowGrowthRate: real("default_low_growth_rate"),
   defaultMediumGrowthRate: real("default_medium_growth_rate"),
   defaultHighGrowthRate: real("default_high_growth_rate"),

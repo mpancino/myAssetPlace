@@ -241,7 +241,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/assets/:id", async (req, res) => {
+  app.patch("/api/assets/:id", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });
     }
@@ -263,6 +263,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ errors: err.errors });
       }
       res.status(500).json({ message: "Failed to update asset" });
+    }
+  });
+  
+  app.delete("/api/assets/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      const id = parseInt(req.params.id);
+      const asset = await storage.getAsset(id);
+      
+      if (!asset) {
+        return res.status(404).json({ message: "Asset not found" });
+      }
+      
+      // Check if the asset belongs to the user
+      if (asset.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to delete this asset" });
+      }
+      
+      // Delete the asset
+      await storage.deleteAsset(id);
+      
+      res.status(200).json({ message: "Asset deleted successfully" });
+    } catch (err) {
+      res.status(500).json({ message: "Failed to delete asset" });
     }
   });
 

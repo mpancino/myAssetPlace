@@ -661,9 +661,9 @@ export default function AssetDetailPage() {
                           ) : (
                             <div className="font-medium flex items-center">
                               <Percent className="mr-2 h-4 w-4 text-muted-foreground" />
-                              {asset?.growthRate !== null 
+                              {asset?.growthRate !== null && asset?.growthRate !== undefined
                                 ? `${(asset.growthRate * 100).toFixed(2)}%`
-                                : selectedClass?.defaultMediumGrowthRate !== null
+                                : selectedClass?.defaultMediumGrowthRate !== null && selectedClass?.defaultMediumGrowthRate !== undefined
                                   ? `${(selectedClass.defaultMediumGrowthRate * 100).toFixed(2)}% (Default)`
                                   : "Not set"
                               }
@@ -701,9 +701,9 @@ export default function AssetDetailPage() {
                           ) : (
                             <div className="font-medium flex items-center">
                               <Percent className="mr-2 h-4 w-4 text-muted-foreground" />
-                              {asset?.incomeYield !== null 
+                              {asset?.incomeYield !== null && asset?.incomeYield !== undefined
                                 ? `${(asset.incomeYield * 100).toFixed(2)}%`
-                                : selectedClass?.defaultIncomeYield !== null
+                                : selectedClass?.defaultIncomeYield !== null && selectedClass?.defaultIncomeYield !== undefined
                                   ? `${(selectedClass.defaultIncomeYield * 100).toFixed(2)}% (Default)`
                                   : "Not set"
                               }
