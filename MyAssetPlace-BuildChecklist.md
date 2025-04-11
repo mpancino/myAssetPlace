@@ -45,140 +45,140 @@ The development is divided into 11 logical phases:
 
 ### Phase 1: Authentication & User Foundation
 
-- [ ] `[REQ-002]` Modern, elegant and intuitive UI (initial application)
+- [x] `[REQ-002]` Modern, elegant and intuitive UI (initial application)
 - [ ] `[REQ-013]` Responsive design working on desktop, tablet, and mobile devices (initial layout)
-- [ ] `[REQ-018]` Account creation via login screen (email/password)
-- [ ] `[REQ-019]` User profile including country
+- [x] `[REQ-018]` Account creation via login screen (email/password)
+- [x] `[REQ-019]` User profile including country
 - [ ] `[REQ-027]` Persistent "+" sign on the UI to add assets (part of basic layout)
 - [ ] `[REQ-042]` Account details management (profile, password)
-- [ ] `[REQ-090]` Secure email/password registration with validation
-- [ ] `[REQ-092]` Secure session handling using industry best practices
+- [x] `[REQ-090]` Secure email/password registration with validation
+- [x] `[REQ-092]` Secure session handling using industry best practices
 - [ ] `[REQ-093]` Profile management
-- [ ] `[REQ-094]` Password strength enforcement, secure hashing
-- [ ] `[REQ-095]` Route protection requiring authentication
-- [ ] `[REQ-096]` Data isolation (users can only access their own data)
-- [ ] `[REQ-097]` API security (authentication and authorization)
-- [ ] `[REQ-215]` React with shadcn/ui components (implementation)
-- [ ] `[REQ-216]` TailwindCSS (implementation)
-- [ ] `[REQ-217]` Standardized form controls
-- [ ] `[REQ-221]` Consistent modal design
-- [ ] `[REQ-222]` Consistent icon library
+- [x] `[REQ-094]` Password strength enforcement, secure hashing
+- [x] `[REQ-095]` Route protection requiring authentication
+- [x] `[REQ-096]` Data isolation (users can only access their own data)
+- [x] `[REQ-097]` API security (authentication and authorization)
+- [x] `[REQ-215]` React with shadcn/ui components (implementation)
+- [x] `[REQ-216]` TailwindCSS (implementation)
+- [x] `[REQ-217]` Standardized form controls
+- [x] `[REQ-221]` Consistent modal design
+- [x] `[REQ-222]` Consistent icon library
 - [ ] `[REQ-223]` Desktop layout (2-3 column)
 - [ ] `[REQ-224]` Tablet layout (1-2 column)
 - [ ] `[REQ-225]` Mobile layout (single column)
 - [ ] `[REQ-226]` Persistent sidebar navigation
 - [ ] `[REQ-229]` Breadcrumbs implementation
 - [ ] `[REQ-230]` Floating Action Button (FAB)
-- [ ] `[REQ-237]` Login screen (basic structure)
+- [x] `[REQ-237]` Login screen (basic structure)
 - [ ] `[REQ-248]` User profile settings page
 - [ ] `[REQ-250]` Onboarding flow screens (welcome, profile setup)
-- [ ] `[REQ-253]` Global UI state (for auth state)
-- [ ] `[REQ-255]` Local/feature state (component state)
-- [ ] `[REQ-256]` Routing implementation
-- [ ] `[REQ-257]` Form handling with react-hook-form and Zod
-- [ ] `[REQ-260]` API client implementation
-- [ ] `[REQ-263]` Page components (login, register, profile)
-- [ ] `[REQ-264]` Generic UI elements (buttons, inputs)
-- [ ] `[REQ-265]` Layout components for page structure
-- [ ] `[REQ-267]` Reusable form components
-- [ ] `[REQ-273]` Form state management with react-hook-form
+- [x] `[REQ-253]` Global UI state (for auth state)
+- [x] `[REQ-255]` Local/feature state (component state)
+- [x] `[REQ-256]` Routing implementation
+- [x] `[REQ-257]` Form handling with react-hook-form and Zod
+- [x] `[REQ-260]` API client implementation
+- [x] `[REQ-263]` Page components (login, register, profile)
+- [x] `[REQ-264]` Generic UI elements (buttons, inputs)
+- [x] `[REQ-265]` Layout components for page structure
+- [x] `[REQ-267]` Reusable form components
+- [x] `[REQ-273]` Form state management with react-hook-form
 - [ ] `[REQ-275]` User-specific application settings state
-- [ ] `[REQ-276]` Client-side input validation with Zod
-- [ ] `[REQ-277]` Type checking for all form fields
-- [ ] `[REQ-279]` Console logging during development
+- [x] `[REQ-276]` Client-side input validation with Zod
+- [x] `[REQ-277]` Type checking for all form fields
+- [x] `[REQ-279]` Console logging during development
 - [ ] `[REQ-280]` Toggleable logs for production builds
-- [ ] `[REQ-283]` Session-based authentication implementation
-- [ ] `[REQ-284]` Server-side request validation with Zod
-- [ ] `[REQ-285]` Centralized error handling middleware
-- [ ] `[REQ-286]` Authorization checks for endpoints
-- [ ] `[REQ-287]` Ownership/tenancy rules enforcement
-- [ ] `[REQ-295]` Referential integrity in schema
-- [ ] `[REQ-296]` Data access layer implementation
-- [ ] `[REQ-299]` Database transaction management
+- [x] `[REQ-283]` Session-based authentication implementation
+- [x] `[REQ-284]` Server-side request validation with Zod
+- [x] `[REQ-285]` Centralized error handling middleware
+- [x] `[REQ-286]` Authorization checks for endpoints
+- [x] `[REQ-287]` Ownership/tenancy rules enforcement
+- [x] `[REQ-295]` Referential integrity in schema
+- [x] `[REQ-296]` Data access layer implementation
+- [x] `[REQ-299]` Database transaction management
 - [ ] `[REQ-301]` User preferred mode storage
-- [ ] `[REQ-309]` Password hashing with bcrypt
-- [ ] `[REQ-310]` Secure, HTTP-only cookies
+- [x] `[REQ-309]` Password hashing with bcrypt
+- [x] `[REQ-310]` Secure, HTTP-only cookies
 - [ ] `[REQ-311]` CSRF protection
-- [ ] `[REQ-312]` Appropriate cookie flags (Secure, SameSite)
-- [ ] `[REQ-313]` Authorization middleware
-- [ ] `[REQ-314]` User data isolation
-- [ ] `[REQ-317]` Server-side validation
-- [ ] `[REQ-318]` Generic error messages in production
+- [x] `[REQ-312]` Appropriate cookie flags (Secure, SameSite)
+- [x] `[REQ-313]` Authorization middleware
+- [x] `[REQ-314]` User data isolation
+- [x] `[REQ-317]` Server-side validation
+- [x] `[REQ-318]` Generic error messages in production
 - [ ] `[REQ-321]` Rate limiting on sensitive endpoints
-- [ ] `[REQ-346]` Server-side session approach
-- [ ] `[REQ-348]` React frontend implementation
-- [ ] `[REQ-349]` Express.js backend API for authentication
-- [ ] `[REQ-350]` PostgreSQL database for user profiles
-- [ ] `[REQ-351]` Passport.js middleware
-- [ ] `[REQ-352]` express-session implementation
-- [ ] `[REQ-355]` bcrypt for password hashing
+- [x] `[REQ-346]` Server-side session approach
+- [x] `[REQ-348]` React frontend implementation
+- [x] `[REQ-349]` Express.js backend API for authentication
+- [x] `[REQ-350]` PostgreSQL database for user profiles
+- [x] `[REQ-351]` Passport.js middleware
+- [x] `[REQ-352]` express-session implementation
+- [x] `[REQ-355]` bcrypt for password hashing
 - [ ] `[REQ-356]` CSRF protection middleware
-- [ ] `[REQ-357]` Registration flow implementation
-- [ ] `[REQ-358]` Login flow with passport-local
-- [ ] `[REQ-364]` Secure session cookie setup
-- [ ] `[REQ-365]` Session data storage (avoid MemoryStore)
-- [ ] `[REQ-366]` Authenticated requests with session cookie
+- [x] `[REQ-357]` Registration flow implementation
+- [x] `[REQ-358]` Login flow with passport-local
+- [x] `[REQ-364]` Secure session cookie setup
+- [x] `[REQ-365]` Session data storage (avoid MemoryStore)
+- [x] `[REQ-366]` Authenticated requests with session cookie
 - [ ] `[REQ-367]` CSRF token generation and validation
-- [ ] `[REQ-368]` Logout flow implementation
-- [ ] `[REQ-369]` Password hashing implementation
-- [ ] `[REQ-370]` HTTPS enforcement
-- [ ] `[REQ-371]` Secure cookie attributes
+- [x] `[REQ-368]` Logout flow implementation
+- [x] `[REQ-369]` Password hashing implementation
+- [x] `[REQ-370]` HTTPS enforcement
+- [x] `[REQ-371]` Secure cookie attributes
 - [ ] `[REQ-372]` CSRF protection implementation
-- [ ] `[REQ-374]` Input validation with Zod
-- [ ] `[REQ-375]` Rate limiting on authentication endpoints
-- [ ] `[REQ-376]` Persistent session store
+- [x] `[REQ-374]` Input validation with Zod
+- [ ] `[REQ-375]` Rate limiting on sensitive endpoints
+- [x] `[REQ-376]` Persistent session store
 
 ### Phase 2: Admin Configuration Basics & Core Models
 
-- [ ] `[REQ-005]` Basic branding customization (splash screen)
-- [ ] `[REQ-017]` Administrator-level UI customization
-- [ ] `[REQ-020]` Country settings configuration
-- [ ] `[REQ-050]` Country-specific settings configuration
-- [ ] `[REQ-051]` Default currency configuration
-- [ ] `[REQ-052]` Financial year end date configuration
-- [ ] `[REQ-053]` External API availability configuration
-- [ ] `[REQ-054]` Asset holding types management
+- [x] `[REQ-005]` Basic branding customization (splash screen)
+- [x] `[REQ-017]` Administrator-level UI customization
+- [x] `[REQ-020]` Country settings configuration
+- [x] `[REQ-050]` Country-specific settings configuration
+- [x] `[REQ-051]` Default currency configuration
+- [x] `[REQ-052]` Financial year end date configuration
+- [x] `[REQ-053]` External API availability configuration
+- [x] `[REQ-054]` Asset holding types management
 - [ ] `[REQ-055]` Initial holding types (Personal, Superannuation, Family Trust)
-- [ ] `[REQ-056]` Tax rules and parameters for holding types
-- [ ] `[REQ-057]` Administrator configurability for tax rules
-- [ ] `[REQ-058]` Country/region applicability for holding types
-- [ ] `[REQ-059]` Income tax brackets configuration (basic structure)
-- [ ] `[REQ-060]` Capital gains tax rules configuration (basic structure)
-- [ ] `[REQ-061]` Holding type expense configuration
-- [ ] `[REQ-063]` Asset class configuration
-- [ ] `[REQ-064]` Growth rate assumptions configuration
-- [ ] `[REQ-065]` Expense categories configuration
-- [ ] `[REQ-066]` Income assumptions configuration
-- [ ] `[REQ-067]` Default settings for holding types and asset classes
+- [x] `[REQ-056]` Tax rules and parameters for holding types
+- [x] `[REQ-057]` Administrator configurability for tax rules
+- [x] `[REQ-058]` Country/region applicability for holding types
+- [x] `[REQ-059]` Income tax brackets configuration (basic structure)
+- [x] `[REQ-060]` Capital gains tax rules configuration (basic structure)
+- [x] `[REQ-061]` Holding type expense configuration
+- [x] `[REQ-063]` Asset class configuration
+- [x] `[REQ-064]` Growth rate assumptions configuration
+- [x] `[REQ-065]` Expense categories configuration
+- [x] `[REQ-066]` Income assumptions configuration
+- [x] `[REQ-067]` Default settings for holding types and asset classes
 - [ ] `[REQ-068]` API key management
-- [ ] `[REQ-069]` Subscription plan configuration
-- [ ] `[REQ-070]` Asset holding types limits configuration
-- [ ] `[REQ-071]` Asset classes limits configuration
-- [ ] `[REQ-072]` Assets per class limits configuration
-- [ ] `[REQ-073]` API integrations access configuration
-- [ ] `[REQ-074]` Interface modes configuration
-- [ ] `[REQ-075]` Financial projections years configuration
-- [ ] `[REQ-076]` Subscription durations configuration
-- [ ] `[REQ-087]` Default subscription plan configuration
-- [ ] `[REQ-088]` Subscription tier cost configuration
-- [ ] `[REQ-089]` Login splash screen configuration
-- [ ] `[REQ-098]` Tax bracket configuration (basic structure)
-- [ ] `[REQ-099]` Capital gains tax configuration (basic structure)
-- [ ] `[REQ-100]` Dividend tax configuration (basic structure)
-- [ ] `[REQ-192]` Login screen display area implementation
-- [ ] `[REQ-193]` Configurable login screen content
+- [x] `[REQ-069]` Subscription plan configuration
+- [x] `[REQ-070]` Asset holding types limits configuration
+- [x] `[REQ-071]` Asset classes limits configuration
+- [x] `[REQ-072]` Assets per class limits configuration
+- [x] `[REQ-073]` API integrations access configuration
+- [x] `[REQ-074]` Interface modes configuration
+- [x] `[REQ-075]` Financial projections years configuration
+- [x] `[REQ-076]` Subscription durations configuration
+- [x] `[REQ-087]` Default subscription plan configuration
+- [x] `[REQ-088]` Subscription tier cost configuration
+- [x] `[REQ-089]` Login splash screen configuration
+- [x] `[REQ-098]` Tax bracket configuration (basic structure)
+- [x] `[REQ-099]` Capital gains tax configuration (basic structure)
+- [x] `[REQ-100]` Dividend tax configuration (basic structure)
+- [x] `[REQ-192]` Login screen display area implementation
+- [x] `[REQ-193]` Configurable login screen content
 - [ ] `[REQ-251]` Administrator console screens
-- [ ] `[REQ-288]` Administrator role/permissions checks
-- [ ] `[REQ-289]` Subscription info endpoint (basic version)
-- [ ] `[REQ-290]` Login splash screen configuration retrieval endpoint
-- [ ] `[REQ-291]` Login splash screen management endpoints
-- [ ] `[REQ-302]` Administrator-configurable defaults storage
-- [ ] `[REQ-303]` Tax parameters structure by country and holding type
-- [ ] `[REQ-304]` Administrator-configured settings storage
-- [ ] `[REQ-305]` Subscription plan schema implementation
-- [ ] `[REQ-306]` User subscription record implementation
+- [x] `[REQ-288]` Administrator role/permissions checks
+- [x] `[REQ-289]` Subscription info endpoint (basic version)
+- [x] `[REQ-290]` Login splash screen configuration retrieval endpoint
+- [x] `[REQ-291]` Login splash screen management endpoints
+- [x] `[REQ-302]` Administrator-configurable defaults storage
+- [x] `[REQ-303]` Tax parameters structure by country and holding type
+- [x] `[REQ-304]` Administrator-configured settings storage
+- [x] `[REQ-305]` Subscription plan schema implementation
+- [x] `[REQ-306]` User subscription record implementation
 - [ ] `[REQ-308]` Image storage strategy
-- [ ] `[REQ-316]` Administrator role checks implementation
+- [x] `[REQ-316]` Administrator role checks implementation
 - [ ] `[REQ-319]` Sensitive data encryption (API keys)
 - [ ] `[REQ-339]` Cloud storage for images setup
 
