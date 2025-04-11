@@ -23,9 +23,9 @@ import { AssetClass, AssetHoldingType, insertAssetSchema, Asset } from "@shared/
 import { formatCurrency } from "@/lib/utils";
 
 export default function AddAssetPage() {
-  const [searchParams] = useSearchParams();
+  const [location, setLocation] = useLocation();
+  const searchParams = new URLSearchParams(window.location.search);
   const classId = searchParams.get("classId");
-  const [, setLocation] = useLocation();
   const { user } = useAuth();
   const { toast } = useToast();
   
@@ -335,7 +335,7 @@ export default function AddAssetPage() {
                           <Input 
                             type="number" 
                             step="0.01"
-                            placeholder={selectedClass?.defaultMediumGrowthRate !== null 
+                            placeholder={selectedClass && selectedClass.defaultMediumGrowthRate !== null 
                               ? `Default: ${(selectedClass.defaultMediumGrowthRate * 100).toFixed(2)}%` 
                               : "Enter growth rate"} 
                             {...field}
@@ -364,7 +364,7 @@ export default function AddAssetPage() {
                           <Input 
                             type="number" 
                             step="0.01"
-                            placeholder={selectedClass?.defaultIncomeYield !== null 
+                            placeholder={selectedClass && selectedClass.defaultIncomeYield !== null 
                               ? `Default: ${(selectedClass.defaultIncomeYield * 100).toFixed(2)}%` 
                               : "Enter income yield"} 
                             {...field}
