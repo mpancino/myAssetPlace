@@ -422,7 +422,7 @@ export default function AddAssetPage() {
                       <FormItem className="flex flex-col">
                         <FormLabel>Purchase Date</FormLabel>
                         <DatePicker
-                          date={field.value}
+                          date={field.value || null}
                           setDate={field.onChange}
                         />
                         <FormMessage />
