@@ -37,7 +37,7 @@ export default function LoginSplashConfig() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Get system settings
-  const { data: systemSettings, isLoading } = useQuery({
+  const { data: systemSettings, isLoading } = useQuery<SystemSettings>({
     queryKey: ["/api/system-settings"],
   });
 
@@ -54,10 +54,12 @@ export default function LoginSplashConfig() {
   // Set form values when settings load
   useEffect(() => {
     if (systemSettings) {
+      // Handle optional properties by using nullish coalescing
+      const settings = systemSettings as Partial<SystemSettings>;
       form.reset({
-        loginSplashTitle: systemSettings.loginSplashTitle || "Welcome to myAssetPlace",
-        loginSplashText: systemSettings.loginSplashText || "Your comprehensive wealth management platform",
-        loginSplashImageUrl: systemSettings.loginSplashImageUrl || "",
+        loginSplashTitle: settings?.loginSplashTitle ?? "Welcome to myAssetPlace",
+        loginSplashText: settings?.loginSplashText ?? "Your comprehensive wealth management platform",
+        loginSplashImageUrl: settings?.loginSplashImageUrl ?? "",
       });
     }
   }, [systemSettings, form]);
