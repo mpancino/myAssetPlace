@@ -41,7 +41,7 @@ The development is divided into 11 logical phases:
 - [x] `[REQ-294]` Schema Management: Define the database schema using Drizzle schema files
 - [x] `[REQ-298]` Migrations: Use Drizzle Kit
 - [x] `[REQ-385]` Calculation Test Suite: Set up testing framework
-- [x] `[REQ-387]` Component & API Testing: Set up testing framework
+- [ ] `[REQ-387]` Component & API Testing: Set up testing framework
 
 ### Phase 1: Authentication & User Foundation
 

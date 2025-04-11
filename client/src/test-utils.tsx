@@ -3,7 +3,7 @@ import { render, RenderOptions } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './hooks/use-auth';
-import { ToastProvider } from '@/hooks/use-toast';
+import { ToastProvider } from '@/components/ui/toast';
 
 // Create a custom render function that includes global providers
 export function setupTestClient() {
