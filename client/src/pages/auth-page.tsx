@@ -289,7 +289,7 @@ export default function AuthPage() {
                         variant="secondary"
                         className="w-full bg-gradient-to-r from-amber-600 to-amber-500 text-white"
                         onClick={() => {
-                          loginForm.setValue("username", "admin");
+                          loginForm.setValue("username", "admin2");
                           loginForm.setValue("password", "adminpassword123");
                           loginForm.handleSubmit(onLoginSubmit)();
                         }}
