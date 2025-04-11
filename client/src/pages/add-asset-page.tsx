@@ -1,0 +1,430 @@
+import { useState, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
+import MainLayout from "@/components/layout/main-layout";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { ArrowLeft, Save } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { AssetClass, AssetHoldingType, insertAssetSchema, Asset } from "@shared/schema";
+import { formatCurrency } from "@/lib/utils";
+
+export default function AddAssetPage() {
+  const [searchParams] = useSearchParams();
+  const classId = searchParams.get("classId");
+  const [, setLocation] = useLocation();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  
+  // Fetch asset classes
+  const { data: assetClasses } = useQuery<AssetClass[]>({
+    queryKey: ["/api/asset-classes"],
+  });
+  
+  // Fetch asset holding types
+  const { data: holdingTypes } = useQuery<AssetHoldingType[]>({
+    queryKey: ["/api/asset-holding-types"],
+  });
+  
+  // Fetch specific asset class if classId is provided
+  const { data: selectedClass } = useQuery<AssetClass>({
+    queryKey: ["/api/asset-classes", parseInt(classId || "0")],
+    enabled: !!classId,
+  });
+  
+  // Create validation schema based on the insertAssetSchema
+  const formSchema = z.object({
+    name: z.string().min(1, "Asset name is required"),
+    description: z.string().optional(),
+    assetClassId: z.number({ 
+      required_error: "Please select an asset class" 
+    }),
+    assetHoldingTypeId: z.number({ 
+      required_error: "Please select a holding type" 
+    }),
+    value: z.number().positive("Value must be positive"),
+    purchaseDate: z.date().optional().nullable(),
+    purchasePrice: z.number().optional().nullable(),
+    growthRate: z.number().optional().nullable(),
+    incomeYield: z.number().optional().nullable(),
+    isHidden: z.boolean().default(false),
+  });
+  
+  type FormValues = z.infer<typeof formSchema>;
+  
+  // Initialize the form
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      assetClassId: classId ? parseInt(classId) : undefined,
+      assetHoldingTypeId: undefined,
+      value: undefined,
+      purchaseDate: null,
+      purchasePrice: null,
+      growthRate: null,
+      incomeYield: null,
+      isHidden: false,
+    },
+  });
+  
+  // Prefill the form with default values from the selected asset class
+  useEffect(() => {
+    if (selectedClass) {
+      // Set default values from selected asset class
+      form.setValue("assetClassId", selectedClass.id);
+      
+      // Only set these if they're not already set by the user
+      if (form.getValues("growthRate") === null && selectedClass.defaultMediumGrowthRate !== null) {
+        form.setValue("growthRate", selectedClass.defaultMediumGrowthRate);
+      }
+      
+      if (form.getValues("incomeYield") === null && selectedClass.defaultIncomeYield !== null) {
+        form.setValue("incomeYield", selectedClass.defaultIncomeYield);
+      }
+    }
+  }, [selectedClass, form]);
+  
+  // Create asset mutation
+  const createAssetMutation = useMutation({
+    mutationFn: async (values: FormValues) => {
+      const res = await apiRequest("POST", "/api/assets", values);
+      const data = await res.json();
+      return data as Asset;
+    },
+    onSuccess: (asset) => {
+      toast({
+        title: "Asset Created",
+        description: `${asset.name} has been added successfully`,
+      });
+      
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/assets/by-class"] });
+      
+      // Redirect to the asset class page
+      setLocation(`/asset-classes/${asset.assetClassId}`);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error creating asset",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Submit handler
+  const onSubmit = (values: FormValues) => {
+    createAssetMutation.mutate(values);
+  };
+  
+  // Handle cancel button
+  const handleCancel = () => {
+    if (classId) {
+      setLocation(`/asset-classes/${classId}`);
+    } else {
+      setLocation("/dashboard");
+    }
+  };
+  
+  return (
+    <MainLayout>
+      <div className="container mx-auto p-4">
+        <div className="flex items-center mb-6">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleCancel} 
+            className="mr-2"
+          >
+            <ArrowLeft className="h-4 w-4 mr-1" /> Back
+          </Button>
+          <h1 className="text-2xl font-bold">Add New Asset</h1>
+        </div>
+        
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Asset Details</CardTitle>
+            <CardDescription>
+              Create a new asset to track in your portfolio
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Asset Name*</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter asset name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="value"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Current Value*</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            step="0.01"
+                            placeholder="0.00" 
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="assetClassId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Asset Class*</FormLabel>
+                        <Select 
+                          value={field.value?.toString()} 
+                          onValueChange={value => field.onChange(parseInt(value))}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select an asset class" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {assetClasses?.map(assetClass => (
+                              <SelectItem key={assetClass.id} value={assetClass.id.toString()}>
+                                {assetClass.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="assetHoldingTypeId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Holding Type*</FormLabel>
+                        <Select 
+                          value={field.value?.toString()} 
+                          onValueChange={value => field.onChange(parseInt(value))}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a holding type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {holdingTypes?.map(type => (
+                              <SelectItem key={type.id} value={type.id.toString()}>
+                                {type.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="Enter a description for this asset (optional)" 
+                          className="min-h-[100px]"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <Separator />
+                
+                <h3 className="text-lg font-medium">Purchase Information</h3>
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="purchaseDate"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Purchase Date</FormLabel>
+                        <DatePicker
+                          date={field.value}
+                          setDate={field.onChange}
+                        />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="purchasePrice"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Purchase Price</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            step="0.01"
+                            placeholder="0.00" 
+                            {...field}
+                            value={field.value === null ? "" : field.value}
+                            onChange={(e) => {
+                              const value = e.target.value === "" ? null : parseFloat(e.target.value);
+                              field.onChange(value);
+                            }}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <Separator />
+                
+                <h3 className="text-lg font-medium">Performance Metrics</h3>
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="growthRate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Growth Rate (%)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            step="0.01"
+                            placeholder={selectedClass?.defaultMediumGrowthRate !== null 
+                              ? `Default: ${(selectedClass.defaultMediumGrowthRate * 100).toFixed(2)}%` 
+                              : "Enter growth rate"} 
+                            {...field}
+                            value={field.value === null ? "" : field.value * 100}
+                            onChange={(e) => {
+                              const value = e.target.value === "" ? null : parseFloat(e.target.value) / 100;
+                              field.onChange(value);
+                            }}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Leave blank to use default class growth rate
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="incomeYield"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Income Yield (%)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            step="0.01"
+                            placeholder={selectedClass?.defaultIncomeYield !== null 
+                              ? `Default: ${(selectedClass.defaultIncomeYield * 100).toFixed(2)}%` 
+                              : "Enter income yield"} 
+                            {...field}
+                            value={field.value === null ? "" : field.value * 100}
+                            onChange={(e) => {
+                              const value = e.target.value === "" ? null : parseFloat(e.target.value) / 100;
+                              field.onChange(value);
+                            }}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Leave blank to use default class income yield
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <FormField
+                  control={form.control}
+                  name="isHidden"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Hide from dashboard</FormLabel>
+                        <FormDescription>
+                          Hidden assets won't appear in your dashboard summary, but will still be included in total calculations
+                        </FormDescription>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="flex justify-end space-x-2">
+                  <Button 
+                    variant="outline" 
+                    onClick={handleCancel}
+                    type="button"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit"
+                    disabled={createAssetMutation.isPending}
+                  >
+                    {createAssetMutation.isPending ? "Saving..." : "Save Asset"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+      </div>
+    </MainLayout>
+  );
+}
