@@ -3,8 +3,9 @@
 This document outlines the development roadmap for the myAssetPlace financial management platform, organizing all 372 requirements from the Product Design Document (PDD v1.12) into a structured build order.
 
 **Document Information**
-* **Version:** 1.0
+* **Version:** 1.1
 * **Date:** April 11, 2025
+* **Last Updated:** April 11, 2025
 * **Status:** Active
 
 ## Build Phases Overview
@@ -167,7 +168,7 @@ The development is divided into 11 logical phases:
 - [x] `[REQ-100]` Dividend tax configuration (basic structure)
 - [x] `[REQ-192]` Login screen display area implementation
 - [x] `[REQ-193]` Configurable login screen content
-- [ ] `[REQ-251]` Administrator console screens
+- [x] `[REQ-251]` Administrator console screens
 - [x] `[REQ-288]` Administrator role/permissions checks
 - [x] `[REQ-289]` Subscription info endpoint (basic version)
 - [x] `[REQ-290]` Login splash screen configuration retrieval endpoint
