@@ -26,7 +26,7 @@ import {
   type SystemSettings,
   type UpdateSystemSettings
 } from "@shared/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, or } from "drizzle-orm";
 
 const MemoryStore = createMemoryStore(session);
 
@@ -259,17 +259,20 @@ export class DatabaseStorage implements IStorage {
         return [];
       }
       
-      const assetClassIds = [...new Set(userAssets.map(a => a.assetClassId))];
+      // Get unique asset class IDs 
+      const assetClassIds = userAssets.map(a => a.assetClassId)
+        .filter((id, index, self) => self.indexOf(id) === index);
       
       // Handle case where no asset class IDs exist
       if (!assetClassIds.length) {
         return [];
       }
       
-      const assetClassesData = await db
-        .select()
-        .from(assetClasses)
-        .where(in_(assetClasses.id, assetClassIds));
+      // Get all asset classes and filter in memory
+      const allAssetClasses = await db.select().from(assetClasses);
+      const assetClassesData = allAssetClasses.filter(ac => 
+        assetClassIds.includes(ac.id)
+      );
       
       const assetClassMap = new Map(assetClassesData.map(ac => [ac.id, ac]));
       
@@ -358,7 +361,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUserSubscription(userId: number, subscriptionPlanId: number): Promise<UserSubscription | undefined> {
-    const today = new Date();
+    // Convert Date to ISO string which is compatible with database
+    const today = new Date().toISOString();
     const [updatedSubscription] = await db
       .update(userSubscriptions)
       .set({
