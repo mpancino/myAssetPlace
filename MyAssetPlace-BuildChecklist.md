@@ -32,7 +32,7 @@ The development is divided into 11 logical phases:
 
 - [x] `[REQ-252]` Framework: React (latest stable version) with TypeScript
 - [x] `[REQ-258]` UI Components: shadcn/ui built on Radix UI and styled with TailwindCSS
-- [ ] `[REQ-261]` Image Handling: Strategy for handling administrator-uploaded images
+- [x] `[REQ-261]` Image Handling: Strategy for handling administrator-uploaded images
 - [x] `[REQ-262]` Directory Structure: Organize components logically
 - [x] `[REQ-281]` Framework: Node.js with Express.js and TypeScript
 - [x] `[REQ-282]` API Style: RESTful API following standard conventions
@@ -40,8 +40,8 @@ The development is divided into 11 logical phases:
 - [x] `[REQ-293]` ORM/Query Builder: Drizzle ORM
 - [x] `[REQ-294]` Schema Management: Define the database schema using Drizzle schema files
 - [x] `[REQ-298]` Migrations: Use Drizzle Kit
-- [ ] `[REQ-385]` Calculation Test Suite: Set up testing framework
-- [ ] `[REQ-387]` Component & API Testing: Set up testing framework
+- [x] `[REQ-385]` Calculation Test Suite: Set up testing framework
+- [x] `[REQ-387]` Component & API Testing: Set up testing framework
 
 ### Phase 1: Authentication & User Foundation
 
@@ -177,7 +177,7 @@ The development is divided into 11 logical phases:
 - [x] `[REQ-304]` Administrator-configured settings storage
 - [x] `[REQ-305]` Subscription plan schema implementation
 - [x] `[REQ-306]` User subscription record implementation
-- [ ] `[REQ-308]` Image storage strategy
+- [x] `[REQ-308]` Image storage strategy
 - [x] `[REQ-316]` Administrator role checks implementation
 - [ ] `[REQ-319]` Sensitive data encryption (API keys)
 - [ ] `[REQ-339]` Cloud storage for images setup
