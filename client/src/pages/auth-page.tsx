@@ -64,57 +64,59 @@ export default function AuthPage() {
     try {
       console.log("Creating demo user...");
       
-      // First, check if we have demo users already created that we can reuse
-      const existingDemoResponse = await apiRequest("GET", "/api/demo-user/available");
-      let demoUserId = null;
-      
-      if (existingDemoResponse.ok) {
-        const existingDemoData = await existingDemoResponse.json();
-        if (existingDemoData && existingDemoData.id) {
-          // Use existing demo user if available
-          demoUserId = existingDemoData.id;
-        }
-      }
-      
-      // If no existing demo user, create new one
-      if (!demoUserId) {
-        const response = await apiRequest("POST", "/api/register/demo", {});
+      // Let's use direct fetch with more detailed logging
+      const response = await fetch('/api/register/demo', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})
+      });
         
-        if (!response.ok) {
+      console.log("Demo user creation response status:", response.status);
+      
+      if (!response.ok) {
+        let errorMessage = "Failed to create demo account";
+        try {
           const errorData = await response.json();
-          console.error("Demo user creation failed:", errorData);
-          toast({
-            title: "Error",
-            description: errorData.message || "Failed to create demo account",
-            variant: "destructive"
-          });
-          setIsCreatingDemo(false);
-          return;
+          console.error("Demo user creation error details:", errorData);
+          errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+          console.error("Failed to parse error response:", e);
         }
         
-        const userData = await response.json();
-        console.log("Demo user created:", userData);
-        demoUserId = userData.id;
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive"
+        });
+        setIsCreatingDemo(false);
+        return;
       }
       
-      // Fully clear and refresh queries to ensure fresh data
-      await queryClient.resetQueries();
+      // Success path
+      const userData = await response.json();
+      console.log("Demo user created successfully:", userData);
       
-      // Show successful toast for better UX
+      // Update local state
+      queryClient.setQueryData(["/api/user"], userData);
+      
+      // Show successful toast
       toast({
         title: "Demo Account Created",
         description: "Welcome to myAssetPlace! You're now using a demo account."
       });
       
-      // Redirect to dashboard - force window.location for a hard refresh
-      // Always redirect to root first to ensure the user is properly loaded
+      // Always redirect to root to ensure proper loading
+      console.log("Redirecting to homepage with demo account...");
       window.location.href = "/";
       
     } catch (error) {
       console.error("Demo user creation error:", error);
       toast({
         title: "Error",
-        description: "Something went wrong. Please try again.",
+        description: "Something went wrong creating the demo account. Please try again or use the Direct Admin Login.",
         variant: "destructive"
       });
     } finally {

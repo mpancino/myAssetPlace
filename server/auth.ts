@@ -194,40 +194,77 @@ export function setupAuth(app: Express) {
   // Demo user creation endpoint
   app.post("/api/register/demo", async (req, res, next) => {
     try {
+      console.log("Demo user creation endpoint called");
+      
       // Generate a unique username with timestamp
       const timestamp = new Date().getTime();
       const username = `demo_user_${timestamp}`;
       const email = `demo_${timestamp}@myassetplace.demo`;
       const password = Math.random().toString(36).slice(-10); // Generate a random password
       
+      console.log(`Creating demo user: ${username}`);
+      
       // Create a new demo user
-      const user = await storage.createUser({
-        username,
-        email,
-        password: await hashPassword(password),
-        isDemo: true,
-        preferredMode: 'basic',
-      });
+      const hashedPassword = await hashPassword(password);
+      console.log("Password hashed successfully");
+      
+      try {
+        const user = await storage.createUser({
+          username,
+          email,
+          password: hashedPassword,
+          role: 'user', // Ensure this is set to 'user'
+          isDemo: true,
+          preferredMode: 'basic',
+          completedOnboarding: false,
+        });
+        
+        console.log(`Demo user created successfully with ID: ${user.id}`);
 
-      // Assign default subscription plan
-      const defaultPlan = await storage.getDefaultSubscriptionPlan();
-      if (defaultPlan) {
-        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-        await storage.createUserSubscription({
-          userId: user.id,
-          subscriptionPlanId: defaultPlan.id,
-          startDate: today,
-          endDate: null, // No end date for active subscriptions
-          status: 'active',
+        // Assign default subscription plan
+        try {
+          const defaultPlan = await storage.getDefaultSubscriptionPlan();
+          if (defaultPlan) {
+            console.log(`Found default subscription plan ID: ${defaultPlan.id}`);
+            const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+            await storage.createUserSubscription({
+              userId: user.id,
+              subscriptionPlanId: defaultPlan.id,
+              startDate: today,
+              endDate: null, // No end date for active subscriptions
+              status: 'active',
+            });
+            console.log("Subscription assigned to demo user");
+          } else {
+            console.log("No default subscription plan found");
+          }
+        } catch (subscriptionError) {
+          console.error("Error assigning subscription to demo user:", subscriptionError);
+          // Continue without subscription - not a critical error
+        }
+
+        req.login(user, (err) => {
+          if (err) {
+            console.error("Error logging in demo user:", err);
+            return next(err);
+          }
+          
+          console.log("Demo user logged in successfully");
+          res.status(201).json(user);
+        });
+      } catch (createUserError) {
+        console.error("Error creating demo user:", createUserError);
+        res.status(500).json({ 
+          message: "Failed to create demo user. Please try the Direct Admin Login instead.",
+          error: createUserError.message
         });
       }
-
-      req.login(user, (err) => {
-        if (err) return next(err);
-        res.status(201).json(user);
-      });
     } catch (err) {
-      next(err);
+      console.error("Unexpected error in demo user creation:", err);
+      res.status(500).json({ 
+        message: "An unexpected error occurred while creating a demo user",
+        error: err.message
+      });
     }
   });
 
