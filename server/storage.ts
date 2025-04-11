@@ -248,40 +248,56 @@ export class DatabaseStorage implements IStorage {
   async getUserAssetsByClass(userId: number): Promise<{ assetClass: AssetClass, totalValue: number }[]> {
     // This is a simplified implementation. In a real application, you would use 
     // SQL aggregate functions to calculate totals directly in the database.
-    const userAssets = await db
-      .select()
-      .from(assets)
-      .where(and(eq(assets.userId, userId), eq(assets.isHidden, false)));
-    
-    const assetClassIds = [...new Set(userAssets.map(a => a.assetClassId))];
-    const assetClassesData = await db
-      .select()
-      .from(assetClasses)
-      .where(eq(assetClasses.id, assetClassIds));
-    
-    const assetClassMap = new Map(assetClassesData.map(ac => [ac.id, ac]));
-    
-    const results: { assetClass: AssetClass, totalValue: number }[] = [];
-    const totalsByClass: Record<number, number> = {};
-    
-    for (const asset of userAssets) {
-      if (!totalsByClass[asset.assetClassId]) {
-        totalsByClass[asset.assetClassId] = 0;
+    try {
+      const userAssets = await db
+        .select()
+        .from(assets)
+        .where(and(eq(assets.userId, userId), eq(assets.isHidden, false)));
+      
+      // Return empty array when no assets found
+      if (!userAssets.length) {
+        return [];
       }
-      totalsByClass[asset.assetClassId] += asset.value;
-    }
-    
-    for (const [classId, total] of Object.entries(totalsByClass)) {
-      const assetClass = assetClassMap.get(Number(classId));
-      if (assetClass) {
-        results.push({
-          assetClass,
-          totalValue: total,
-        });
+      
+      const assetClassIds = [...new Set(userAssets.map(a => a.assetClassId))];
+      
+      // Handle case where no asset class IDs exist
+      if (!assetClassIds.length) {
+        return [];
       }
+      
+      const assetClassesData = await db
+        .select()
+        .from(assetClasses)
+        .where(in_(assetClasses.id, assetClassIds));
+      
+      const assetClassMap = new Map(assetClassesData.map(ac => [ac.id, ac]));
+      
+      const results: { assetClass: AssetClass, totalValue: number }[] = [];
+      const totalsByClass: Record<number, number> = {};
+      
+      for (const asset of userAssets) {
+        if (!totalsByClass[asset.assetClassId]) {
+          totalsByClass[asset.assetClassId] = 0;
+        }
+        totalsByClass[asset.assetClassId] += asset.value;
+      }
+      
+      for (const [classId, total] of Object.entries(totalsByClass)) {
+        const assetClass = assetClassMap.get(Number(classId));
+        if (assetClass) {
+          results.push({
+            assetClass,
+            totalValue: total,
+          });
+        }
+      }
+      
+      return results;
+    } catch (error) {
+      console.error("Error in getUserAssetsByClass:", error);
+      return [];
     }
-    
-    return results;
   }
 
   // Subscription Plan operations
