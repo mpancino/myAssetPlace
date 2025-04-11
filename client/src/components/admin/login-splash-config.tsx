@@ -1,11 +1,14 @@
 import { useForm } from "react-hook-form";
+import { useState, useEffect, useRef } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { SystemSettings } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Loader2, Upload } from "lucide-react";
 import {
   Form,
   FormControl,
@@ -16,6 +19,7 @@ import {
 } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Form schema
 const splashFormSchema = z.object({
@@ -29,6 +33,8 @@ type SplashFormValues = z.infer<typeof splashFormSchema>;
 export default function LoginSplashConfig() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Get system settings
   const { data: systemSettings, isLoading } = useQuery({
@@ -46,7 +52,7 @@ export default function LoginSplashConfig() {
   });
 
   // Set form values when settings load
-  React.useEffect(() => {
+  useEffect(() => {
     if (systemSettings) {
       form.reset({
         loginSplashTitle: systemSettings.loginSplashTitle || "Welcome to myAssetPlace",
@@ -55,6 +61,72 @@ export default function LoginSplashConfig() {
       });
     }
   }, [systemSettings, form]);
+
+  // Image upload mutation
+  const uploadImage = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("image", file);
+      
+      const res = await fetch("/api/upload/splash-image", {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to upload image");
+      }
+      
+      return res.json();
+    },
+    onSuccess: (data) => {
+      // Update the form with the new image URL
+      form.setValue("loginSplashImageUrl", data.imageUrl);
+      queryClient.invalidateQueries({ queryKey: ["/api/system-settings"] });
+      setUploadError(null);
+      
+      toast({
+        title: "Image uploaded",
+        description: "Image has been uploaded and saved successfully.",
+      });
+    },
+    onError: (error: Error) => {
+      setUploadError(error.message);
+      toast({
+        title: "Failed to upload image",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Handle file selection
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      setUploadError("Please select an image file (JPEG, PNG, etc.)");
+      return;
+    }
+    
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError("Image size must be less than 5MB");
+      return;
+    }
+    
+    // Upload the image
+    uploadImage.mutate(file);
+  };
+
+  // Trigger file input click
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
 
   // Update system settings mutation
   const updateSettings = useMutation({
@@ -128,7 +200,7 @@ export default function LoginSplashConfig() {
               name="loginSplashImageUrl"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Background Image URL</FormLabel>
+                  <FormLabel>Background Image</FormLabel>
                   <div className="flex items-center gap-4">
                     {field.value && (
                       <div className="flex-shrink-0 h-16 w-16 bg-slate-100 rounded-md overflow-hidden">
@@ -146,6 +218,42 @@ export default function LoginSplashConfig() {
                       <Input {...field} placeholder="https://example.com/image.jpg" />
                     </FormControl>
                   </div>
+                  <div className="mt-2">
+                    <input 
+                      type="file" 
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={handleUploadClick}
+                      disabled={uploadImage.isPending}
+                      className="flex items-center gap-2"
+                    >
+                      {uploadImage.isPending ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="h-4 w-4" />
+                          Upload Image
+                        </>
+                      )}
+                    </Button>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Supported formats: JPEG, PNG, GIF (max 5MB)
+                    </p>
+                  </div>
+                  {uploadError && (
+                    <Alert variant="destructive" className="mt-2">
+                      <AlertDescription>{uploadError}</AlertDescription>
+                    </Alert>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -153,7 +261,7 @@ export default function LoginSplashConfig() {
             
             <Button
               type="submit"
-              disabled={updateSettings.isPending}
+              disabled={updateSettings.isPending || uploadImage.isPending}
             >
               {updateSettings.isPending ? "Saving..." : "Save Changes"}
             </Button>

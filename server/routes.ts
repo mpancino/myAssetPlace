@@ -1,11 +1,13 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
+import path from "path";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { loginUserSchema, insertAssetSchema, insertCountrySchema, insertAssetHoldingTypeSchema, insertAssetClassSchema, insertSubscriptionPlanSchema, updateSystemSettingsSchema, users } from "@shared/schema";
 import { z } from "zod";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
+import { upload, getFileUrl, deleteFile } from "./utils/upload";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
@@ -297,6 +299,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       res.status(500).json({ message: "Failed to update system settings" });
     }
+  });
+  
+  // Image upload for login splash screen
+  app.post("/api/upload/splash-image", isAdmin, upload.single('image'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No image file uploaded" });
+      }
+      
+      // Get the current system settings
+      const currentSettings = await storage.getSystemSettings();
+      
+      // If there's an existing image, delete it
+      if (currentSettings?.loginSplashImageUrl) {
+        try {
+          const filename = path.basename(currentSettings.loginSplashImageUrl);
+          await deleteFile(filename);
+        } catch (error) {
+          console.error("Error deleting previous image:", error);
+          // Continue even if previous file deletion fails
+        }
+      }
+      
+      // Get the public URL for the uploaded file
+      const imageUrl = getFileUrl(req.file.filename);
+      
+      // Update the system settings with the new image URL
+      const updatedSettings = await storage.updateSystemSettings({
+        loginSplashImageUrl: imageUrl,
+        // Preserve existing title and text if they exist
+        loginSplashTitle: currentSettings?.loginSplashTitle,
+        loginSplashText: currentSettings?.loginSplashText,
+      });
+      
+      res.status(200).json({ 
+        message: "Image uploaded successfully", 
+        imageUrl,
+        settings: updatedSettings
+      });
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      res.status(500).json({ message: "Failed to upload image" });
+    }
+  });
+  
+  // Serve uploaded files
+  app.use('/uploads', (req, res, next) => {
+    // Basic security check to avoid directory traversal
+    const requestedFile = path.basename(req.path);
+    const filePath = path.join(process.cwd(), 'uploads', requestedFile);
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        res.status(404).json({ message: "File not found" });
+      }
+    });
   });
 
   // User profile route
