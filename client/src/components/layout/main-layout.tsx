@@ -61,31 +61,25 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
       {/* Main Content */}
       <div className="flex flex-col md:ml-64 flex-1 h-full overflow-hidden">
-        {/* Tabs navigation */}
-        <div className="hidden md:flex border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-          <Tabs 
-            value={activeTab} 
-            onValueChange={setActiveTab}
-            className="w-full"
-          >
-            <TabsList className="h-full">
-              <TabsTrigger 
-                value="dashboard" 
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary-500 px-6 py-4"
-              >
-                Dashboard
-              </TabsTrigger>
-              {user?.role === 'admin' && (
+        {/* Tabs navigation - Only shown if not admin or for regular user sections */}
+        {(!user?.role || user.role !== 'admin') && (
+          <div className="hidden md:flex border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+            <Tabs 
+              value={activeTab} 
+              onValueChange={setActiveTab}
+              className="w-full"
+            >
+              <TabsList className="h-full">
                 <TabsTrigger 
-                  value="administrator" 
+                  value="dashboard" 
                   className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary-500 px-6 py-4"
                 >
-                  Administrator
+                  Dashboard
                 </TabsTrigger>
-              )}
-            </TabsList>
-          </Tabs>
-        </div>
+              </TabsList>
+            </Tabs>
+          </div>
+        )}
 
         {/* Main content area - adjust the top padding for mobile */}
         <main className="flex-1 bg-slate-50 overflow-auto p-4 md:p-6 pt-20 md:pt-4">

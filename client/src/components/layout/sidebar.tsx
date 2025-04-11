@@ -57,97 +57,102 @@ export default function Sidebar({ className }: SidebarProps) {
       
       <div className="flex-1 flex flex-col overflow-y-auto">
         <nav className="flex-1 px-4 py-4 space-y-1">
-          <NavLink href="/dashboard" icon={<Home className="h-5 w-5 mr-3" />}>
-            Dashboard
-          </NavLink>
-          
-          <div className="space-y-1">
-            <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4">
-              Asset Holding Types
-            </h3>
-            {holdingTypes ? (
-              holdingTypes.map((type) => (
-                <NavLink 
-                  key={type.id} 
-                  href={`/holding-types/${type.id}`} 
-                  icon={
-                    type.name === "Personal" ? <User className="h-5 w-5 mr-3" /> :
-                    type.name === "Superannuation" ? <Shield className="h-5 w-5 mr-3" /> :
-                    <Users className="h-5 w-5 mr-3" />
-                  }
-                >
-                  {type.name}
-                </NavLink>
-              ))
-            ) : (
-              <>
-                <NavLink href="/holding-types/personal" icon={<User className="h-5 w-5 mr-3" />}>
-                  Personal
-                </NavLink>
-                <NavLink href="/holding-types/super" icon={<Shield className="h-5 w-5 mr-3" />}>
-                  Superannuation
-                </NavLink>
-                <NavLink href="/holding-types/trust" icon={<Users className="h-5 w-5 mr-3" />}>
-                  Family Trust
-                </NavLink>
-              </>
-            )}
-          </div>
-          
-          <div className="space-y-1">
-            <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4">
-              Asset Classes
-            </h3>
-            {assetClasses ? (
-              assetClasses.map((assetClass) => (
-                <NavLink 
-                  key={assetClass.id} 
-                  href={`/asset-classes/${assetClass.id}`} 
-                  icon={
-                    assetClass.name === "Real Estate" ? <Building className="h-5 w-5 mr-3" /> :
-                    assetClass.name === "Stocks & Shares" ? <BarChart3 className="h-5 w-5 mr-3" /> :
-                    <LineChart className="h-5 w-5 mr-3" />
-                  }
-                >
-                  {assetClass.name}
-                </NavLink>
-              ))
-            ) : (
-              <>
-                <NavLink href="/asset-classes/real-estate" icon={<Building className="h-5 w-5 mr-3" />}>
-                  Real Estate
-                </NavLink>
-                <NavLink href="/asset-classes/stocks" icon={<BarChart3 className="h-5 w-5 mr-3" />}>
-                  Stocks & Shares
-                </NavLink>
-                <NavLink href="/asset-classes/cash" icon={<LineChart className="h-5 w-5 mr-3" />}>
-                  Cash & Savings
-                </NavLink>
-              </>
-            )}
-          </div>
-          
-          <div className="space-y-1">
-            <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4">
-              Financial Tools
-            </h3>
-            <NavLink href="/projections" icon={<BarChart3 className="h-5 w-5 mr-3" />}>
-              Projections
-            </NavLink>
-            <NavLink href="/reports" icon={<LineChart className="h-5 w-5 mr-3" />}>
-              Reports
-            </NavLink>
-          </div>
-
-          {user?.role === 'admin' && (
+          {/* Conditionally render sidebar content based on user role */}
+          {user?.role === 'admin' ? (
+            // Admin-only sidebar
             <div className="space-y-1">
-              <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4">
+              <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                 Administration
               </h3>
               <NavLink href="/admin" icon={<Settings className="h-5 w-5 mr-3" />}>
                 Admin Console
               </NavLink>
             </div>
+          ) : (
+            // Regular user sidebar
+            <>
+              <NavLink href="/dashboard" icon={<Home className="h-5 w-5 mr-3" />}>
+                Dashboard
+              </NavLink>
+              
+              <div className="space-y-1">
+                <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4">
+                  Asset Holding Types
+                </h3>
+                {holdingTypes ? (
+                  holdingTypes.map((type) => (
+                    <NavLink 
+                      key={type.id} 
+                      href={`/holding-types/${type.id}`} 
+                      icon={
+                        type.name === "Personal" ? <User className="h-5 w-5 mr-3" /> :
+                        type.name === "Superannuation" ? <Shield className="h-5 w-5 mr-3" /> :
+                        <Users className="h-5 w-5 mr-3" />
+                      }
+                    >
+                      {type.name}
+                    </NavLink>
+                  ))
+                ) : (
+                  <>
+                    <NavLink href="/holding-types/personal" icon={<User className="h-5 w-5 mr-3" />}>
+                      Personal
+                    </NavLink>
+                    <NavLink href="/holding-types/super" icon={<Shield className="h-5 w-5 mr-3" />}>
+                      Superannuation
+                    </NavLink>
+                    <NavLink href="/holding-types/trust" icon={<Users className="h-5 w-5 mr-3" />}>
+                      Family Trust
+                    </NavLink>
+                  </>
+                )}
+              </div>
+              
+              <div className="space-y-1">
+                <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4">
+                  Asset Classes
+                </h3>
+                {assetClasses ? (
+                  assetClasses.map((assetClass) => (
+                    <NavLink 
+                      key={assetClass.id} 
+                      href={`/asset-classes/${assetClass.id}`} 
+                      icon={
+                        assetClass.name === "Real Estate" ? <Building className="h-5 w-5 mr-3" /> :
+                        assetClass.name === "Stocks & Shares" ? <BarChart3 className="h-5 w-5 mr-3" /> :
+                        <LineChart className="h-5 w-5 mr-3" />
+                      }
+                    >
+                      {assetClass.name}
+                    </NavLink>
+                  ))
+                ) : (
+                  <>
+                    <NavLink href="/asset-classes/real-estate" icon={<Building className="h-5 w-5 mr-3" />}>
+                      Real Estate
+                    </NavLink>
+                    <NavLink href="/asset-classes/stocks" icon={<BarChart3 className="h-5 w-5 mr-3" />}>
+                      Stocks & Shares
+                    </NavLink>
+                    <NavLink href="/asset-classes/cash" icon={<LineChart className="h-5 w-5 mr-3" />}>
+                      Cash & Savings
+                    </NavLink>
+                  </>
+                )}
+              </div>
+              
+              <div className="space-y-1">
+                <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mt-4">
+                  Financial Tools
+                </h3>
+                <NavLink href="/projections" icon={<BarChart3 className="h-5 w-5 mr-3" />}>
+                  Projections
+                </NavLink>
+                <NavLink href="/reports" icon={<LineChart className="h-5 w-5 mr-3" />}>
+                  Reports
+                </NavLink>
+              </div>
+            </>
           )}
         </nav>
       </div>
