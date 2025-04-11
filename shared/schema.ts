@@ -162,9 +162,31 @@ export const userSubscriptionsRelations = relations(userSubscriptions, ({ one })
 // System Settings
 export const systemSettings = pgTable("system_settings", {
   id: serial("id").primaryKey(),
+  // Login splash screen settings
   loginSplashTitle: text("login_splash_title"),
   loginSplashText: text("login_splash_text"),
   loginSplashImageUrl: text("login_splash_image_url"),
+  
+  // General system settings
+  defaultCurrency: text("default_currency"),
+  defaultFinancialYearEnd: text("default_financial_year_end"),
+  defaultBasicModeYears: integer("default_basic_mode_years"),
+  defaultAdvancedModeYears: integer("default_advanced_mode_years"),
+  
+  // API integration settings
+  enablePropertyApi: boolean("enable_property_api").default(false),
+  enableStockApi: boolean("enable_stock_api").default(false),
+  enableCryptoApi: boolean("enable_crypto_api").default(false),
+  
+  // Legal and support information
+  termsAndConditionsUrl: text("terms_and_conditions_url"),
+  privacyPolicyUrl: text("privacy_policy_url"),
+  supportEmail: text("support_email"),
+  supportPhone: text("support_phone"),
+  
+  // Company information
+  companyName: text("company_name"),
+  companyAddress: text("company_address"),
 });
 
 // Schemas

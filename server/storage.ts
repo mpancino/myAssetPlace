@@ -1,5 +1,6 @@
 import { db } from "./db";
 import session from "express-session";
+import { Store as SessionStore } from "express-session";
 import createMemoryStore from "memorystore";
 import { 
   users, 
@@ -82,11 +83,11 @@ export interface IStorage {
   updateSystemSettings(settings: UpdateSystemSettings): Promise<SystemSettings | undefined>;
 
   // Session store
-  sessionStore: session.SessionStore;
+  sessionStore: SessionStore;
 }
 
 export class DatabaseStorage implements IStorage {
-  sessionStore: session.SessionStore;
+  sessionStore: SessionStore;
 
   constructor() {
     this.sessionStore = new MemoryStore({
