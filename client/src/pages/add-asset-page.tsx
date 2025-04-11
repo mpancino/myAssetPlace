@@ -308,7 +308,7 @@ export default function AddAssetPage() {
                             step="0.01"
                             placeholder="0.00" 
                             {...field}
-                            value={field.value === null ? "" : field.value}
+                            value={(field.value === null || field.value === undefined) ? "" : field.value}
                             onChange={(e) => {
                               const value = e.target.value === "" ? null : parseFloat(e.target.value);
                               field.onChange(value);
@@ -339,7 +339,7 @@ export default function AddAssetPage() {
                               ? `Default: ${(selectedClass.defaultMediumGrowthRate * 100).toFixed(2)}%` 
                               : "Enter growth rate"} 
                             {...field}
-                            value={field.value === null ? "" : field.value * 100}
+                            value={(field.value === null || field.value === undefined) ? "" : field.value * 100}
                             onChange={(e) => {
                               const value = e.target.value === "" ? null : parseFloat(e.target.value) / 100;
                               field.onChange(value);
@@ -368,7 +368,7 @@ export default function AddAssetPage() {
                               ? `Default: ${(selectedClass.defaultIncomeYield * 100).toFixed(2)}%` 
                               : "Enter income yield"} 
                             {...field}
-                            value={field.value === null ? "" : field.value * 100}
+                            value={(field.value === null || field.value === undefined) ? "" : field.value * 100}
                             onChange={(e) => {
                               const value = e.target.value === "" ? null : parseFloat(e.target.value) / 100;
                               field.onChange(value);
