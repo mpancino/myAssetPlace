@@ -117,6 +117,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch asset classes" });
     }
   });
+  
+  app.get("/api/asset-classes/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const assetClass = await storage.getAssetClass(id);
+      
+      if (!assetClass) {
+        return res.status(404).json({ message: "Asset class not found" });
+      }
+      
+      res.json(assetClass);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to fetch asset class" });
+    }
+  });
 
   app.post("/api/asset-classes", isAdmin, async (req, res) => {
     try {
@@ -155,6 +170,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+      const assetClassId = req.query.assetClassId ? parseInt(req.query.assetClassId as string) : undefined;
+      
+      // If assetClassId is provided, filter assets by that class
+      if (assetClassId) {
+        const allAssets = await storage.listAssets(req.user.id);
+        const filteredAssets = allAssets.filter(asset => asset.assetClassId === assetClassId);
+        return res.json(filteredAssets);
+      }
+      
+      // Otherwise return all assets with optional limit
       const assets = await storage.listAssets(req.user.id, limit);
       res.json(assets);
     } catch (err) {
