@@ -117,7 +117,7 @@ export function setupAuth(app: Express) {
       // Assign default subscription plan
       const defaultPlan = await storage.getDefaultSubscriptionPlan();
       if (defaultPlan) {
-        const today = new Date();
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
         await storage.createUserSubscription({
           userId: user.id,
           subscriptionPlanId: defaultPlan.id,
@@ -156,7 +156,7 @@ export function setupAuth(app: Express) {
       // Assign default subscription plan
       const defaultPlan = await storage.getDefaultSubscriptionPlan();
       if (defaultPlan) {
-        const today = new Date();
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
         await storage.createUserSubscription({
           userId: user.id,
           subscriptionPlanId: defaultPlan.id,
