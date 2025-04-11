@@ -122,6 +122,7 @@ export function setupAuth(app: Express) {
           userId: user.id,
           subscriptionPlanId: defaultPlan.id,
           startDate: today,
+          endDate: null, // No end date for active subscriptions
           status: 'active',
         });
       }
@@ -161,6 +162,7 @@ export function setupAuth(app: Express) {
           userId: user.id,
           subscriptionPlanId: defaultPlan.id,
           startDate: today,
+          endDate: null, // No end date for active subscriptions
           status: 'active',
         });
       }

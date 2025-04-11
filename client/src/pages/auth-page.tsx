@@ -57,24 +57,39 @@ export default function AuthPage() {
   const createDemoUser = async () => {
     setIsCreatingDemo(true);
     try {
+      console.log("Creating demo user...");
       const response = await apiRequest("POST", "/api/register/demo", {});
+      
       if (response.ok) {
-        const user = await response.json();
-        queryClient.setQueryData(["/api/user"], user);
+        const userData = await response.json();
+        console.log("Demo user created:", userData);
+        
+        // Invalidate user query cache to trigger a refresh
+        queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+        
+        // Set the user data directly in the query cache
+        queryClient.setQueryData(["/api/user"], userData);
+        
         toast({
           title: "Demo Account Created",
           description: "You're now using a demo account with sample data."
         });
-        navigate("/dashboard");
+        
+        // Force a small delay to ensure the auth context updates
+        setTimeout(() => {
+          navigate("/dashboard");
+        }, 100);
       } else {
-        const error = await response.json();
+        const errorData = await response.json();
+        console.error("Demo user creation failed:", errorData);
         toast({
           title: "Error",
-          description: error.message || "Failed to create demo account",
+          description: errorData.message || "Failed to create demo account",
           variant: "destructive"
         });
       }
     } catch (error) {
+      console.error("Demo user creation error:", error);
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",

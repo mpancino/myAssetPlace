@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -51,7 +51,15 @@ export default function DemoOnboardingDialog() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
-  const [isOpen, setIsOpen] = useState(user?.isDemo && !user?.completedOnboarding);
+  const [isOpen, setIsOpen] = useState(false);
+  
+  // Update the open state whenever the user changes
+  useEffect(() => {
+    if (user && user.isDemo === true && user.completedOnboarding === false) {
+      console.log("Opening demo onboarding dialog for user:", user);
+      setIsOpen(true);
+    }
+  }, [user]);
 
   const form = useForm<OnboardingFormData>({
     resolver: zodResolver(onboardingSchema),
