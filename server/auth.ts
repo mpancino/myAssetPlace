@@ -7,22 +7,23 @@ import { promisify } from "util";
 import { storage } from "./storage";
 import { User } from "@shared/schema";
 
+// Don't use extends User as it causes a circular reference
 declare global {
   namespace Express {
-    // Using the User type from schema.ts
     interface User {
       id: number;
       username: string;
       email: string;
-      firstName?: string;
-      lastName?: string;
-      countryId?: number;
+      password: string;
+      firstName?: string | null;
+      lastName?: string | null;
+      countryId?: number | null;
       role: 'user' | 'admin';
       preferredMode: 'basic' | 'advanced';
       isDemo: boolean;
       completedOnboarding: boolean;
-      age?: number;
-      targetRetirementAge?: number;
+      age?: number | null;
+      targetRetirementAge?: number | null;
       createdAt: Date;
       updatedAt: Date;
     }
