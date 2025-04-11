@@ -186,6 +186,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch assets" });
     }
   });
+  
+  app.get("/api/assets/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      const id = parseInt(req.params.id);
+      const asset = await storage.getAsset(id);
+      
+      if (!asset) {
+        return res.status(404).json({ message: "Asset not found" });
+      }
+      
+      // Check if the asset belongs to the user
+      if (asset.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to view this asset" });
+      }
+      
+      res.json(asset);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to fetch asset" });
+    }
+  });
 
   app.get("/api/assets/by-class", async (req, res) => {
     if (!req.isAuthenticated()) {

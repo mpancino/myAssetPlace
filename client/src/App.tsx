@@ -7,6 +7,7 @@ import DashboardPage from "@/pages/dashboard-page";
 import AdminPage from "@/pages/admin-page";
 import AssetClassPage from "@/pages/asset-class-page";
 import AddAssetPage from "@/pages/add-asset-page";
+import AssetDetailPage from "@/pages/asset-detail-page";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { AuthProvider } from "@/hooks/use-auth";
 import DemoOnboardingDialog from "@/components/onboarding/demo-onboarding-dialog";
@@ -19,6 +20,7 @@ function Router() {
       <ProtectedRoute path="/admin" component={AdminPage} />
       <ProtectedRoute path="/asset-classes/:classId" component={AssetClassPage} />
       <ProtectedRoute path="/add-asset" component={AddAssetPage} />
+      <ProtectedRoute path="/assets/:assetId" component={AssetDetailPage} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
