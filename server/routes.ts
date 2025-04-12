@@ -761,7 +761,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
           
           console.log(`Deduplicated expenses from ${Object.keys(expensesData).length} to ${Object.keys(dedupedExpenses).length}`);
-          req.body.propertyExpenses = JSON.stringify(dedupedExpenses);
+          // Keep as object instead of stringifying to comply with schema
+          req.body.propertyExpenses = dedupedExpenses;
         } catch (err) {
           console.error("Error during expense deduplication:", err);
         }
@@ -826,7 +827,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           });
           
           console.log(`Deduplicated investment expenses from ${Object.keys(expensesData).length} to ${Object.keys(dedupedExpenses).length}`);
-          req.body.investmentExpenses = JSON.stringify(dedupedExpenses);
+          // Keep as object instead of stringifying to comply with schema
+          req.body.investmentExpenses = dedupedExpenses;
         } catch (err) {
           console.error("Error during investment expense deduplication:", err);
         }
