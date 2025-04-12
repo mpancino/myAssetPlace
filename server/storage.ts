@@ -216,8 +216,9 @@ export class DatabaseStorage implements IStorage {
   
   async deleteAssetClass(id: number): Promise<boolean> {
     try {
-      // Protect core asset classes from deletion
-      const protectedAssetClassIds = [1, 2, 3, 4, 5, 6, 8, 9];
+      // Protect core asset classes from deletion - only those explicitly mentioned in the PDD
+      // 1=Cash, 2=Loans, 3=Real Estate, 4=Investments, 5=Retirement, 8=Employment Income, 9=Employee Stock Options
+      const protectedAssetClassIds = [1, 2, 3, 4, 5, 8, 9];
       if (protectedAssetClassIds.includes(id)) {
         console.error(`Cannot delete protected asset class with ID ${id}`);
         return false;
