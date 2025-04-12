@@ -1,9 +1,20 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import path from "path";
 import { storage } from "./storage";
 import { setupAuth, setupDirectAdminLogin } from "./auth";
-import { loginUserSchema, insertAssetSchema, insertCountrySchema, insertAssetHoldingTypeSchema, insertAssetClassSchema, insertSubscriptionPlanSchema, updateSystemSettingsSchema, users } from "@shared/schema";
+import { 
+  loginUserSchema, 
+  insertAssetSchema, 
+  insertCountrySchema, 
+  insertAssetHoldingTypeSchema, 
+  insertAssetClassSchema, 
+  insertSubscriptionPlanSchema, 
+  updateSystemSettingsSchema, 
+  users,
+  assets,
+  assetClasses 
+} from "@shared/schema";
 import { z } from "zod";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
@@ -216,23 +227,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     try {
-      console.log("Getting assets by class for user ID:", req.user.id);
+      // Instead of relying on the problematic getUserAssetsByClass method,
+      // let's implement the functionality directly here
+      console.log("Implementing direct assets by class for user ID:", req.user.id);
       
-      try {
-        const assetsByClass = await storage.getUserAssetsByClass(req.user.id);
-        
-        // If no assets are returned, return an empty array instead of causing an error
-        if (!assetsByClass || !Array.isArray(assetsByClass)) {
-          console.warn("No assets by class returned, defaulting to empty array");
-          return res.json([]);
-        }
-        
-        console.log("Returning assets by class:", JSON.stringify(assetsByClass));
-        res.json(assetsByClass);
-      } catch (innerErr) {
-        console.error("Detailed error in getUserAssetsByClass:", innerErr);
-        throw innerErr;
+      // 1. Get all asset classes
+      const allAssetClasses = await db.select().from(assetClasses);
+      
+      // 2. Get the user's assets
+      const userAssets = await db.select().from(assets).where(eq(assets.userId, req.user.id));
+      
+      // 3. Create a map to track totals by class
+      const resultsByClass = new Map();
+      
+      // Initialize with all classes at zero value
+      for (const ac of allAssetClasses) {
+        resultsByClass.set(ac.id, {
+          assetClass: ac,
+          totalValue: 0
+        });
       }
+      
+      // Add up values for each asset class
+      for (const asset of userAssets) {
+        if (asset && asset.assetClassId) {
+          const classResult = resultsByClass.get(asset.assetClassId);
+          if (classResult) {
+            classResult.totalValue += typeof asset.value === 'number' ? asset.value : 0;
+          }
+        }
+      }
+      
+      // Convert map to array for response
+      const results = Array.from(resultsByClass.values());
+      
+      console.log(`Successfully built asset class results with ${results.length} classes`);
+      res.json(results);
     } catch (err) {
       console.error("Error in /api/assets/by-class endpoint:", err);
       console.error("Error details:", err instanceof Error ? err.stack : String(err));
