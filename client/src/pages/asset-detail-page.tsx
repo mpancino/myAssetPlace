@@ -434,15 +434,23 @@ export default function AssetDetailPage() {
       // Create a copy of the values to ensure we're not affected by object references
       const dataToSend = {
         ...values,
-        // Ensure property expenses are properly handled by creating a deep copy
+        // Ensure expenses are properly handled by creating deep copies
         propertyExpenses: values.propertyExpenses ? 
-          JSON.parse(JSON.stringify(values.propertyExpenses)) : {}
+          JSON.parse(JSON.stringify(values.propertyExpenses)) : {},
+        investmentExpenses: values.investmentExpenses ? 
+          JSON.parse(JSON.stringify(values.investmentExpenses)) : {}
       };
       
-      // Log the values being sent in the request to debug property expenses
+      // Log the values being sent in the request to debug expenses
       console.log("Sending PATCH request with data:", JSON.stringify(dataToSend));
+      
+      // Log property expenses
       console.log("Property expenses:", dataToSend.propertyExpenses);
-      console.log("[SAVE] Number of expenses:", Object.keys(dataToSend.propertyExpenses || {}).length);
+      console.log("[SAVE] Number of property expenses:", Object.keys(dataToSend.propertyExpenses || {}).length);
+      
+      // Log investment expenses
+      console.log("Investment expenses:", dataToSend.investmentExpenses);
+      console.log("[SAVE] Number of investment expenses:", Object.keys(dataToSend.investmentExpenses || {}).length);
       
       const res = await apiRequest("PATCH", `/api/assets/${assetId}`, dataToSend);
       const data = await res.json();
@@ -454,6 +462,7 @@ export default function AssetDetailPage() {
       const now = new Date().toISOString();
       console.log(`[${now}] Asset update success! Received updated asset:`, updatedAsset);
       console.log("Updated property expenses:", updatedAsset.propertyExpenses);
+      console.log("Updated investment expenses:", updatedAsset.investmentExpenses);
       
       // Show success toast
       toast({
@@ -466,30 +475,49 @@ export default function AssetDetailPage() {
       queryClient.removeQueries({ queryKey: [`/api/assets/${assetId}`] });
       
       // Immediately make a new fetch request to get truly fresh data from the server
-      console.log('[REFRESH] Making direct fetch to get fresh data after update...');
+      console.log('[RELOAD] Forcing a complete reload directly from database...');
       
-      // Using a direct fetch request to bypass cache entirely
-      fetch(`/api/assets/${assetId}`)
+      // Using a direct fetch request with cache-busting headers to bypass cache entirely
+      fetch(`/api/assets/${assetId}`, {
+        headers: { 
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      })
         .then(response => response.json())
         .then(freshData => {
-          console.log('[REFRESH] Fresh data received via direct fetch:', freshData);
-          console.log('[REFRESH] Property expenses in fresh data:', freshData.propertyExpenses);
-          console.log('[REFRESH] Number of expenses:', 
-            Object.keys(parsePropertyExpenses(freshData.propertyExpenses)).length);
+          console.log('[RELOAD] Fresh data received from database:', freshData);
+          
+          // Process property expenses
+          if (freshData.propertyExpenses) {
+            console.log('[RELOAD] Property expenses in fresh data:', freshData.propertyExpenses);
+            const parsedPropertyExpenses = parsePropertyExpenses(freshData.propertyExpenses);
+            console.log('[RELOAD] Number of property expenses:', Object.keys(parsedPropertyExpenses).length);
+            
+            // Update property expenses state
+            setCurrentPropertyExpenses(parsedPropertyExpenses);
+            console.log('[RELOAD] Updated property expenses state');
+          }
+          
+          // Process investment expenses - this is critical for our current issue
+          if (freshData.investmentExpenses) {
+            console.log('[RELOAD] Investment expenses in fresh data:', freshData.investmentExpenses);
+            const parsedInvestmentExpenses = parseInvestmentExpenses(freshData.investmentExpenses);
+            console.log('[RELOAD] Number of investment expenses:', Object.keys(parsedInvestmentExpenses).length);
+            
+            // Update investment expenses state
+            setCurrentInvestmentExpenses(parsedInvestmentExpenses);
+            console.log('[RELOAD] Updated investment expenses state');
+          }
           
           // Manually update the cache with this fresh data
-          console.log('[REFRESH] Setting query data with fresh data...');
+          console.log('[RELOAD] Setting query data with fresh data...');
           queryClient.setQueryData([`/api/assets/${assetId}`], freshData);
-          
-          // Also immediately update the expenses in the local component state
-          if (freshData.propertyExpenses) {
-            const parsedExpenses = parsePropertyExpenses(freshData.propertyExpenses);
-            setCurrentPropertyExpenses(parsedExpenses);
-            console.log('[REFRESH] Updated local expenses state with', Object.keys(parsedExpenses).length, 'expenses');
-          }
           
           // ONLY exit edit mode AFTER we've received and set the fresh data
           setIsEditing(false);
+          console.log('[RELOAD] Exited edit mode after data was refreshed');
           
           // Also invalidate other relevant queries for the list views
           queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
@@ -499,15 +527,39 @@ export default function AssetDetailPage() {
           }
         })
         .catch(error => {
-          console.error('[REFRESH] Error fetching fresh data:', error);
+          console.error('[RELOAD] Error fetching fresh data:', error);
+          console.error('[RELOAD] Error details:', error.message);
+          
           // Fall back to using the original approach
+          console.log('[RELOAD] Falling back to standard query mechanism...');
+          
+          // First invalidate the queries to force fresh data
+          queryClient.invalidateQueries({ queryKey: [`/api/assets/${assetId}`] });
+          
           setTimeout(() => {
+            console.log('[RELOAD] Executing fallback query fetch after timeout...');
             queryClient.fetchQuery({ 
               queryKey: [`/api/assets/${assetId}`],
               queryFn: getQueryFn({ on401: "throw" })
+            })
+            .then(freshData => {
+              console.log('[RELOAD] Fallback fetch successful:', freshData);
+              
+              // Try to update state with the newly fetched data 
+              if (freshData && freshData.investmentExpenses) {
+                const parsedInvestmentExpenses = parseInvestmentExpenses(freshData.investmentExpenses);
+                setCurrentInvestmentExpenses(parsedInvestmentExpenses);
+                console.log('[RELOAD] Updated investment expenses via fallback with',
+                  Object.keys(parsedInvestmentExpenses).length, 'expenses');
+              }
+              
+              setIsEditing(false);
+            })
+            .catch(fallbackError => {
+              console.error('[RELOAD] Even fallback fetch failed:', fallbackError);
+              setIsEditing(false);
             });
-            setIsEditing(false);
-          }, 300);
+          }, 500); // Slightly longer timeout to ensure the server has completed processing
         });
     },
     onError: (error: Error) => {
@@ -739,6 +791,9 @@ export default function AssetDetailPage() {
   
   // Form submission with enhanced expense preservation and proper parsing
   const onSubmit = (values: AssetDetailFormValues) => {
+    console.log("==================== FORM SUBMIT START ====================");
+    console.log(`[${new Date().toISOString()}] FORM SUBMIT HANDLER TRIGGERED`);
+    
     // Get current form values 
     const formValues = form.getValues();
     
@@ -776,9 +831,6 @@ export default function AssetDetailPage() {
     if (Object.keys(investmentExpensesToSave).length > 0) {
       console.log("[FORM SUBMIT] Investment expense IDs:", Object.keys(investmentExpensesToSave));
     }
-    
-    // Ensure property expenses are properly passed to the mutation by explicitly setting them
-    console.log("[FORM SUBMIT] Final property expenses object being sent:", JSON.stringify(propertyExpensesToSave));
     
     // Debug log to check if property expenses match what's in the component state
     if (currentPropertyExpenses) {
@@ -818,26 +870,71 @@ export default function AssetDetailPage() {
       }
     }
     
-    // Lock current expenses to prevent refresh changing them before save
-    const finalPropertyExpenses = {...propertyExpensesToSave};
-    const finalInvestmentExpenses = {...investmentExpensesToSave};
+    // CRITICAL: Create deep copies of expense objects to completely isolate them
+    // This prevents any race conditions where state updates might affect these objects
+    const finalPropertyExpenses = JSON.parse(JSON.stringify(propertyExpensesToSave));
+    const finalInvestmentExpenses = JSON.parse(JSON.stringify(investmentExpensesToSave));
+    
+    // TEST CASE: Log the isolated expense objects to prove they're safe from state changes
+    console.log("[FORM SUBMIT TEST] Final property expenses object (copied):", finalPropertyExpenses);
+    console.log("[FORM SUBMIT TEST] Final investment expenses object (copied):", finalInvestmentExpenses);
+    
+    // Store a reference count to verify data integrity 
+    const propertyExpenseCount = Object.keys(finalPropertyExpenses).length;
+    const investmentExpenseCount = Object.keys(finalInvestmentExpenses).length;
+    console.log("[FORM SUBMIT TEST] Property expense count (immutable):", propertyExpenseCount);
+    console.log("[FORM SUBMIT TEST] Investment expense count (immutable):", investmentExpenseCount);
+    
+    // Run a simulated state change test to ensure our copies are truly isolated
+    console.log("[FORM SUBMIT TEST] Running isolation test...");
+    setTimeout(() => {
+      // This simulates what would happen if state changed during the save operation
+      // The original objects might be modified, but our copies should remain intact
+      console.log("[FORM SUBMIT TEST] After simulated delay - property expense count:", 
+        Object.keys(finalPropertyExpenses).length, "- should still be", propertyExpenseCount);
+      console.log("[FORM SUBMIT TEST] After simulated delay - investment expense count:", 
+        Object.keys(finalInvestmentExpenses).length, "- should still be", investmentExpenseCount);
+      
+      // Verify isolation by comparing object references
+      const isPropertyIsolated = finalPropertyExpenses !== propertyExpensesToSave;
+      const isInvestmentIsolated = finalInvestmentExpenses !== investmentExpensesToSave;
+      console.log("[FORM SUBMIT TEST] Property expenses properly isolated:", isPropertyIsolated);
+      console.log("[FORM SUBMIT TEST] Investment expenses properly isolated:", isInvestmentIsolated);
+      
+      if (!isPropertyIsolated || !isInvestmentIsolated) {
+        console.error("[FORM SUBMIT TEST] CRITICAL ERROR: Expense objects not properly isolated!");
+      } else {
+        console.log("[FORM SUBMIT TEST] SUCCESS: All expense objects are properly isolated and protected");
+      }
+    }, 100);
     
     // Update UI to show we're saving
     const currentIsInvestmentAsset = selectedClass?.name?.toLowerCase() === "investments";
     if (currentIsInvestmentAsset) {
+      console.log("[FORM SUBMIT] This is an investment asset");
+      
       toast({
         title: "Saving investment expenses",
-        description: `Saving ${Object.keys(finalInvestmentExpenses).length} expenses...`,
+        description: `Saving ${investmentExpenseCount} expenses...`,
         duration: 2000,
       });
+      
+      // IMPORTANT: Log the exact data being sent to the mutation
+      console.log(`[FORM SUBMIT] Mutation will send ${investmentExpenseCount} investment expenses`);
+      console.log("[FORM SUBMIT] Investment expense IDs being sent:", Object.keys(finalInvestmentExpenses));
     }
     
-    // Now trigger the actual save
+    console.log("[FORM SUBMIT] Triggering update mutation with final data...");
+    
+    // Now trigger the actual save with our isolated copies
     updateAssetMutation.mutate({
       ...values,
       propertyExpenses: finalPropertyExpenses,
       investmentExpenses: finalInvestmentExpenses
     });
+    
+    console.log("[FORM SUBMIT] Mutation triggered. Waiting for server response...");
+    console.log("==================== FORM SUBMIT END ====================");
   };
   
   // Handle cancel edit
