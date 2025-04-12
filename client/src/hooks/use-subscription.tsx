@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext } from "react";
+import { createContext, ReactNode, useContext, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { 
   SubscriptionPlan, 
@@ -122,14 +122,11 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   };
 
   // Show upgrade prompt for a specific feature
+  const [upgradeFeature, setUpgradeFeature] = useState<string | null>(null);
+  
+  // This will be exposed so components can trigger the upgrade modal
   const showUpgradePrompt = (feature: string) => {
-    // For now, just show a toast with upgrade message
-    // Later this will connect to the upgrade modal
-    toast({
-      title: "Upgrade Required",
-      description: `Your current plan doesn't include access to ${feature}. Please upgrade to unlock this feature.`,
-      variant: "destructive",
-    });
+    setUpgradeFeature(feature);
   };
 
   return (

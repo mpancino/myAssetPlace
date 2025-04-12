@@ -41,9 +41,13 @@ function Router() {
 function App() {
   return (
     <AuthProvider>
-      <Router />
-      <DemoOnboardingDialog />
-      <Toaster />
+      <SubscriptionProvider>
+        <UpgradePromptProvider>
+          <Router />
+          <DemoOnboardingDialog />
+          <Toaster />
+        </UpgradePromptProvider>
+      </SubscriptionProvider>
     </AuthProvider>
   );
 }

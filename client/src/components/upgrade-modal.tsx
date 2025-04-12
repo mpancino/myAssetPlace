@@ -33,7 +33,6 @@ export function UpgradeModal({
   // Fetch available subscription plans
   const { data: plans, isLoading } = useQuery<SubscriptionPlan[]>({
     queryKey: ["/api/subscription-plans"],
-    queryFn: getQueryFn(),
   });
   
   // Get plans better than current
@@ -99,12 +98,19 @@ export function UpgradeModal({
                     </p>
                     <ul className="text-sm mt-2 space-y-1">
                       {/* Show interface modes */}
-                      {plan.allowedInterfaceModes && (
+                      {typeof plan.allowedInterfaceModes !== 'undefined' && (
                         <li className="flex items-center gap-2">
                           <Check className="h-4 w-4 text-primary" />
-                          {JSON.parse(String(plan.allowedInterfaceModes)).includes("advanced") 
-                            ? "Advanced Mode" 
-                            : "Basic Mode"}
+                          {(() => {
+                            try {
+                              const modes = JSON.parse(String(plan.allowedInterfaceModes));
+                              return Array.isArray(modes) && modes.includes("advanced") 
+                                ? "Advanced Mode" 
+                                : "Basic Mode";
+                            } catch (e) {
+                              return "Basic Mode";
+                            }
+                          })()}
                         </li>
                       )}
                       {/* Show asset limits */}
