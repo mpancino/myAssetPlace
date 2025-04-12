@@ -40,10 +40,10 @@ export async function createDemoAssets(userId: number): Promise<Asset[]> {
       incomeYield: 2.0
     },
     
-    // Stocks & Shares
+    // Investments (replacing Stocks & Shares)
     {
       userId,
-      assetClassId: 2, // Stocks & Shares
+      assetClassId: 4, // Investments (correct ID)
       assetHoldingTypeId: 1, // Personal
       name: "Tech Stock Portfolio",
       description: "Collection of technology stocks",
@@ -55,7 +55,7 @@ export async function createDemoAssets(userId: number): Promise<Asset[]> {
     },
     {
       userId,
-      assetClassId: 2, // Stocks & Shares
+      assetClassId: 5, // Retirement (correct ID)
       assetHoldingTypeId: 2, // Retirement/Super
       name: "Retirement Fund",
       description: "401k/Superannuation investments",
@@ -91,7 +91,7 @@ export async function createDemoAssets(userId: number): Promise<Asset[]> {
     // Loans & Liabilities
     {
       userId,
-      assetClassId: 4, // Loans & Liabilities
+      assetClassId: 2, // Loans & Liabilities (correct ID)
       assetHoldingTypeId: 1, // Personal
       name: "Mortgage",
       description: "Home loan",
@@ -108,7 +108,7 @@ export async function createDemoAssets(userId: number): Promise<Asset[]> {
     },
     {
       userId,
-      assetClassId: 4, // Loans & Liabilities
+      assetClassId: 2, // Loans & Liabilities (correct ID)
       assetHoldingTypeId: 1, // Personal
       name: "Car Loan",
       description: "Auto financing",
@@ -124,10 +124,10 @@ export async function createDemoAssets(userId: number): Promise<Asset[]> {
       isLiability: true
     },
     
-    // Business & Private Equity
+    // Business & Private Equity (using Investments asset class)
     {
       userId,
-      assetClassId: 5, // Business & Private Equity
+      assetClassId: 4, // Investments (correct ID for business investments)
       assetHoldingTypeId: 3, // Family Trust
       name: "Small Business Investment",
       description: "Ownership stake in local business",
