@@ -15,7 +15,7 @@ import BalanceSheetPage from "@/pages/balance-sheet-page";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { AuthProvider } from "@/hooks/use-auth";
 import { SubscriptionProvider } from "@/hooks/use-subscription";
-import { UpgradePromptProvider } from "@/components/upgrade-prompt-manager";
+import { UpgradePromptManager } from "@/components/upgrade-prompt-manager";
 import DemoOnboardingDialog from "@/components/onboarding/demo-onboarding-dialog";
 
 function Router() {
@@ -42,11 +42,10 @@ function App() {
   return (
     <AuthProvider>
       <SubscriptionProvider>
-        <UpgradePromptProvider>
-          <Router />
-          <DemoOnboardingDialog />
-          <Toaster />
-        </UpgradePromptProvider>
+        <Router />
+        <DemoOnboardingDialog />
+        <UpgradePromptManager />
+        <Toaster />
       </SubscriptionProvider>
     </AuthProvider>
   );

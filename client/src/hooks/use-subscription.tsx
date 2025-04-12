@@ -149,18 +149,27 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   // This will be exposed so components can trigger the upgrade modal
   const showUpgradePrompt = (feature: string) => {
-    // For now, just show a toast with upgrade message
-    // In a full implementation, this would trigger the upgrade modal
-    toast({
-      title: "Upgrade Required",
-      description: `Your current plan doesn't include access to ${feature}. Please upgrade to unlock this feature.`,
-      variant: "destructive",
-    });
-    
-    // Note: A more complete implementation would use:
-    // 1. Import the useUpgradePrompt hook
-    // 2. Call showUpgradePrompt from the hook
-    // But we want to avoid circular dependencies
+    try {
+      // Use the upgrade prompt manager
+      // In a real implementation, we would have an import at the top
+      // But for now, we'll work with window-level events to avoid circular dependencies
+      const event = new CustomEvent('show-upgrade-prompt', { detail: { feature } });
+      window.dispatchEvent(event);
+      
+      // Also show a toast to give immediate feedback
+      toast({
+        title: "Upgrade Required",
+        description: `Your current plan doesn't include access to ${feature}. Please upgrade to unlock this feature.`,
+      });
+    } catch (error) {
+      console.error("Failed to trigger upgrade prompt:", error);
+      // Fallback to toast only
+      toast({
+        title: "Subscription Required",
+        description: `Your current plan doesn't include access to ${feature}.`,
+        variant: "destructive",
+      });
+    }
   };
 
   return (
