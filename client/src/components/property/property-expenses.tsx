@@ -139,7 +139,17 @@ export function PropertyExpenses({
   
   // Use the asset class expense categories if available, or fall back to defaults
   const availableCategories = expenseCategories && expenseCategories.length > 0
-    ? expenseCategories.map((cat) => typeof cat === 'string' ? cat : cat.name) 
+    ? expenseCategories.map((cat) => {
+        // Handle different types of categories
+        if (typeof cat === 'string') {
+          return cat;
+        } else if (cat && typeof cat === 'object') {
+          const objCat = cat as Record<string, any>; // Type assertion for safety
+          return objCat.name ? String(objCat.name) : String(cat);
+        } else {
+          return String(cat);
+        }
+      })
     : DEFAULT_EXPENSE_CATEGORIES;
   
   // Core state
@@ -515,12 +525,24 @@ export function PropertyExpenses({
                   <SelectContent>
                     {availableCategories.map((category) => {
                       // Handle both string categories and standardized category objects
-                      const categoryName = typeof category === 'string' ? 
-                        category : 
-                        category;
+                      let categoryName = '';
+                      let categoryValue = '';
+                      
+                      if (typeof category === 'string') {
+                        categoryName = category;
+                        categoryValue = category;
+                      } else if (category && typeof category === 'object') {
+                        // For objects, safely extract properties
+                        const objCategory = category as any; // Type assertion for safety
+                        categoryName = objCategory.name ? String(objCategory.name) : String(category);
+                        categoryValue = categoryName; // Use name as value too
+                      } else {
+                        categoryName = String(category);
+                        categoryValue = categoryName;
+                      }
                         
                       return (
-                        <SelectItem key={categoryName} value={categoryName}>
+                        <SelectItem key={categoryValue} value={categoryValue}>
                           {categoryName}
                         </SelectItem>
                       );
