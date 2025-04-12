@@ -1741,6 +1741,7 @@ export default function AssetDetailPage() {
                                 console.log("Property expenses component triggered onChange in read-only mode");
                                 // We shouldn't reach here because of the overlay
                               }}
+                              isEditMode={false}
                             />
                             <div className="mt-4 flex justify-center">
                               <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>

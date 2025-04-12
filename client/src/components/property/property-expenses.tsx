@@ -185,7 +185,7 @@ export function PropertyExpenseAnalysis({
   );
 }
 
-export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSaving = false, isSaved = false }: PropertyExpensesProps) {
+export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSaving = false, isSaved = false, isEditMode = true }: PropertyExpensesProps) {
   const { toast } = useToast();
   const [isAddingExpense, setIsAddingExpense] = useState(false);
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
@@ -719,7 +719,7 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
         <div className="flex justify-end">
           <Button 
             onClick={() => setIsAddingExpense(true)}
-            disabled={isProcessing || editingExpenseId !== null || isSaving}
+            disabled={isProcessing || editingExpenseId !== null || isSaving || !isEditMode}
           >
             <Plus className="mr-2 h-4 w-4" /> Add Expense
           </Button>
