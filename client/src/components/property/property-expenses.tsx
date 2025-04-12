@@ -258,13 +258,39 @@ export function PropertyExpenses({
       // Ensure each expense has all required properties with the correct types
       const normalizedExpenses: Record<string, PropertyExpense> = {};
       
-      Object.entries(parsedExpenses).forEach(([id, expense]) => {
+      // Create deduplication tracker
+      const dedupeTracker: Record<string, boolean> = {}; 
+      
+      // Sort entries to prioritize "expense-N" IDs over random UUIDs
+      const sortedEntries = Object.entries(parsedExpenses).sort(([idA], [idB]) => {
+        const isOriginalA = idA.startsWith('expense-');
+        const isOriginalB = idB.startsWith('expense-');
+        if (isOriginalA && !isOriginalB) return -1;
+        if (!isOriginalA && isOriginalB) return 1;
+        return 0;
+      });
+      
+      // Process entries with deduplication
+      sortedEntries.forEach(([id, expense]) => {
         if (expense && typeof expense === 'object' && 'id' in expense) {
           const frequency = ['monthly', 'quarterly', 'annually'].includes(expense.frequency as string) 
             ? expense.frequency as string 
             : 'monthly';
             
           const amount = typeof expense.amount === 'number' ? expense.amount : 0;
+          const category = expense.category as string || 'Other';
+          
+          // DEDUPLICATION: Create unique key to detect duplicates 
+          const dedupeKey = `${category}-${amount}-${frequency}`;
+          
+          // Skip if we've already seen this expense signature
+          if (dedupeTracker[dedupeKey]) {
+            console.log(`[PARSE] Skipping duplicate expense: ${dedupeKey}`);
+            return;
+          }
+          
+          // Mark this signature as seen
+          dedupeTracker[dedupeKey] = true;
           
           const annualTotal = typeof expense.annualTotal === 'number' 
             ? expense.annualTotal 
@@ -272,7 +298,7 @@ export function PropertyExpenses({
             
           normalizedExpenses[id] = {
             id: expense.id as string,
-            category: expense.category as string || 'Other',
+            category,
             description: expense.description as string || '',
             amount,
             frequency,
@@ -286,8 +312,10 @@ export function PropertyExpenses({
       });
       
       console.log('[PARSE] Normalization complete. Returning', Object.keys(normalizedExpenses).length, 'expenses');
+      console.log('[PARSE] Deduplicated from', Object.keys(parsedExpenses).length, 'to', Object.keys(normalizedExpenses).length);
       if (Object.keys(normalizedExpenses).length > 0) {
         console.log('[PARSE] Normalized expense IDs:', Object.keys(normalizedExpenses));
+        console.log('[PARSE] Deduplicated signatures:', Object.keys(dedupeTracker).join(', '));
       }
       console.log('====== END PARSE EXPENSE DATA ======');
       
