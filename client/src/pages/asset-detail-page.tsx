@@ -109,6 +109,11 @@ export default function AssetDetailPage() {
   const selectedHoldingType = asset?.assetHoldingTypeId 
     ? holdingTypes.find(t => t.id === asset.assetHoldingTypeId) 
     : undefined;
+    
+  // Debug information
+  console.log("Asset class ID:", asset?.assetClassId);
+  console.log("Selected class:", selectedClass);
+  console.log("Is Real Estate?", selectedClass?.name === "Real Estate");
   
   // Initialize form with asset data
   const form = useForm<AssetDetailFormValues>({
