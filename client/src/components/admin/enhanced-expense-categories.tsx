@@ -34,6 +34,7 @@ import {
 import { X, Plus, Edit, Trash, Info, Clock } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import type { ExpenseCategory } from "@shared/schema";
+import { useExpenseCategoryEditor } from "@/contexts/expense-category-edit-context";
 
 interface EnhancedExpenseCategoriesInputProps {
   value: string;
@@ -154,24 +155,17 @@ export function EnhancedExpenseCategoriesInput({
     setIsAddDialogOpen(false);
   };
   
-  // Start editing a category - this manually opens the dialog
+  // Use the global expense category editor context
+  const { openEditor } = useExpenseCategoryEditor();
+  
+  // Start editing a category using the global editor
   const handleStartEdit = (category: ExpenseCategory) => {
-    console.log("Starting edit for category:", category);
+    console.log("Starting edit for category using global editor:", category);
     
-    // Force a defensive copy to ensure we don't lose this category if state updates
-    const categoryCopy = { ...category };
+    // Use the global editor context to handle the editing
+    openEditor(category, categories, updateParent);
     
-    setEditingCategory(categoryCopy);
-    setCategoryName(categoryCopy.name);
-    setCategoryDescription(categoryCopy.description || "");
-    setCategoryFrequency(categoryCopy.defaultFrequency || "monthly");
-    setIsEditDialogOpen(true);
-    
-    console.log("Edit dialog opened with values:", {
-      name: categoryCopy.name,
-      description: categoryCopy.description || "",
-      frequency: categoryCopy.defaultFrequency || "monthly"
-    });
+    console.log("Global editor opened with category:", category);
   };
   
   // Update an existing category when save is clicked

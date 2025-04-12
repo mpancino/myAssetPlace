@@ -17,6 +17,8 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { SubscriptionProvider } from "@/hooks/use-subscription";
 import { UpgradePromptManager } from "@/components/upgrade-prompt-manager";
 import DemoOnboardingDialog from "@/components/onboarding/demo-onboarding-dialog";
+import { ExpenseCategoryEditorProvider } from "@/contexts/expense-category-edit-context";
+import { ExpenseCategoryEditModal } from "@/components/admin/expense-category-edit-modal";
 
 function Router() {
   return (
@@ -42,10 +44,13 @@ function App() {
   return (
     <AuthProvider>
       <SubscriptionProvider>
-        <Router />
-        <DemoOnboardingDialog />
-        <UpgradePromptManager />
-        <Toaster />
+        <ExpenseCategoryEditorProvider>
+          <Router />
+          <DemoOnboardingDialog />
+          <UpgradePromptManager />
+          <ExpenseCategoryEditModal />
+          <Toaster />
+        </ExpenseCategoryEditorProvider>
       </SubscriptionProvider>
     </AuthProvider>
   );
