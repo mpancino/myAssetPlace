@@ -1707,7 +1707,7 @@ export default function AssetDetailPage() {
                               <FormItem>
                                 <FormControl>
                                   <PropertyExpenses
-                                    value={field.value as Record<string, PropertyExpense>}
+                                    value={field.value as Record<string, PropertyExpense> || {}}
                                     onChange={(newExpenses) => {
                                       console.log("Expense component updated with", Object.keys(newExpenses).length, "expenses");
                                       

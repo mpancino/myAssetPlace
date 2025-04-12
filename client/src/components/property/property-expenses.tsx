@@ -467,7 +467,7 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
       title: "Expense updated",
       description: `Updated ${newExpense.category} expense successfully`
     });
-  }, [newExpense, applyCommand, resetForm, toast]);
+  }, [newExpense, processExpenseCommand, resetForm, toast, onChange]);
 
   // Handler for deleting an expense
   const handleDeleteExpense = useCallback((expenseId: string) => {
@@ -494,7 +494,7 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
       title: "Expense deleted",
       description: `Removed ${expenseToDelete.category} expense of ${formatCurrency(expenseToDelete.amount)}`
     });
-  }, [expenses, applyCommand, toast]);
+  }, [expenses, processExpenseCommand, toast, onChange, formatCurrency]);
 
   // Handler for starting the edit process
   const handleStartEdit = useCallback((expense: PropertyExpense) => {
