@@ -39,8 +39,23 @@ export default function AssetClassPage() {
     enabled: !!classId
   });
   
-  // Filter assets by class ID (client-side filtering as backup)
-  const assets = allAssets.filter(asset => asset.assetClassId === parseInt(classId));
+  // Filter assets by class ID and make additional adjustments for misclassified assets
+  const assets = allAssets.filter(asset => {
+    // First filter by the asset class ID
+    const matchesClassId = asset.assetClassId === parseInt(classId);
+    
+    // Additional corrections for misclassified assets
+    if (assetClass?.name === "Loans & Liabilities") {
+      // Include any assets that are marked as liabilities, regardless of their class ID
+      return matchesClassId || asset.isLiability === true;
+    } else if (assetClass?.name === "Investments" && asset.isLiability === true) {
+      // Don't show liabilities in the investments class
+      return false;
+    } else {
+      // For all other asset classes, use the standard class ID matching
+      return matchesClassId;
+    }
+  });
   
   // Fetch the user's country for currency information
   const {

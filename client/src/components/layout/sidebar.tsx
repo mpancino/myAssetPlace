@@ -125,8 +125,25 @@ export default function Sidebar({ className }: SidebarProps) {
                 </h3>
                 {assetClasses ? (
                   assetClasses.map((assetClass) => {
-                    // Get count of assets in this asset class
-                    const assetsInClass = assets.filter(asset => asset.assetClassId === assetClass.id);
+                    // Get count of assets in this asset class with intelligent classification
+                    let assetsInClass;
+                    
+                    // Handle the special case for Loans & Liabilities
+                    if (assetClass.name === "Loans & Liabilities") {
+                      // For Loans, include any asset that is a liability regardless of class
+                      assetsInClass = assets.filter(asset => 
+                        asset.assetClassId === assetClass.id || asset.isLiability === true
+                      );
+                    } else if (assetClass.name === "Investments") {
+                      // For Investments, exclude any assets that are liabilities
+                      assetsInClass = assets.filter(asset => 
+                        asset.assetClassId === assetClass.id && asset.isLiability !== true
+                      );
+                    } else {
+                      // For all other classes, use the standard asset class ID
+                      assetsInClass = assets.filter(asset => asset.assetClassId === assetClass.id);
+                    }
+                    
                     const assetCount = assetsInClass.length;
                     
                     // Get appropriate icon based on asset class name
