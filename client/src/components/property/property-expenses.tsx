@@ -38,6 +38,7 @@ interface PropertyExpensesProps {
   currencySymbol?: string;
   isSaving?: boolean;
   isSaved?: boolean;
+  isEditMode?: boolean;
 }
 
 // Categories for expense types
@@ -718,7 +719,7 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
         <div className="flex justify-end">
           <Button 
             onClick={() => setIsAddingExpense(true)}
-            disabled={isProcessing || editingExpenseId !== null}
+            disabled={isProcessing || editingExpenseId !== null || isSaving}
           >
             <Plus className="mr-2 h-4 w-4" /> Add Expense
           </Button>

@@ -1721,6 +1721,7 @@ export default function AssetDetailPage() {
                                       // Database updates will occur when "Save Changes" is clicked
                                       // This ensures all changes are committed together
                                     }}
+                                    isEditMode={isEditing}
                                     isSaving={savePropertyExpensesMutation.isPending}
                                     isSaved={savePropertyExpensesMutation.isSuccess}
                                   />
