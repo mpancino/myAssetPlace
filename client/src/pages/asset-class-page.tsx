@@ -5,7 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import MainLayout from "@/components/layout/main-layout";
-import { PlusCircle, Edit, Trash2, ArrowRight, Wallet, Home, Briefcase, LineChart, CreditCard, DollarSign } from "lucide-react";
+import { 
+  PlusCircle, Edit, Trash2, ArrowRight, Wallet, Home, Briefcase, 
+  LineChart, CreditCard, DollarSign, MapPin, BedDouble, Bath, Car 
+} from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { AssetClass, Asset, Country, AssetHoldingType } from "@shared/schema";
@@ -228,23 +231,165 @@ export default function AssetClassPage() {
         ) : assets?.length ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {assets.map((asset) => {
-              // If this is a real estate asset class, use the PropertyCard component
+              // If this is a real estate asset class, use a custom real estate card
               if (assetClass?.name?.toLowerCase() === 'real estate') {
                 // Find the asset's holding type
                 const holdingType = holdingTypes?.find(ht => ht.id === asset.assetHoldingTypeId);
                 
-                // Handle property deletion
-                const handleDelete = () => {
-                  setLocation(`/assets/${asset.id}`);
-                };
+                // Debug: Log property details
+                console.log("Asset class ID:", assetClass.id);
+                console.log("Selected class:", assetClass);
+                console.log("Is Real Estate?", assetClass?.name?.toLowerCase() === 'real estate');
+                console.log("Property data:", asset);
+                console.log("hasMortgage (camelCase):", asset.hasMortgage);
+                console.log("has_mortgage (snake_case):", (asset as any).has_mortgage);
+                
+                // Check if property has a mortgage (supporting both camelCase and snake_case)
+                const hasMortgage = asset.hasMortgage || (asset as any).has_mortgage;
+                const mortgageAmount = asset.mortgageAmount || (asset as any).mortgage_amount || 0;
                 
                 return (
-                  <PropertyCard 
-                    key={asset.id} 
-                    property={asset} 
-                    holdingType={holdingType}
-                    onDelete={handleDelete}
-                  />
+                  <Card key={asset.id} className="group hover:shadow-lg transition-all">
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <CardTitle className="text-xl">{asset.name}</CardTitle>
+                        <div className="flex flex-col items-end gap-1">
+                          {holdingType && (
+                            <Badge variant="outline">{holdingType.name}</Badge>
+                          )}
+                          {hasMortgage && (
+                            <Badge variant="outline" className="bg-primary/10 text-primary">
+                              <CreditCard className="h-3 w-3 mr-1" /> Has Mortgage
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      {asset.address && (
+                        <CardDescription className="flex items-center mt-1">
+                          <MapPin className="h-3 w-3 mr-1" />
+                          {asset.address}, {asset.suburb}
+                        </CardDescription>
+                      )}
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <div>
+                          <span className="text-sm text-muted-foreground">Current Value:</span>
+                          <p className="text-xl font-semibold">
+                            {formatCurrency(asset.value, userCountry?.currencySymbol || '$')}
+                          </p>
+                        </div>
+                        
+                        {/* Show mortgage details if property has a mortgage */}
+                        {hasMortgage && (
+                          <>
+                            <div className="flex justify-between">
+                              <span className="text-sm text-muted-foreground flex items-center">
+                                <CreditCard className="h-3 w-3 mr-1" />
+                                Mortgage Balance
+                              </span>
+                              <span className="text-destructive font-medium">
+                                {formatCurrency(mortgageAmount, userCountry?.currencySymbol || '$')}
+                              </span>
+                            </div>
+                            
+                            <div className="flex justify-between">
+                              <span className="text-sm text-muted-foreground">Equity:</span>
+                              <span className="text-green-600 font-medium">
+                                {formatCurrency(
+                                  (asset.value || 0) - mortgageAmount,
+                                  userCountry?.currencySymbol || '$'
+                                )}
+                                {asset.value > 0 && (
+                                  <span className="ml-1 text-muted-foreground">
+                                    ({Math.round(((asset.value - mortgageAmount) / asset.value) * 100)}%)
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                            
+                            {/* Equity progress bar */}
+                            <div className="w-full bg-muted rounded-full h-1.5 dark:bg-gray-700">
+                              <div 
+                                className="bg-green-600 h-1.5 rounded-full"
+                                style={{ 
+                                  width: `${asset.value ? 
+                                    Math.min(100, 100 - ((mortgageAmount / asset.value) * 100)) : 0}%` 
+                                }}
+                              ></div>
+                            </div>
+                          </>
+                        )}
+                        
+                        {asset.purchasePrice && (
+                          <div>
+                            <span className="text-sm text-muted-foreground">Purchase Price:</span>
+                            <p>
+                              {formatCurrency(asset.purchasePrice, userCountry?.currencySymbol || '$')}
+                            </p>
+                          </div>
+                        )}
+                        
+                        {asset.purchaseDate && (
+                          <div>
+                            <span className="text-sm text-muted-foreground">Purchase Date:</span>
+                            <p>{new Date(asset.purchaseDate).toLocaleDateString()}</p>
+                          </div>
+                        )}
+                        
+                        <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-2">
+                          {asset.bedrooms && asset.bedrooms > 0 && (
+                            <div className="flex items-center">
+                              <BedDouble className="h-3 w-3 mr-1" />
+                              <span>{asset.bedrooms}</span>
+                            </div>
+                          )}
+                          
+                          {asset.bathrooms && asset.bathrooms > 0 && (
+                            <div className="flex items-center">
+                              <Bath className="h-3 w-3 mr-1" />
+                              <span>{asset.bathrooms}</span>
+                            </div>
+                          )}
+                          
+                          {asset.parkingSpaces && asset.parkingSpaces > 0 && (
+                            <div className="flex items-center">
+                              <Car className="h-3 w-3 mr-1" />
+                              <span>{asset.parkingSpaces}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                    <Separator />
+                    <CardFooter className="flex justify-between pt-4">
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setLocation(`/assets/${asset.id}`)}
+                        >
+                          <Edit className="h-4 w-4 mr-1" /> Edit
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="text-destructive"
+                          onClick={() => setLocation(`/assets/${asset.id}`)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" /> Delete
+                        </Button>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => setLocation(`/assets/${asset.id}`)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        View Details <ArrowRight className="ml-1 h-4 w-4" />
+                      </Button>
+                    </CardFooter>
+                  </Card>
                 );
               }
               
@@ -273,45 +418,7 @@ export default function AssetClassPage() {
                         </p>
                       </div>
                       
-                      {/* Mortgage badge and information */}
-                      {assetClass?.name?.toLowerCase() === 'real estate' && (asset.hasMortgage || (asset as any).has_mortgage) && (
-                        <>
-                          <div className="flex justify-between items-center mt-1">
-                            <Badge variant="outline" className="bg-primary/10 text-primary">
-                              <CreditCard className="h-3 w-3 mr-1" /> Has Mortgage
-                            </Badge>
-                            <span className="text-sm text-destructive font-medium">
-                              {formatCurrency(asset.mortgageAmount || (asset as any).mortgage_amount || 0, userCountry?.currencySymbol || '$')}
-                            </span>
-                          </div>
-                          
-                          <div className="mt-1">
-                            <div className="flex justify-between text-xs mb-1">
-                              <span className="text-muted-foreground">Equity:</span>
-                              <span className="text-green-600 font-medium">
-                                {formatCurrency(
-                                  (asset.value || 0) - (asset.mortgageAmount || (asset as any).mortgage_amount || 0), 
-                                  userCountry?.currencySymbol || '$'
-                                )}
-                                {asset.value > 0 && (
-                                  <span className="ml-1 text-muted-foreground">
-                                    ({Math.round(((asset.value - (asset.mortgageAmount || (asset as any).mortgage_amount || 0)) / asset.value) * 100)}%)
-                                  </span>
-                                )}
-                              </span>
-                            </div>
-                            <div className="w-full bg-muted rounded-full h-1.5 dark:bg-gray-700">
-                              <div 
-                                className="bg-green-600 h-1.5 rounded-full"
-                                style={{ 
-                                  width: `${asset.value ? 
-                                    Math.min(100, 100 - (((asset.mortgageAmount || (asset as any).mortgage_amount || 0) / asset.value) * 100)) : 0}%` 
-                                }}
-                              ></div>
-                            </div>
-                          </div>
-                        </>
-                      )}
+                      {/* Note: Mortgage information for Real Estate is already handled in the real estate card above */}
                       
                       {asset.purchasePrice && (
                         <div>
