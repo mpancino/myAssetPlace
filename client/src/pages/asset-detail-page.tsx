@@ -116,6 +116,32 @@ function convertComponentToPageExpense(expense: ComponentInvestmentExpense): Inv
   };
 }
 
+// Convert a collection of page expenses to component expenses
+function convertPageExpensesToComponent(expenses: Record<string, InvestmentExpense>): Record<string, ComponentInvestmentExpense> {
+  if (!expenses) return {};
+  
+  const result: Record<string, ComponentInvestmentExpense> = {};
+  
+  Object.entries(expenses).forEach(([id, expense]) => {
+    result[id] = convertPageToComponentExpense(expense);
+  });
+  
+  return result;
+}
+
+// Convert a collection of component expenses to page expenses
+function convertComponentExpensesToPage(expenses: Record<string, ComponentInvestmentExpense>): Record<string, InvestmentExpense> {
+  if (!expenses) return {};
+  
+  const result: Record<string, InvestmentExpense> = {};
+  
+  Object.entries(expenses).forEach(([id, expense]) => {
+    result[id] = convertComponentToPageExpense(expense);
+  });
+  
+  return result;
+}
+
 // Helper function to safely parse investment expenses data
 function parseInvestmentExpenses(data: any): Record<string, InvestmentExpense> {
   try {
@@ -652,16 +678,30 @@ export default function AssetDetailPage() {
   
   // Direct investment expense save mutation - immediately saves expenses to DB
   const saveInvestmentExpensesMutation = useMutation({
-    mutationFn: async (expenses: Record<string, InvestmentExpense>) => {
+    mutationFn: async (expenses: Record<string, InvestmentExpense> | Record<string, ComponentInvestmentExpense>) => {
       if (!assetId) return null;
       
       console.log(`[SEQUENCE:${Date.now()}] 1. SAVE MUTATION STARTED - saveInvestmentExpensesMutation`);
       console.log(`[SEQUENCE:${Date.now()}] Current state before save: currentInvestmentExpenses has ${
         Object.keys(currentInvestmentExpenses || {}).length} items`);
       
+      // Check if these are ComponentInvestmentExpense instances or PageInvestmentExpense instances
+      // by checking for a "category" property on the first expense
+      const expenseValues = Object.values(expenses);
+      const firstExpense = expenseValues.length > 0 ? expenseValues[0] : null;
+      
+      // Convert to PageInvestmentExpense format if needed
+      let pageFormatExpenses = expenses as Record<string, InvestmentExpense>;
+      
+      if (firstExpense && 'category' in firstExpense) {
+        console.log(`[SEQUENCE:${Date.now()}] Converting component format to page format for saving`);
+        // These are component format expenses
+        pageFormatExpenses = convertComponentExpensesToPage(expenses as Record<string, ComponentInvestmentExpense>);
+      }
+      
       // Create a minimal update payload with just the expenses
       const dataToSend = {
-        investmentExpenses: expenses
+        investmentExpenses: pageFormatExpenses
       };
       
       console.log("[DIRECT SAVE INV] Saving expenses to database:", Object.keys(expenses).length);
@@ -2354,15 +2394,21 @@ export default function AssetDetailPage() {
                                 <FormControl>
                                   <InvestmentExpenses
                                     key={`investment-expenses-edit-${asset.id}`}
-                                    value={field.value as Record<string, InvestmentExpense> || {}}
-                                    onChange={(newExpenses) => {
-                                      console.log("Investment expense component updated with", Object.keys(newExpenses).length, "expenses");
+                                    value={convertPageExpensesToComponent(field.value as Record<string, InvestmentExpense> || {})}
+                                    onChange={(newComponentExpenses) => {
+                                      console.log(`[INV_EXPENSE_CHANGED:${Date.now()}] Component updated with`, 
+                                        Object.keys(newComponentExpenses).length, "expenses");
+                                      
+                                      // Convert component format back to page format
+                                      const pageFormatExpenses = convertComponentExpensesToPage(newComponentExpenses);
+                                      console.log(`[INV_EXPENSE_CHANGED:${Date.now()}] Converted to page format with`, 
+                                        Object.keys(pageFormatExpenses).length, "expenses");
                                       
                                       // Update the form field without immediate database save
-                                      field.onChange(newExpenses);
+                                      field.onChange(pageFormatExpenses);
                                       
                                       // Update state tracker to monitor changes
-                                      setCurrentInvestmentExpenses(newExpenses);
+                                      setCurrentInvestmentExpenses(pageFormatExpenses);
                                     }}
                                     assetClassId={asset?.assetClassId}
                                     isEditMode={isEditing}
@@ -2379,7 +2425,7 @@ export default function AssetDetailPage() {
                             <div className="absolute inset-0 bg-transparent z-10" onClick={() => setIsEditing(true)}></div>
                             <InvestmentExpenses
                               key={`investment-expenses-view-${asset.id}`}
-                              value={parseInvestmentExpenses(asset.investmentExpenses)}
+                              value={convertPageExpensesToComponent(parseInvestmentExpenses(asset.investmentExpenses))}
                               onChange={(value) => {
                                 // Read-only when not editing - should trigger edit mode
                                 console.log("Investment expenses component triggered onChange in read-only mode");
@@ -2404,7 +2450,7 @@ export default function AssetDetailPage() {
                     {asset.investmentExpenses && Object.keys(parseInvestmentExpenses(asset.investmentExpenses)).length > 0 && (
                       <InvestmentExpenseAnalysis 
                         key={`investment-expense-analysis-${asset.id}`}
-                        expenses={parseInvestmentExpenses(asset.investmentExpenses)}
+                        expenses={convertPageExpensesToComponent(parseInvestmentExpenses(asset.investmentExpenses))}
                         annualIncome={asset.annualIncome || 0}
                       />
                     )}
