@@ -87,7 +87,7 @@ export default function AssetDetailPage() {
   
   // Fetch the asset details
   const { data: asset, isLoading: isLoadingAsset } = useQuery<Asset>({
-    queryKey: ["/api/assets", assetId],
+    queryKey: [`/api/assets/${assetId}`],
     enabled: !!assetId,
   });
   
@@ -170,7 +170,7 @@ export default function AssetDetailPage() {
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
       queryClient.invalidateQueries({ queryKey: ["/api/assets/by-class"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/assets", assetId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/assets/${assetId}`] });
       
       // Exit edit mode
       setIsEditing(false);
