@@ -18,22 +18,24 @@ import { MortgageDetails } from "@/components/property/mortgage-details";
 import { PropertyExpenses } from "@/components/property/property-expenses";
 import { 
   ArrowLeft, 
-  Save, 
-  Trash2, 
-  Edit, 
-  Calendar, 
-  DollarSign, 
-  Percent, 
-  Tag, 
-  Building, 
-  CreditCard, 
-  AlertTriangle,
-  Link,
-  Receipt,
-  BedDouble,
+  BarChart3,
   Bath,
+  BedDouble,
+  Building, 
+  Calculator,
+  Calendar, 
   Car,
-  Map as MapIcon
+  CreditCard, 
+  DollarSign, 
+  Edit, 
+  Link,
+  Map as MapIcon,
+  Percent, 
+  Receipt,
+  Save, 
+  Tag, 
+  Trash2, 
+  AlertTriangle
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -1637,6 +1639,144 @@ export default function AssetDetailPage() {
                         </Card>
                       )
                     )}
+                  </div>
+                )}
+              </TabsContent>
+              
+              {/* Expenses Tab - Dedicated tab for property expenses */}
+              <TabsContent value="expenses" className="space-y-4 pt-4">
+                {asset && selectedClass?.name?.toLowerCase() === "real estate" && (
+                  <div className="space-y-4">
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="flex items-center">
+                          <BarChart3 className="mr-2 h-5 w-5 text-primary" /> Property Expenses
+                        </CardTitle>
+                        <CardDescription>
+                          Manage expenses related to this property
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {isEditing ? (
+                          <FormField
+                            control={form.control}
+                            name="propertyExpenses"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormControl>
+                                  <PropertyExpenses
+                                    value={field.value as Record<string, PropertyExpense>}
+                                    onChange={field.onChange}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        ) : asset.propertyExpenses ? (
+                          <PropertyExpenses
+                            value={asset.propertyExpenses as Record<string, PropertyExpense>}
+                            onChange={(value) => {
+                              // Read-only when not editing
+                              console.log("Property expenses component triggered onChange in read-only mode");
+                            }}
+                          />
+                        ) : (
+                          <p className="text-muted-foreground">No property expenses have been added yet.</p>
+                        )}
+                      </CardContent>
+                    </Card>
+                    
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="flex items-center">
+                          <Calculator className="mr-2 h-5 w-5 text-primary" /> Expense Analysis
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        {asset.propertyExpenses && typeof asset.propertyExpenses === 'object' && 
+                         Object.keys(asset.propertyExpenses).length > 0 ? (
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              <div className="border rounded-lg p-4 text-center">
+                                <p className="text-sm text-muted-foreground mb-1">Total Annual Expenses</p>
+                                <p className="text-2xl font-bold text-destructive">
+                                  {formatCurrency(
+                                    Object.values(asset.propertyExpenses as Record<string, PropertyExpense>)
+                                      .reduce((total, expense) => total + expense.annualTotal, 0)
+                                  )}
+                                </p>
+                              </div>
+                              
+                              <div className="border rounded-lg p-4 text-center">
+                                <p className="text-sm text-muted-foreground mb-1">Monthly Average</p>
+                                <p className="text-2xl font-bold">
+                                  {formatCurrency(
+                                    Object.values(asset.propertyExpenses as Record<string, PropertyExpense>)
+                                      .reduce((total, expense) => total + expense.annualTotal, 0) / 12
+                                  )}
+                                </p>
+                              </div>
+                              
+                              <div className="border rounded-lg p-4 text-center">
+                                <p className="text-sm text-muted-foreground mb-1">Expense Categories</p>
+                                <p className="text-2xl font-bold">
+                                  {new Set(Object.values(asset.propertyExpenses as Record<string, PropertyExpense>)
+                                    .map(expense => expense.category)).size}
+                                </p>
+                              </div>
+                            </div>
+                            
+                            {asset.isRental && asset.rentalIncome && asset.rentalFrequency && (
+                              <Card className="bg-muted/30">
+                                <CardHeader className="pb-2">
+                                  <CardTitle className="text-lg">Rental Income vs. Expenses</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                      <p className="text-sm text-muted-foreground mb-1">Annual Rental Income</p>
+                                      <p className="text-xl font-semibold text-green-600">
+                                        {formatCurrency(
+                                          asset.rentalIncome * 
+                                          (asset.rentalFrequency === 'monthly' ? 12 : 
+                                           asset.rentalFrequency === 'weekly' ? 52 : 1)
+                                        )}
+                                      </p>
+                                    </div>
+                                    
+                                    <div>
+                                      <p className="text-sm text-muted-foreground mb-1">Annual Expenses</p>
+                                      <p className="text-xl font-semibold text-destructive">
+                                        {formatCurrency(
+                                          Object.values(asset.propertyExpenses as Record<string, PropertyExpense>)
+                                            .reduce((total, expense) => total + expense.annualTotal, 0)
+                                        )}
+                                      </p>
+                                    </div>
+                                    
+                                    <div className="col-span-2">
+                                      <p className="text-sm text-muted-foreground mb-1">Net Annual Income</p>
+                                      <p className="text-2xl font-bold text-primary">
+                                        {formatCurrency(
+                                          (asset.rentalIncome * 
+                                           (asset.rentalFrequency === 'monthly' ? 12 : 
+                                            asset.rentalFrequency === 'weekly' ? 52 : 1)) - 
+                                          Object.values(asset.propertyExpenses as Record<string, PropertyExpense>)
+                                            .reduce((total, expense) => total + expense.annualTotal, 0)
+                                        )}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground">Add property expenses to view expense analysis.</p>
+                        )}
+                      </CardContent>
+                    </Card>
                   </div>
                 )}
               </TabsContent>
