@@ -19,7 +19,6 @@ import { z } from "zod";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
 import { upload, getFileUrl, deleteFile } from "./utils/upload";
-import path from "path";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
