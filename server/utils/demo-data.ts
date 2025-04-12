@@ -87,6 +87,39 @@ export async function createDemoAssets(userId: number): Promise<Asset[]> {
       bathrooms: 2,
       parkingSpaces: 1
     },
+    {
+      userId,
+      assetClassId: 3, // Real Estate
+      assetHoldingTypeId: 1, // Personal
+      name: "Investment Property",
+      description: "Rental property investment",
+      value: 380000,
+      purchasePrice: 320000,
+      purchaseDate: new Date("2018-09-10").toISOString(),
+      growthRate: 3.5,
+      isLiability: false,
+      propertyType: "residential",
+      address: "45 Park Avenue",
+      suburb: "Riverdale",
+      state: "VIC",
+      postcode: "3000",
+      country: "Australia",
+      bedrooms: 2,
+      bathrooms: 1,
+      parkingSpaces: 1,
+      isRental: true,
+      rentalIncome: 1900,
+      rentalFrequency: "monthly",
+      vacancyRate: 5,
+      hasMortgage: true,
+      mortgageAmount: 250000,
+      mortgageInterestRate: 3.85,
+      mortgageTerm: 360,
+      mortgageStartDate: new Date("2018-09-15").toISOString(),
+      mortgageLender: "Westpac Bank",
+      mortgageType: "variable",
+      mortgagePaymentFrequency: "monthly",
+    },
     
     // Loans & Liabilities
     {

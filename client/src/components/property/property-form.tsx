@@ -100,12 +100,17 @@ export function PropertyForm({
     },
   });
 
-  // Watch for isRental changes in the form
+  // Watch for isRental and hasMortgage changes in the form
   const isRentalValue = form.watch("isRental");
+  const hasMortgageValue = form.watch("hasMortgage");
   
   useEffect(() => {
     setIsRental(isRentalValue || false);
   }, [isRentalValue]);
+  
+  useEffect(() => {
+    setHasMortgage(hasMortgageValue || false);
+  }, [hasMortgageValue]);
 
   // Update form when defaultValues change
   useEffect(() => {
@@ -655,6 +660,206 @@ export function PropertyForm({
                       <FormDescription>
                         Estimated percentage of time the property is vacant per year
                       </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Mortgage Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center text-xl">
+              <PiggyBank className="mr-2 h-5 w-5" />
+              Mortgage Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="hasMortgage"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Property Mortgage</FormLabel>
+                    <FormDescription>
+                      Does this property have a mortgage?
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            
+            {hasMortgage && (
+              <div className="space-y-4 animate-in fade-in-50 duration-300">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="mortgageAmount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Mortgage Amount ($)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : 0)}
+                            onBlur={field.onBlur}
+                            name={field.name}
+                            ref={field.ref}
+                            value={field.value === null || field.value === undefined ? '' : field.value}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Current outstanding mortgage balance
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="mortgageLender"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Mortgage Lender</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="e.g., ANZ, Commonwealth Bank" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="mortgageInterestRate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Interest Rate (%)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            max="100"
+                            onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : 0)}
+                            onBlur={field.onBlur}
+                            name={field.name}
+                            ref={field.ref}
+                            value={field.value === null || field.value === undefined ? '' : field.value}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="mortgageType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Interest Rate Type</FormLabel>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select interest rate type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="fixed">Fixed</SelectItem>
+                            <SelectItem value="variable">Variable</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="mortgageTerm"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Loan Term (months)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="1"
+                            max="1200"
+                            onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : 360)}
+                            onBlur={field.onBlur}
+                            name={field.name}
+                            ref={field.ref}
+                            value={field.value === null || field.value === undefined ? '' : field.value}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Total term of the mortgage (e.g., 360 months = 30 years)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="mortgageStartDate"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Mortgage Start Date</FormLabel>
+                        <DatePicker
+                          date={field.value ? new Date(field.value) : null}
+                          setDate={field.onChange}
+                        />
+                        <FormDescription>
+                          When did the mortgage begin?
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <FormField
+                  control={form.control}
+                  name="mortgagePaymentFrequency"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Payment Frequency</FormLabel>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select payment frequency" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="weekly">Weekly</SelectItem>
+                          <SelectItem value="fortnightly">Fortnightly</SelectItem>
+                          <SelectItem value="monthly">Monthly</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
