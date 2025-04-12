@@ -40,7 +40,7 @@ import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
 import { AssetClass, AssetHoldingType, Asset } from "@shared/schema";
 import { OffsetAccountSection } from "@/components/loans/offset-account-section";
 import { calculateLoanPayment } from "@shared/calculations";
@@ -184,7 +184,7 @@ export default function AssetDetailPage() {
       bedrooms: asset?.bedrooms || null,
       bathrooms: asset?.bathrooms || null,
       landSize: asset?.landSize || null,
-      floorArea: asset?.floorArea || null,
+      // floorArea removed as it's not in the schema
       parkingSpaces: asset?.parkingSpaces || null,
       isRental: asset?.isRental || false,
       rentalIncome: asset?.rentalIncome || null,
@@ -286,7 +286,7 @@ export default function AssetDetailPage() {
       // Then refetch to get fresh data from the server
       queryClient.fetchQuery({ 
         queryKey: [`/api/assets/${assetId}`],
-        queryFn: getQueryFn()
+        queryFn: getQueryFn({ on401: "throw" })
       }).then(freshData => {
         console.log("Forced refetch complete. Fresh data received:", freshData);
       });

@@ -38,8 +38,12 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
   useEffect(() => {
     // Force update the expenses state when the value prop changes
     // This is critical to ensure the table refreshes after a form submission
-    console.log("Value prop changed. New expenses:", value);
+    const now = new Date().toISOString();
+    console.log(`[${now}] Value prop changed in PropertyExpenses component`);
+    console.log("New expenses from prop:", value);
     console.log("Current local expenses state:", expenses);
+    console.log(`Number of expenses in prop: ${Object.keys(value || {}).length}`);
+    console.log(`Number of expenses in state: ${Object.keys(expenses || {}).length}`);
     
     // Always update the local state to match the prop value
     // This ensures we always display the latest data from the server
@@ -75,7 +79,16 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
     // Propagate change to parent
     onChange(updatedExpenses);
     
-    console.log("After adding expense:", updatedExpenses);
+    const now = new Date().toISOString();
+    console.log(`[${now}] Added new expense with ID: ${id}`);
+    console.log("New expense details:", {
+      category: newExpense.category,
+      description: newExpense.description,
+      amount: newExpense.amount,
+      frequency: newExpense.frequency,
+      annualTotal: annualTotal
+    });
+    console.log(`Total expenses after add: ${Object.keys(updatedExpenses).length}`);
     
     setNewExpense({
       category: "",
