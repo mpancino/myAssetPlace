@@ -326,8 +326,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             : req.body.propertyExpenses;
           
           // Create a deduplication tracker
-          const dedupeTracker = {};
-          const dedupedExpenses = {};
+          const dedupeTracker: Record<string, boolean> = {};
+          const dedupedExpenses: Record<string, any> = {};
           
           // Sort expenses to prioritize "expense-N" IDs over random UUIDs
           const sortedEntries = Object.entries(expensesData).sort(([keyA], [keyB]) => {
@@ -340,9 +340,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Process entries with deduplication
           sortedEntries.forEach(([key, expense]) => {
-            if (expense && typeof expense === 'object' && expense.category && expense.amount) {
+            // Make sure expense is an object and has required properties
+            if (expense && typeof expense === 'object' && 
+                'category' in expense && 
+                'amount' in expense) {
+              
+              // Safely extract properties with type checking
+              const category = String(expense.category || '');
+              const amount = Number(expense.amount || 0);
+              // Check if frequency property exists, defaulting to monthly
+              const frequency = typeof (expense as any).frequency === 'string' 
+                ? String((expense as any).frequency) 
+                : 'monthly';
+              
+              // Skip empty or invalid expenses
+              if (!category || amount <= 0) return;
+              
               // Create a unique key for this expense signature
-              const dedupeKey = `${expense.category}-${expense.amount}-${expense.frequency || 'monthly'}`;
+              const dedupeKey = `${category}-${amount}-${frequency}`;
               
               // Skip if we've already seen this signature
               if (dedupeTracker[dedupeKey]) {
