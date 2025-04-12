@@ -7,10 +7,12 @@ import { AssetAllocationChart } from "@/components/dashboard/asset-allocation-ch
 import { ViewToggle } from "@/components/dashboard/view-toggle";
 import FloatingActionButton from "@/components/ui/floating-action-button";
 import ModeToggle from "@/components/ui/mode-toggle";
+import { ProtectedFeature } from "@/components/protected-feature";
+import { useSubscription } from "@/hooks/use-subscription";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { Download, MoreHorizontal, Filter, Database } from "lucide-react";
+import { Download, MoreHorizontal, Filter, Database, Sparkles, ArrowUpCircle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Asset, AssetClass, AssetHoldingType, SubscriptionPlan } from "@shared/schema";
@@ -32,6 +34,7 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const { toast } = useToast();
+  const { showUpgradePrompt } = useSubscription();
   const [viewBy, setViewBy] = useState<"assetClass" | "holdingType">("assetClass");
 
   // Fetch user subscription details
@@ -220,12 +223,31 @@ export default function DashboardPage() {
         {/* Advanced Asset Allocation Chart with View Toggling */}
         <div className="mb-6">
           <ViewToggle view={viewBy} onChange={setViewBy} />
-          <AssetAllocationChart 
-            assets={assets} 
-            assetClasses={assetClasses} 
-            holdingTypes={holdingTypes} 
-            viewBy={viewBy} 
-          />
+          <ProtectedFeature 
+            protection={{ type: "mode", mode: "advanced" }}
+            fallback={
+              <div className="bg-muted/20 border-2 border-dashed border-muted rounded-lg p-6 my-4 text-center">
+                <h3 className="font-medium text-lg mb-2">Advanced Asset Visualization</h3>
+                <p className="text-muted-foreground mb-4">
+                  Upgrade to Advanced Mode to access detailed asset allocation charts and analysis tools.
+                </p>
+                <Button 
+                  onClick={() => showUpgradePrompt("Advanced Asset Visualization")}
+                  variant="outline"
+                >
+                  <Sparkles className="h-4 w-4 mr-2 text-primary" />
+                  Upgrade Now
+                </Button>
+              </div>
+            }
+          >
+            <AssetAllocationChart 
+              assets={assets} 
+              assetClasses={assetClasses} 
+              holdingTypes={holdingTypes} 
+              viewBy={viewBy} 
+            />
+          </ProtectedFeature>
         </div>
 
         {/* Asset allocation and Recent assets in different layouts based on screen size */}
