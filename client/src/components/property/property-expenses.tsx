@@ -164,17 +164,43 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
   const hasRecentLocalChanges = useRef(false);
   const localChangesTimestamp = useRef<number | null>(null);
   
-  // Function to mark that we've made local changes
+  // Function to mark that we've made local changes - with much longer persistence
   const markLocalChanges = useCallback(() => {
     hasRecentLocalChanges.current = true;
     localChangesTimestamp.current = Date.now();
     
-    // Automatically clear the local changes flag after a reasonable time
-    // This ensures we eventually sync with server if a refetch doesn't happen
+    console.log('[LOCAL CHANGES] Marked local changes at:', new Date().toISOString());
+    
+    // Save the current state to localStorage as a backup
+    // This creates an additional safety net for our expense data
+    try {
+      if (Object.keys(expenses).length > 0) {
+        const backupKey = `propertyExpenses_backup_${Date.now()}`;
+        localStorage.setItem(backupKey, JSON.stringify(expenses));
+        console.log('[BACKUP] Saved expenses state to localStorage:', backupKey);
+        
+        // Clean up old backups to prevent storage bloat
+        const allKeys = Object.keys(localStorage);
+        const expenseBackups = allKeys.filter(k => k.startsWith('propertyExpenses_backup_'));
+        if (expenseBackups.length > 5) {
+          // Keep only the 5 most recent backups
+          expenseBackups
+            .sort()
+            .slice(0, expenseBackups.length - 5)
+            .forEach(k => localStorage.removeItem(k));
+        }
+      }
+    } catch (e) {
+      console.error('[BACKUP] Failed to save expenses to localStorage:', e);
+    }
+    
+    // Automatically clear the local changes flag after a much longer time
+    // This significantly extends our "protection window" for local changes
     setTimeout(() => {
+      console.log('[LOCAL CHANGES] Clearing local changes flag after timeout');
       hasRecentLocalChanges.current = false;
-    }, 2000); // 2 seconds should be enough for most server operations to complete
-  }, []);
+    }, 10000); // 10 seconds gives much more time for server operations to complete
+  }, [expenses]);
   
   // Function to check if we should accept external updates
   const shouldAcceptExternalUpdates = useCallback(() => {
@@ -190,7 +216,7 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
     return false;
   }, []);
   
-  // External data sync - with improved logic for handling local vs server state
+  // External data sync - with significantly improved logic for handling local vs server state
   useEffect(() => {
     // Always skip sync during active processing
     if (isProcessing) {
@@ -209,6 +235,14 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
     const incomingKeys = Object.keys(value || {});
     const incomingExpenses = value || {};
     
+    // If we have expenses locally but incoming is empty, preserve our local state
+    if (currentKeys.length > 0 && incomingKeys.length === 0) {
+      console.log('[SYNC PREVENTED] Incoming data has no expenses but local state has expenses. Preserving local state.');
+      // Notify parent of our current state to keep it in sync
+      onChange(expenses);
+      return;
+    }
+    
     // Only sync if there's an actual difference
     if (JSON.stringify(currentKeys.sort()) !== JSON.stringify(incomingKeys.sort()) ||
         JSON.stringify(expenses) !== JSON.stringify(incomingExpenses)) {
@@ -217,22 +251,52 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
       console.log('Current expense count:', currentKeys.length);
       console.log('Incoming expense count:', incomingKeys.length);
       
-      // If we're accepting an update with fewer expenses than we have locally,
-      // it might be a race condition where the server hasn't processed our additions yet
-      if (incomingKeys.length < currentKeys.length && hasRecentLocalChanges.current) {
-        console.log('[SYNC DELAYED] Incoming data has fewer expenses than local state. Delaying sync to prevent data loss.');
+      // CRITICAL FIX: If we have more expenses locally than what's coming in,
+      // and we have recent changes, ALWAYS preserve our local state
+      if (currentKeys.length > incomingKeys.length) {
+        console.log('[SYNC PREVENTED] Local state has more expenses than incoming data. Preserving local state.');
+        
+        // Proactively notify the parent of our current state to keep it in sync
+        onChange(expenses);
         return;
       }
       
-      isExternalUpdate.current = true;
+      // Special case: if incoming has the same number but different expenses,
+      // merge rather than replace when we have recent changes
+      if (currentKeys.length > 0 && 
+          currentKeys.length === incomingKeys.length && 
+          hasRecentLocalChanges.current) {
+          
+        // Check if the sets are actually different
+        // Using Array methods instead of Set iteration to avoid TypeScript downlevel iteration issues
+        const isDifferent = currentKeys.some(id => !incomingKeys.includes(id)) || 
+                           incomingKeys.some(id => !currentKeys.includes(id));
+                           
+        if (isDifferent) {
+          console.log('[SYNC MERGE] Merging local expenses with incoming expenses');
+          // Keep our expenses but also add any new ones from incoming
+          const mergedExpenses = { ...incomingExpenses, ...expenses };
+          
+          isExternalUpdate.current = true;
+          applyCommand({ type: 'SYNC', expenses: mergedExpenses });
+          
+          setTimeout(() => {
+            isExternalUpdate.current = false;
+          }, 200);
+          
+          return;
+        }
+      }
       
+      // Default case: accept the incoming changes
+      isExternalUpdate.current = true;
       applyCommand({ type: 'SYNC', expenses: incomingExpenses });
       
       setTimeout(() => {
         isExternalUpdate.current = false;
       }, 200);
     }
-  }, [value, expenses, applyCommand, isProcessing, shouldAcceptExternalUpdates]);
+  }, [value, expenses, applyCommand, isProcessing, shouldAcceptExternalUpdates, onChange]);
 
   // Handler for adding a new expense
   const handleAddExpense = useCallback(() => {
