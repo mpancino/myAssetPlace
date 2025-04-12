@@ -45,7 +45,7 @@ export function ExpenseEditModal() {
   
   // Use the asset class expense categories if available, or fall back to defaults
   const availableCategories = expenseCategories && expenseCategories.length > 0
-    ? expenseCategories.map((cat: any) => typeof cat === 'string' ? cat : cat.name)
+    ? expenseCategories.map((cat) => typeof cat === 'string' ? cat : cat.name)
     : DEFAULT_EXPENSE_CATEGORIES;
   
   // Form state
@@ -145,7 +145,7 @@ export function ExpenseEditModal() {
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableCategories.map((cat: string) => (
+                  {availableCategories.map((cat) => (
                     <SelectItem key={cat} value={cat}>
                       {cat}
                     </SelectItem>

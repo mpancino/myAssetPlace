@@ -444,11 +444,18 @@ export function PropertyExpenses({
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {availableCategories.map((category: string) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
+                    {availableCategories.map((category) => {
+                      // Handle both string categories and standardized category objects
+                      const categoryName = typeof category === 'string' ? 
+                        category : 
+                        category.name;
+                        
+                      return (
+                        <SelectItem key={categoryName} value={categoryName}>
+                          {categoryName}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>

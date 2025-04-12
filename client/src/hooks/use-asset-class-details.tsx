@@ -78,7 +78,7 @@ function parseExpenseCategories(expenseCategories: any): StandardizedExpenseCate
       // If it's a string, create a simple category object
       if (typeof cat === 'string') {
         return {
-          id: crypto.randomUUID(), // Generate a random ID for string categories
+          id: crypto.randomUUID?.() || `cat-${Math.random().toString(36).substring(2, 9)}`, // Generate an ID with fallback
           name: cat,
           description: '',
           defaultFrequency: 'monthly'
@@ -89,7 +89,7 @@ function parseExpenseCategories(expenseCategories: any): StandardizedExpenseCate
       if (typeof cat === 'object' && cat !== null) {
         // Ensure it has an ID
         if (!cat.id) {
-          cat.id = crypto.randomUUID();
+          cat.id = crypto.randomUUID?.() || `cat-${Math.random().toString(36).substring(2, 9)}`;
         }
         
         // Ensure it has a name
@@ -107,7 +107,7 @@ function parseExpenseCategories(expenseCategories: any): StandardizedExpenseCate
       
       // Fallback for unexpected types
       return {
-        id: crypto.randomUUID(),
+        id: crypto.randomUUID?.() || `cat-${Math.random().toString(36).substring(2, 9)}`,
         name: String(cat),
         description: '',
         defaultFrequency: 'monthly'

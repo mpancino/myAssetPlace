@@ -134,7 +134,7 @@ export function InvestmentExpenses({
   
   // Use the asset class expense categories if available, or fall back to defaults
   const availableCategories = expenseCategories && expenseCategories.length > 0
-    ? expenseCategories.map((cat: any) => typeof cat === 'string' ? cat : cat.name) 
+    ? expenseCategories.map((cat) => typeof cat === 'string' ? cat : cat.name) 
     : DEFAULT_EXPENSE_CATEGORIES;
   
   // Core state
@@ -466,7 +466,7 @@ export function InvestmentExpenses({
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {availableCategories.map((category: string) => (
+                    {availableCategories.map((category) => (
                       <SelectItem key={category} value={category}>
                         {category}
                       </SelectItem>

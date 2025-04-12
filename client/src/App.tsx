@@ -20,6 +20,9 @@ import { UpgradePromptManager } from "@/components/upgrade-prompt-manager";
 import DemoOnboardingDialog from "@/components/onboarding/demo-onboarding-dialog";
 import { ExpenseCategoryEditorProvider } from "@/contexts/expense-category-edit-context";
 import { ExpenseCategoryEditModal } from "@/components/admin/expense-category-edit-modal";
+// Import expense management components
+import { ExpenseEditProvider } from "@/contexts/expense-edit-context";
+import { ExpenseEditModal } from "@/components/expense/expense-edit-modal";
 
 function Router() {
   return (
@@ -47,11 +50,14 @@ function App() {
     <AuthProvider>
       <SubscriptionProvider>
         <ExpenseCategoryEditorProvider>
-          <Router />
-          <DemoOnboardingDialog />
-          <UpgradePromptManager />
-          <ExpenseCategoryEditModal />
-          <Toaster />
+          <ExpenseEditProvider>
+            <Router />
+            <DemoOnboardingDialog />
+            <UpgradePromptManager />
+            <ExpenseCategoryEditModal />
+            <ExpenseEditModal />
+            <Toaster />
+          </ExpenseEditProvider>
         </ExpenseCategoryEditorProvider>
       </SubscriptionProvider>
     </AuthProvider>
