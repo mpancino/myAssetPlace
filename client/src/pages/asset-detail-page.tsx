@@ -818,10 +818,25 @@ export default function AssetDetailPage() {
       }
     }
     
+    // Lock current expenses to prevent refresh changing them before save
+    const finalPropertyExpenses = {...propertyExpensesToSave};
+    const finalInvestmentExpenses = {...investmentExpensesToSave};
+    
+    // Update UI to show we're saving
+    const currentIsInvestmentAsset = selectedClass?.name?.toLowerCase() === "investments";
+    if (currentIsInvestmentAsset) {
+      toast({
+        title: "Saving investment expenses",
+        description: `Saving ${Object.keys(finalInvestmentExpenses).length} expenses...`,
+        duration: 2000,
+      });
+    }
+    
+    // Now trigger the actual save
     updateAssetMutation.mutate({
       ...values,
-      propertyExpenses: propertyExpensesToSave,
-      investmentExpenses: investmentExpensesToSave
+      propertyExpenses: finalPropertyExpenses,
+      investmentExpenses: finalInvestmentExpenses
     });
   };
   
