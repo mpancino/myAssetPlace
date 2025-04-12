@@ -69,31 +69,44 @@ import type { PropertyExpense } from "@shared/schema";
 // Helper function to safely parse property expenses data
 function parsePropertyExpenses(data: any): Record<string, PropertyExpense> {
   try {
-    // Enhanced debugging
-    console.log('[PARSE] Input type:', typeof data);
-    console.log('[PARSE] Input value:', data ? (typeof data === 'object' ? 'Object with keys: ' + Object.keys(data).join(', ') : data.toString().substring(0, 100)) : 'null/undefined');
+    // Create a unique ID for this parse operation to trace it through logs
+    const parseId = Date.now().toString().slice(-4);
+    console.log(`\n[PARSE:${parseId}] ===== PARSE PROPERTY EXPENSES =====`);
+    console.log(`[PARSE:${parseId}] Input type:`, typeof data);
+    console.log(`[PARSE:${parseId}] Input value:`, data ? (typeof data === 'object' ? 'Object with keys: ' + Object.keys(data).join(', ') : data.toString().substring(0, 100)) : 'null/undefined');
+    
+    // Log the call stack to track where this is being called from
+    console.log(`[PARSE:${parseId}] Call stack:`, new Error().stack?.split('\n').slice(2, 5).join('\n'));
     
     // If it's a string, try to parse it as JSON
     if (typeof data === 'string') {
       if (data.trim() === '') {
-        console.log('[PARSE] Empty string detected, returning empty object');
+        console.log(`[PARSE:${parseId}] Empty string detected, returning empty object`);
         return {};
       }
       
       const parsedData = JSON.parse(data) as Record<string, PropertyExpense>;
-      console.log('[PARSE] Parsed string into object with keys:', Object.keys(parsedData));
+      console.log(`[PARSE:${parseId}] Parsed string into object with ${Object.keys(parsedData).length} items`);
+      console.log(`[PARSE:${parseId}] Keys:`, Object.keys(parsedData));
+      console.log(`[PARSE:${parseId}] ===== END PARSE =====\n`);
       return parsedData;
     }
     
     // If it's already an object, create a deep clone to break reference cycles
     if (data && typeof data === 'object') {
-      console.log('[PARSE] Received object with keys:', Object.keys(data));
+      console.log(`[PARSE:${parseId}] Received object with ${Object.keys(data).length} items`);
+      console.log(`[PARSE:${parseId}] Keys:`, Object.keys(data));
+      
       // Create a deep clone to ensure we're not affected by reference issues
-      return JSON.parse(JSON.stringify(data)) as Record<string, PropertyExpense>;
+      const clonedData = JSON.parse(JSON.stringify(data)) as Record<string, PropertyExpense>;
+      console.log(`[PARSE:${parseId}] Created deep clone with ${Object.keys(clonedData).length} items`);
+      console.log(`[PARSE:${parseId}] ===== END PARSE =====\n`);
+      return clonedData;
     }
     
     // Return empty object as fallback
-    console.log('[PARSE] Fallback: returning empty object');
+    console.log(`[PARSE:${parseId}] Fallback: returning empty object`);
+    console.log(`[PARSE:${parseId}] ===== END PARSE =====\n`);
     return {};
   } catch (err) {
     console.error('[ERROR] Failed to parse property expenses:', err);
@@ -1801,6 +1814,7 @@ export default function AssetDetailPage() {
                               <FormItem>
                                 <FormControl>
                                   <PropertyExpenses
+                                    key={`expenses-edit-${asset.id}-${Date.now()}`}
                                     value={field.value as Record<string, PropertyExpense> || {}}
                                     onChange={(newExpenses) => {
                                       console.log("Expense component updated with", Object.keys(newExpenses).length, "expenses");
@@ -1817,7 +1831,7 @@ export default function AssetDetailPage() {
                                     }}
                                     isEditMode={isEditing}
                                     isSaving={savePropertyExpensesMutation.isPending}
-                                    isSaved={savePropertyExpensesMutation.isSuccess}
+                                    isSaved={false} // Never show the "saved" banner
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -1829,6 +1843,7 @@ export default function AssetDetailPage() {
                             {/* Read-only overlay when not in edit mode */}
                             <div className="absolute inset-0 bg-transparent z-10" onClick={() => setIsEditing(true)}></div>
                             <PropertyExpenses
+                              key={`expenses-view-${asset.id}-${Date.now()}`}
                               value={parsePropertyExpenses(asset.propertyExpenses)}
                               onChange={(value) => {
                                 // Read-only when not editing - should trigger edit mode
@@ -1853,6 +1868,7 @@ export default function AssetDetailPage() {
                     {/* Property Expense Analysis */}
                     {asset.propertyExpenses && Object.keys(parsePropertyExpenses(asset.propertyExpenses)).length > 0 && (
                       <PropertyExpenseAnalysis 
+                        key={`expense-analysis-${asset.id}-${Date.now()}`}
                         expenses={parsePropertyExpenses(asset.propertyExpenses)}
                         rentalIncome={asset.isRental ? asset.rentalIncome || 0 : 0}
                         rentalFrequency={asset.rentalFrequency || "monthly"}

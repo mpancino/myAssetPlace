@@ -300,9 +300,25 @@ export function PropertyExpenses({
   
   // Initialize expenses from props - critical for data persistence
   useEffect(() => {
-    const parsedExpenses = parseExpenseData(value);
-    // Update local state with parsed expenses
-    setExpenses(parsedExpenses);
+    console.log('====== VALUE CHANGE EFFECT ======');
+    console.log('[EFFECT] Value changed in PropertyExpenses component');
+    console.log('[EFFECT] Value type:', typeof value);
+    console.log('[EFFECT] Raw value:', value);
+    
+    // Force a clean slate by setting expenses to empty object first
+    setExpenses({});
+    
+    // Then parse and set the expenses after a short delay to ensure React renders the change
+    setTimeout(() => {
+      const parsedExpenses = parseExpenseData(value);
+      console.log('[EFFECT] Parsed expenses count:', Object.keys(parsedExpenses).length);
+      console.log('[EFFECT] Parsed expense IDs:', Object.keys(parsedExpenses));
+      
+      // Update local state with parsed expenses
+      setExpenses(parsedExpenses);
+      console.log('[EFFECT] Updated expenses state');
+      console.log('====== END VALUE CHANGE EFFECT ======');
+    }, 50);
   }, [value, parseExpenseData]);
 
   // Handler for adding a new expense
@@ -558,9 +574,18 @@ export function PropertyExpenses({
     );
   }, [expenses]);
 
+  // Log when the component renders for debugging
+  console.log('====== PROPERTY EXPENSES RENDER ======');
+  console.log('[RENDER] Current expenses in state:', Object.keys(expenses).length);
+  console.log('[RENDER] Expense IDs:', Object.keys(expenses));
+  console.log('[RENDER] Edit mode:', isEditMode);
+  console.log('[RENDER] Value from parent:', typeof value, 
+    typeof value === 'object' ? Object.keys(value || {}).length + ' items' : value);
+  console.log('====== END PROPERTY EXPENSES RENDER ======');
+    
   return (
     <div className="space-y-4">
-      {/* Database status indicators */}
+      {/* Only show loading indicator - no success banners */}
       {isSaving && (
         <div className="bg-blue-50 border border-blue-200 p-2 rounded mb-2 flex items-center text-blue-700">
           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -568,13 +593,7 @@ export function PropertyExpenses({
         </div>
       )}
       
-      {isSaved && !isSaving && (
-        <div className="bg-green-50 border border-green-200 p-2 rounded mb-2 flex items-center text-green-700">
-          <CheckCircle className="h-4 w-4 mr-2" />
-          <span className="text-sm">Expenses saved to database successfully!</span>
-        </div>
-      )}
-      
+      {/* Non-edit mode instruction */}
       {!isEditMode && (
         <div className="bg-blue-50 border border-blue-200 p-2 rounded mb-2 flex items-center text-blue-700">
           <AlertTriangle className="h-4 w-4 mr-2" />
