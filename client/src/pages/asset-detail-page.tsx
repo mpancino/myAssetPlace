@@ -23,7 +23,8 @@ import {
   Tag, 
   Building, 
   CreditCard, 
-  AlertTriangle
+  AlertTriangle,
+  Link
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -32,6 +33,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { AssetClass, AssetHoldingType, Asset } from "@shared/schema";
+import { OffsetAccountSection } from "@/components/loans/offset-account-section";
 import { formatCurrency } from "@/lib/utils";
 import { 
   AlertDialog,
@@ -779,7 +781,16 @@ export default function AssetDetailPage() {
                             <p className="font-medium">Personal Loan</p>
                           </div>
                         </div>
-                        {/* Additional loan fields would go here */}
+                        
+                        {/* Only show offset accounts if this is a liability */}
+                        {asset?.isLiability && asset?.id && (
+                          <div className="mt-6">
+                            <OffsetAccountSection 
+                              loanId={asset.id} 
+                              loanInterestRate={asset.incomeYield ? asset.incomeYield * 100 : undefined}
+                            />
+                          </div>
+                        )}
                       </div>
                     )}
                     
