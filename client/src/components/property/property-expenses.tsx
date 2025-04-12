@@ -234,12 +234,13 @@ export function PropertyExpenses({
       
       // Handle string format (needs parsing)
       if (typeof value === 'string') {
+        const stringValue = String(value);
         try {
-          if (value.trim() === '') {
+          if (!stringValue || stringValue === '') {
             console.log('[PROPERTY EXPENSES] Empty string received');
             parsedExpenses = {};
           } else {
-            parsedExpenses = JSON.parse(value);
+            parsedExpenses = JSON.parse(stringValue);
             console.log('[PROPERTY EXPENSES] Successfully parsed string to object with', Object.keys(parsedExpenses).length, 'expenses');
           }
         } catch (parseError) {
@@ -509,7 +510,7 @@ export function PropertyExpenses({
                             variant="outline"
                             size="icon"
                             onClick={() => handleStartEdit(expense)}
-                            disabled={isProcessing || editingExpenseId !== null}
+                            disabled={isProcessing || (editingExpenseId !== null && editingExpenseId !== expense.id)}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -517,7 +518,7 @@ export function PropertyExpenses({
                             variant="outline"
                             size="icon"
                             onClick={() => handleDeleteExpense(expense.id)}
-                            disabled={isProcessing || editingExpenseId !== null}
+                            disabled={isProcessing || (editingExpenseId !== null && editingExpenseId !== expense.id)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
