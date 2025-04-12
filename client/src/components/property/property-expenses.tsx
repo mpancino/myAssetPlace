@@ -1,17 +1,18 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
-import { Plus, Trash2, Edit, Check, X, AlertTriangle, PieChart, Calculator, CheckCircle, Loader2 } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { formatCurrency, cn } from "@/lib/utils";
 import { PropertyExpense } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+import { AlertTriangle, BarChart3, Calculator, Check, CheckCircle, Edit, Loader2, PieChart, Plus, Trash2, X } from "lucide-react";
 
-// Frequency multiplier constants
+// Type for frequency multiplier to calculate annual totals
 type FrequencyMultiplier = {
   [key: string]: number;
   monthly: number;
@@ -19,27 +20,12 @@ type FrequencyMultiplier = {
   annually: number;
 };
 
+// Define frequency multipliers for annual calculations
 const FREQUENCY_MULTIPLIERS: FrequencyMultiplier = {
   monthly: 12,
   quarterly: 4,
   annually: 1,
 };
-
-// Command pattern for expense operations
-type ExpenseCommand = 
-  | { type: 'ADD', expense: PropertyExpense }
-  | { type: 'UPDATE', id: string, data: Partial<Omit<PropertyExpense, 'id'>> }
-  | { type: 'DELETE', id: string }
-  | { type: 'SYNC', expenses: Record<string, PropertyExpense> };
-
-interface PropertyExpensesProps {
-  value: Record<string, PropertyExpense>;
-  onChange: (value: Record<string, PropertyExpense>) => void;
-  currencySymbol?: string;
-  isSaving?: boolean;
-  isSaved?: boolean;
-  isEditMode?: boolean;
-}
 
 // Categories for expense types
 const EXPENSE_CATEGORIES = [
@@ -57,21 +43,31 @@ const EXPENSE_CATEGORIES = [
   "Other",
 ];
 
-// A new component to show expense analysis
+/**
+ * Interface for the PropertyExpenses component
+ */
+interface PropertyExpensesProps {
+  value: Record<string, PropertyExpense>;
+  onChange: (value: Record<string, PropertyExpense>) => void;
+  currencySymbol?: string;
+  isSaving?: boolean;
+  isSaved?: boolean;
+  isEditMode?: boolean;
+}
+
+/**
+ * Component for displaying property expense analysis
+ */
 export function PropertyExpenseAnalysis({ 
   expenses, 
   rentalIncome = 0,
   rentalFrequency = "monthly",
-  currencySymbol = "$",
-  isSaving = false,
-  isSaved = false
+  currencySymbol = "$"
 }: {
   expenses: Record<string, PropertyExpense>;
   rentalIncome?: number;
   rentalFrequency?: string;
   currencySymbol?: string;
-  isSaving?: boolean;
-  isSaved?: boolean;
 }) {
   // Calculate total annual expenses
   const totalAnnualExpenses = useMemo(() => 
@@ -185,15 +181,24 @@ export function PropertyExpenseAnalysis({
   );
 }
 
-export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSaving = false, isSaved = false, isEditMode = true }: PropertyExpensesProps) {
+/**
+ * Component for managing property expenses
+ */
+export function PropertyExpenses({ 
+  value, 
+  onChange, 
+  currencySymbol = "$", 
+  isSaving = false, 
+  isSaved = false, 
+  isEditMode = true
+}: PropertyExpensesProps) {
   const { toast } = useToast();
+  
+  // State for expense form and list
+  const [expenses, setExpenses] = useState<Record<string, PropertyExpense>>({});
   const [isAddingExpense, setIsAddingExpense] = useState(false);
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
-  const [expenses, setExpenses] = useState<Record<string, PropertyExpense>>({});
   const [isProcessing, setIsProcessing] = useState(false);
-  
-  // Track if we're in an external update from parent
-  const isExternalUpdate = useRef(false);
   
   // Default new expense form data
   const defaultNewExpense = {
@@ -206,9 +211,9 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
   const [newExpense, setNewExpense] = useState<Omit<PropertyExpense, "id" | "annualTotal">>(defaultNewExpense);
 
   // Calculate annual total based on amount and frequency
-  const calculateAnnualTotal = useCallback((amount: number, frequency: string): number => {
+  const calculateAnnualTotal = (amount: number, frequency: string): number => {
     return amount * (FREQUENCY_MULTIPLIERS[frequency as keyof FrequencyMultiplier] || 12);
-  }, []);
+  };
 
   // Reset form state
   const resetForm = useCallback(() => {
@@ -217,170 +222,25 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
     setEditingExpenseId(null);
   }, []);
 
-  // Handle expense operations with command pattern
-  const processExpenseCommand = useCallback((command: ExpenseCommand): Record<string, PropertyExpense> => {
-    let updatedExpenses: Record<string, PropertyExpense> = { ...expenses };
-    const timestamp = new Date().toISOString();
-    
-    switch (command.type) {
-      case 'ADD':
-        console.log(`[${timestamp}] Executing ADD command for expense ID: ${command.expense.id}`);
-        updatedExpenses = {
-          ...updatedExpenses,
-          [command.expense.id]: command.expense,
-        };
-        break;
-        
-      case 'UPDATE':
-        console.log(`[${timestamp}] Executing UPDATE command for expense ID: ${command.id}`);
-        if (updatedExpenses[command.id]) {
-          const currentExpense = updatedExpenses[command.id];
-          updatedExpenses = {
-            ...updatedExpenses,
-            [command.id]: {
-              ...currentExpense,
-              ...command.data,
-              annualTotal: calculateAnnualTotal(
-                command.data.amount !== undefined ? command.data.amount : currentExpense.amount,
-                command.data.frequency !== undefined ? command.data.frequency : currentExpense.frequency
-              ),
-            },
-          };
-        }
-        break;
-        
-      case 'DELETE':
-        console.log(`[${timestamp}] Executing DELETE command for expense ID: ${command.id}`);
-        const { [command.id]: _, ...remainingExpenses } = updatedExpenses;
-        updatedExpenses = remainingExpenses;
-        break;
-        
-      case 'SYNC':
-        console.log(`[${timestamp}] Executing SYNC command - replacing expenses with external data`);
-        console.log(`Previous state had ${Object.keys(expenses).length} expenses`);
-        console.log(`New state has ${Object.keys(command.expenses).length} expenses`);
-        updatedExpenses = { ...command.expenses };
-        break;
-    }
-    
-    return updatedExpenses;
-  }, [expenses, calculateAnnualTotal]);
-
-  // Apply a command, update state, and notify parent
-  const applyCommand = useCallback((command: ExpenseCommand) => {
-    setIsProcessing(true);
-    
-    // Process the command to get updated expenses
-    const updatedExpenses = processExpenseCommand(command);
-    
-    // Update local state first to ensure it's always up to date
-    setExpenses(updatedExpenses);
-    
-    // Log the state before notifying parent
-    console.log(`[EXPENSE COMMAND] ${command.type} completed, notifying parent with ${Object.keys(updatedExpenses).length} expenses`);
-    
-    // Notify parent of changes - parent will handle form state updates
-    // No longer trying to directly save to database from here
-    onChange(updatedExpenses);
-    
-    // Only log detailed info for non-SYNC operations
-    if (command.type !== 'SYNC') {
-      console.log(`After ${command.type.toLowerCase()} operation, total expenses: ${Object.keys(updatedExpenses).length}`);
-    }
-    
-    setIsProcessing(false);
-    
-    return updatedExpenses;
-  }, [processExpenseCommand, onChange]);
-
-  // Track if we have recent local changes that should take precedence
-  const hasRecentLocalChanges = useRef(false);
-  const localChangesTimestamp = useRef<number | null>(null);
-  
-  // Function to mark that we've made local changes - with much longer persistence
-  const markLocalChanges = useCallback(() => {
-    hasRecentLocalChanges.current = true;
-    localChangesTimestamp.current = Date.now();
-    
-    console.log('[LOCAL CHANGES] Marked local changes at:', new Date().toISOString());
-    
-    // Save the current state to localStorage as a backup
-    // This creates an additional safety net for our expense data
-    try {
-      if (Object.keys(expenses).length > 0) {
-        const backupKey = `propertyExpenses_backup_${Date.now()}`;
-        localStorage.setItem(backupKey, JSON.stringify(expenses));
-        console.log('[BACKUP] Saved expenses state to localStorage:', backupKey);
-        
-        // Clean up old backups to prevent storage bloat
-        const allKeys = Object.keys(localStorage);
-        const expenseBackups = allKeys.filter(k => k.startsWith('propertyExpenses_backup_'));
-        if (expenseBackups.length > 5) {
-          // Keep only the 5 most recent backups
-          expenseBackups
-            .sort()
-            .slice(0, expenseBackups.length - 5)
-            .forEach(k => localStorage.removeItem(k));
-        }
-      }
-    } catch (e) {
-      console.error('[BACKUP] Failed to save expenses to localStorage:', e);
-    }
-    
-    // Automatically clear the local changes flag after a much longer time
-    // This significantly extends our "protection window" for local changes
-    setTimeout(() => {
-      console.log('[LOCAL CHANGES] Clearing local changes flag after timeout');
-      hasRecentLocalChanges.current = false;
-    }, 10000); // 10 seconds gives much more time for server operations to complete
-  }, [expenses]);
-  
-  // Function to check if we should accept external updates
-  const shouldAcceptExternalUpdates = useCallback(() => {
-    if (!hasRecentLocalChanges.current) return true;
-    
-    // If it's been more than 1.5 seconds since our local change,
-    // we'll accept external updates even if we flagged local changes
-    if (localChangesTimestamp.current && 
-        Date.now() - localChangesTimestamp.current > 1500) {
-      return true;
-    }
-    
-    return false;
-  }, []);
-  
-  // COMPLETELY DISABLED the sync logic as it was interfering with our direct database writes
-  // Now we always initialize from props to ensure we're using the latest server data
+  // Initialize expenses from props
   useEffect(() => {
-    // Parse and convert property expenses if they're in string format
-    const parseExpenses = (expenseData: any): Record<string, PropertyExpense> => {
-      try {
-        // If it's a string, try to parse it as JSON
-        if (typeof expenseData === 'string') {
-          return JSON.parse(expenseData) as Record<string, PropertyExpense>;
-        }
-        
-        // If it's already an object, return it
-        if (expenseData && typeof expenseData === 'object') {
-          return expenseData as Record<string, PropertyExpense>;
-        }
-        
-        // Return empty object as fallback
-        return {};
-      } catch (err) {
-        console.error('[ERROR] Failed to parse property expenses in component:', err);
-        return {};
-      }
-    };
+    let parsedExpenses: Record<string, PropertyExpense> = {};
     
-    // Always use the value from props to ensure we have the latest server data
-    const parsedValue = parseExpenses(value);
-    if (Object.keys(parsedValue).length > 0) {
-      console.log('[INITIALIZATION] Setting expense data from server props:', Object.keys(parsedValue).length, 'expenses');
-      setExpenses(parsedValue);
-    } else if (Object.keys(expenses).length > 0 && Object.keys(parsedValue).length === 0) {
-      // If we have local expenses but server returned none, warn about potential data loss
-      console.warn('[DATA INCONSISTENCY] Server returned no expenses but local state has expenses');
+    // Parse expense data (handle both string and object formats)
+    try {
+      if (typeof value === 'string') {
+        parsedExpenses = JSON.parse(value);
+      } else if (value && typeof value === 'object') {
+        parsedExpenses = value;
+      }
+    } catch (err) {
+      console.error('Failed to parse property expenses:', err);
+    }
+    
+    // Update local state
+    if (Object.keys(parsedExpenses).length > 0) {
+      console.log('[INITIALIZATION] Setting expense data:', Object.keys(parsedExpenses).length, 'expenses');
+      setExpenses(parsedExpenses);
     }
   }, [value]);
 
@@ -395,6 +255,7 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
       return;
     }
     
+    // Create new expense with ID and annual total
     const id = uuidv4();
     const annualTotal = calculateAnnualTotal(newExpense.amount, newExpense.frequency);
     
@@ -404,18 +265,23 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
       annualTotal,
     };
     
-    console.log("Adding new expense", newExpenseWithId.id);
+    // Update local state
+    const updatedExpenses = {
+      ...expenses,
+      [id]: newExpenseWithId
+    };
     
-    // Add the expense via the command pattern
-    applyCommand({ type: 'ADD', expense: newExpenseWithId });
+    // Update parent state
+    setExpenses(updatedExpenses);
+    onChange(updatedExpenses);
     
+    // Reset form and show success message
     resetForm();
-    
     toast({
       title: "Expense added",
       description: `Added ${newExpense.category} expense with annual total of ${formatCurrency(annualTotal)}`
     });
-  }, [newExpense, applyCommand, calculateAnnualTotal, resetForm, toast]);
+  }, [newExpense, expenses, onChange, resetForm, toast]);
 
   // Handler for updating an existing expense
   const handleUpdateExpense = useCallback((expenseId: string) => {
@@ -428,38 +294,49 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
       return;
     }
     
-    console.log("Updating expense", expenseId);
+    // Calculate annual total for updated expense
+    const annualTotal = calculateAnnualTotal(newExpense.amount, newExpense.frequency);
     
-    // Update the expense via the command pattern
-    applyCommand({ 
-      type: 'UPDATE', 
-      id: expenseId, 
-      data: newExpense 
-    });
+    // Update expense in state
+    const updatedExpenses = {
+      ...expenses,
+      [expenseId]: {
+        ...expenses[expenseId],
+        ...newExpense,
+        annualTotal
+      }
+    };
     
+    // Update parent state
+    setExpenses(updatedExpenses);
+    onChange(updatedExpenses);
+    
+    // Reset form and show success message
     resetForm();
-    
     toast({
       title: "Expense updated",
       description: `Updated ${newExpense.category} expense successfully`
     });
-  }, [newExpense, applyCommand, resetForm, toast]);
+  }, [newExpense, expenses, onChange, resetForm, toast]);
 
   // Handler for deleting an expense
   const handleDeleteExpense = useCallback((expenseId: string) => {
     const expenseToDelete = expenses[expenseId];
     if (!expenseToDelete) return;
     
-    console.log("Deleting expense", expenseId);
+    // Create new expenses object without the deleted expense
+    const { [expenseId]: _, ...remainingExpenses } = expenses;
     
-    // Delete the expense via the command pattern
-    applyCommand({ type: 'DELETE', id: expenseId });
+    // Update parent state
+    setExpenses(remainingExpenses);
+    onChange(remainingExpenses);
     
+    // Show success message
     toast({
       title: "Expense deleted",
       description: `Removed ${expenseToDelete.category} expense of ${formatCurrency(expenseToDelete.amount)}`
     });
-  }, [expenses, applyCommand, toast, formatCurrency]);
+  }, [expenses, onChange, toast]);
 
   // Handler for starting the edit process
   const handleStartEdit = useCallback((expense: PropertyExpense) => {
@@ -480,14 +357,7 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
 
   return (
     <div className="space-y-4">
-      {isExternalUpdate.current && (
-        <div className="bg-amber-50 border border-amber-200 p-2 rounded mb-2 flex items-center text-amber-700">
-          <AlertTriangle className="h-4 w-4 mr-2" />
-          <span className="text-sm">Syncing expense data...</span>
-        </div>
-      )}
-      
-      {/* Database save status indicators */}
+      {/* Database status indicators */}
       {isSaving && (
         <div className="bg-blue-50 border border-blue-200 p-2 rounded mb-2 flex items-center text-blue-700">
           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -501,7 +371,15 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
           <span className="text-sm">Expenses saved to database successfully!</span>
         </div>
       )}
+      
+      {!isEditMode && (
+        <div className="bg-blue-50 border border-blue-200 p-2 rounded mb-2 flex items-center text-blue-700">
+          <AlertTriangle className="h-4 w-4 mr-2" />
+          <span className="text-sm">Click Edit to make changes to expenses</span>
+        </div>
+      )}
     
+      {/* Expense table */}
       {Object.values(expenses).length > 0 ? (
         <Table>
           <TableHeader>
@@ -516,8 +394,9 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
           </TableHeader>
           <TableBody>
             {Object.values(expenses).map((expense) => (
-              <TableRow key={expense.id} className="transition-opacity duration-300">
+              <TableRow key={expense.id}>
                 {editingExpenseId === expense.id ? (
+                  // Edit mode for a row
                   <>
                     <TableCell>
                       <Select
@@ -591,6 +470,7 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
                     </TableCell>
                   </>
                 ) : (
+                  // View mode for a row
                   <>
                     <TableCell>{expense.category}</TableCell>
                     <TableCell>{expense.description}</TableCell>
@@ -605,7 +485,7 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
                           variant="outline"
                           size="icon"
                           onClick={() => handleStartEdit(expense)}
-                          disabled={isProcessing || editingExpenseId !== null}
+                          disabled={!isEditMode || isProcessing || editingExpenseId !== null}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -613,7 +493,7 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
                           variant="outline"
                           size="icon"
                           onClick={() => handleDeleteExpense(expense.id)}
-                          disabled={isProcessing || editingExpenseId !== null}
+                          disabled={!isEditMode || isProcessing || editingExpenseId !== null}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -638,6 +518,7 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
         </div>
       )}
 
+      {/* Add expense form */}
       {isAddingExpense ? (
         <Card>
           <CardContent className="pt-6">
@@ -702,13 +583,12 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
               <Button
                 variant="outline"
                 onClick={resetForm}
-                disabled={isProcessing}
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleAddExpense}
-                disabled={isProcessing || !newExpense.category || newExpense.amount <= 0}
+                disabled={!newExpense.category || newExpense.amount <= 0}
               >
                 Add Expense
               </Button>
@@ -719,7 +599,7 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
         <div className="flex justify-end">
           <Button 
             onClick={() => setIsAddingExpense(true)}
-            disabled={isProcessing || editingExpenseId !== null || isSaving || !isEditMode}
+            disabled={!isEditMode || editingExpenseId !== null || isSaving}
           >
             <Plus className="mr-2 h-4 w-4" /> Add Expense
           </Button>
