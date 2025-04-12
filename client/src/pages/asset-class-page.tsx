@@ -253,7 +253,9 @@ export default function AssetClassPage() {
                       ) : expenseCategories && expenseCategories.length > 0 ? (
                         <div className="flex flex-wrap gap-2">
                           {expenseCategories.map((category, index) => (
-                            <Badge key={index} variant="outline">{category}</Badge>
+                            <Badge key={index} variant="outline">
+                              {typeof category === 'string' ? category : category.name}
+                            </Badge>
                           ))}
                         </div>
                       ) : (

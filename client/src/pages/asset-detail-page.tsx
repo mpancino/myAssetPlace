@@ -804,6 +804,9 @@ export default function AssetDetailPage() {
                     <TabsTrigger value="expenses">Expenses</TabsTrigger>
                   </>
                 )}
+                {selectedClass?.name?.toLowerCase() === "investments" && (
+                  <TabsTrigger value="expenses">Expenses</TabsTrigger>
+                )}
                 {(selectedClass?.name?.toLowerCase() === "loans & liabilities" || 
                   asset?.assetClassId === 5) && (
                   <TabsTrigger value="loan">Loan Info</TabsTrigger>
