@@ -154,8 +154,11 @@ export function PropertyForm({
                   <FormLabel>Description</FormLabel>
                   <FormControl>
                     <Textarea
-                      {...field}
                       placeholder="Add additional details about the property"
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      ref={field.ref}
                       value={field.value || ''}
                     />
                   </FormControl>
@@ -285,8 +288,11 @@ export function PropertyForm({
                       <Input
                         type="number"
                         step="0.01"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : 0)}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                        value={field.value === null || field.value === undefined ? '' : field.value}
                       />
                     </FormControl>
                     <FormDescription>
@@ -307,8 +313,11 @@ export function PropertyForm({
                       <Input
                         type="number"
                         step="0.01"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : 0)}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                        value={field.value === null || field.value === undefined ? '' : field.value}
                       />
                     </FormControl>
                     <FormMessage />
