@@ -6,6 +6,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User } from "@shared/schema";
+import { createDemoAssets } from "./utils/demo-data";
 
 // Don't use extends User as it causes a circular reference
 declare global {
@@ -250,6 +251,16 @@ export function setupAuth(app: Express) {
           }
           
           console.log("Demo user logged in successfully");
+          
+          // Create demo assets for the user
+          try {
+            const assets = await createDemoAssets(user.id);
+            console.log(`Created ${assets.length} demo assets for user ID: ${user.id}`);
+          } catch (assetError) {
+            console.error("Error creating demo assets:", assetError);
+            // Continue even if asset creation fails - not a critical error
+          }
+          
           res.status(201).json(user);
         });
       } catch (createUserError) {
