@@ -596,14 +596,18 @@ export function PropertyExpenses({
           </CardContent>
         </Card>
       ) : (
-        <div className="flex justify-end">
-          <Button 
-            onClick={() => setIsAddingExpense(true)}
-            disabled={!isEditMode || editingExpenseId !== null || isSaving}
-          >
-            <Plus className="mr-2 h-4 w-4" /> Add Expense
-          </Button>
-        </div>
+        <>
+          {isEditMode && (
+            <div className="flex justify-end">
+              <Button 
+                onClick={() => setIsAddingExpense(true)}
+                disabled={editingExpenseId !== null || isSaving}
+              >
+                <Plus className="mr-2 h-4 w-4" /> Add Expense
+              </Button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
