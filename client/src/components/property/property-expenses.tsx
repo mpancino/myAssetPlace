@@ -119,7 +119,16 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
     // Propagate change to parent
     onChange(updatedExpenses);
     
-    console.log("After updating expense:", updatedExpenses);
+    const now = new Date().toISOString();
+    console.log(`[${now}] Updated expense with ID: ${expenseId}`);
+    console.log("Updated expense details:", {
+      category: updatedExpense.category,
+      description: updatedExpense.description,
+      amount: updatedExpense.amount,
+      frequency: updatedExpense.frequency,
+      annualTotal: updatedExpense.annualTotal
+    });
+    console.log(`Total expenses after update: ${Object.keys(updatedExpenses).length}`);
     
     setEditingExpenseId(null);
     setNewExpense({
@@ -131,6 +140,9 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
   };
 
   const handleDeleteExpense = (expenseId: string) => {
+    const expenseToDelete = expenses[expenseId];
+    if (!expenseToDelete) return;
+    
     const updatedExpenses = { ...expenses };
     delete updatedExpenses[expenseId];
     
@@ -139,7 +151,14 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
     // Propagate change to parent
     onChange(updatedExpenses);
     
-    console.log("After deleting expense:", updatedExpenses);
+    const now = new Date().toISOString();
+    console.log(`[${now}] Deleted expense with ID: ${expenseId}`);
+    console.log("Deleted expense details:", {
+      category: expenseToDelete.category,
+      description: expenseToDelete.description,
+      amount: expenseToDelete.amount
+    });
+    console.log(`Total expenses after delete: ${Object.keys(updatedExpenses).length}`);
   };
 
   const handleStartEdit = (expense: PropertyExpense) => {

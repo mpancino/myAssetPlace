@@ -270,7 +270,8 @@ export default function AssetDetailPage() {
     onSuccess: (updatedAsset) => {
       if (!updatedAsset) return;
       
-      console.log("Asset update success! Received updated asset:", updatedAsset);
+      const now = new Date().toISOString();
+      console.log(`[${now}] Asset update success! Received updated asset:`, updatedAsset);
       console.log("Updated property expenses:", updatedAsset.propertyExpenses);
       
       // Show success toast
@@ -279,30 +280,31 @@ export default function AssetDetailPage() {
         description: `${updatedAsset.name} has been updated successfully`,
       });
       
-      // CRITICAL FIX: Forced approach to ensure data is visible after update
+      // CRITICAL FIX: More robust approach to ensure data is visible after update
       // First completely clear the cached data
       queryClient.removeQueries({ queryKey: [`/api/assets/${assetId}`] });
       
-      // Then refetch to get fresh data from the server
-      queryClient.fetchQuery({ 
-        queryKey: [`/api/assets/${assetId}`],
-        queryFn: getQueryFn({ on401: "throw" })
-      }).then(freshData => {
-        console.log("Forced refetch complete. Fresh data received:", freshData);
-      });
-      
-      // Exit edit mode AFTER we've initiated the refetch
-      // Add a small delay to ensure the UI has time to process changes
+      // Add a longer delay to ensure server has fully committed changes
+      // This is especially important for complex JSON data like property expenses
       setTimeout(() => {
-        setIsEditing(false);
-      }, 100);
-      
-      // Also invalidate other relevant queries for the list views
-      queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/assets/by-class"] });
-      if (updatedAsset.assetClassId) {
-        queryClient.invalidateQueries({ queryKey: [`/api/asset-classes/${updatedAsset.assetClassId}`] });
-      }
+        // Then refetch to get fresh data from the server
+        queryClient.fetchQuery({ 
+          queryKey: [`/api/assets/${assetId}`],
+          queryFn: getQueryFn({ on401: "throw" })
+        }).then(freshData => {
+          console.log(`[${new Date().toISOString()}] Forced refetch complete with delay. Fresh data received:`, freshData);
+          
+          // ONLY exit edit mode AFTER we've received the fresh data
+          setIsEditing(false);
+          
+          // Also invalidate other relevant queries for the list views
+          queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/assets/by-class"] });
+          if (updatedAsset.assetClassId) {
+            queryClient.invalidateQueries({ queryKey: [`/api/asset-classes/${updatedAsset.assetClassId}`] });
+          }
+        });
+      }, 300); // Increased delay to ensure server has time to process the update
     },
     onError: (error: Error) => {
       toast({
