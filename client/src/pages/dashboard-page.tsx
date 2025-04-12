@@ -197,8 +197,8 @@ export default function DashboardPage() {
                   </DropdownMenuItem>
                   <DropdownMenuItem 
                     onClick={() => {
-                      const isAllowed = subscription.plan.allowedApis && 
-                        JSON.parse(String(subscription.plan.allowedApis)).includes("export");
+                      // Use the subscription hook's helper function instead of direct access
+                      const isAllowed = useSubscription().isAllowedApiAccess("export");
                       
                       if (isAllowed) {
                         handleExport();

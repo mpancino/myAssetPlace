@@ -918,6 +918,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // User subscription management routes
+  app.get("/api/user/subscription", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      const subscription = await storage.getUserSubscription(req.user.id);
+      if (!subscription) {
+        return res.status(404).json({ message: "Subscription not found" });
+      }
+      res.json(subscription);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to fetch subscription" });
+    }
+  });
+
+  // Upgrade subscription
+  app.post("/api/user/subscription/upgrade", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      const { planId } = req.body;
+      
+      if (!planId) {
+        return res.status(400).json({ message: "Plan ID is required" });
+      }
+      
+      // Verify plan exists
+      const plan = await storage.getSubscriptionPlan(planId);
+      if (!plan) {
+        return res.status(404).json({ message: "Subscription plan not found" });
+      }
+      
+      // Update user's subscription
+      const subscription = await storage.updateUserSubscription(req.user.id, planId);
+      
+      if (!subscription) {
+        return res.status(400).json({ message: "Failed to update subscription" });
+      }
+      
+      // Return full subscription with plan details
+      const fullSubscription = await storage.getUserSubscription(req.user.id);
+      res.json(fullSubscription);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to upgrade subscription" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

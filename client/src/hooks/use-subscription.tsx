@@ -106,13 +106,15 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     // If there's no limit set, user can add unlimited assets
     if (!userSubscription.plan.maxAssetsPerClass) return true;
     
-    // In a complete implementation, this would:
-    // 1. Query the current asset count per class
-    // 2. Compare against the plan limit
-    // 3. Return false if any class exceeds its limit
+    // Note: In a complete implementation, this function would:
+    // 1. Take an assetClassId parameter
+    // 2. Query the current asset count for that specific class
+    // 3. Compare against the plan limit
+    // 4. Return false if the class exceeds its limit
     
-    // For now, we implement a simple check
-    // Future: Could use React Query to fetch current asset count
+    // For now, we return true since the asset count check will be
+    // implemented more thoroughly when the asset classes are built out
+    // This allows users to add assets during development
     return true;
   };
 
