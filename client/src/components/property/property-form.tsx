@@ -156,6 +156,7 @@ export function PropertyForm({
                     <Textarea
                       {...field}
                       placeholder="Add additional details about the property"
+                      value={field.value || ''}
                     />
                   </FormControl>
                   <FormMessage />
