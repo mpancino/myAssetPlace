@@ -234,16 +234,29 @@ export default function AssetClassPage() {
               // Check if we're in the real estate asset class
               const isRealEstate = assetClass?.name?.toLowerCase() === 'real estate';
               
+              // Debug logs to see what's happening
+              console.log("Asset class name:", assetClass?.name);
+              console.log("Is Real Estate class?", isRealEstate);
+              console.log("Current asset:", asset);
+              
               // If this is a real estate asset class, use the PropertyCard component
               if (isRealEstate) {
                 // Find the asset's holding type
                 const holdingType = holdingTypes?.find(ht => ht.id === asset.assetHoldingTypeId);
+                console.log("Using PropertyCard for:", asset.name);
                 
-                // Use PropertyCard component for real estate
+                // Construct a new object with mortgage information to ensure it's passed correctly
+                const propertyWithMortgage = {
+                  ...asset,
+                  hasMortgage: asset.hasMortgage || (asset as any).has_mortgage, 
+                  mortgageAmount: asset.mortgageAmount || (asset as any).mortgage_amount || 0
+                };
+                
+                // Use PropertyCard component for real estate with explicit mortgage props
                 return (
                   <PropertyCard 
                     key={asset.id} 
-                    property={asset} 
+                    property={propertyWithMortgage} 
                     holdingType={holdingType}
                     onDelete={() => setLocation(`/assets/${asset.id}`)}
                   />

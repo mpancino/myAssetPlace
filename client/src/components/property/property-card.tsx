@@ -69,8 +69,12 @@ export function PropertyCard({
     return typeMap[type] || "Unknown";
   };
   
+  // Debug: Log key property details
+  console.log("PropertyCard component rendering for:", property.name);
+  console.log("PropertyCard hasMortgage:", hasMortgage);
+  
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-shadow">
+    <Card className="overflow-hidden hover:shadow-md transition-shadow bg-pink-50">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <CardTitle className="text-lg flex items-center">
