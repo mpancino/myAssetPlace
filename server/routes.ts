@@ -216,17 +216,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     try {
-      const assetsByClass = await storage.getUserAssetsByClass(req.user.id);
+      console.log("Getting assets by class for user ID:", req.user.id);
       
-      // If no assets are returned, return an empty array instead of causing an error
-      if (!assetsByClass || !Array.isArray(assetsByClass)) {
-        console.warn("No assets by class returned, defaulting to empty array");
-        return res.json([]);
+      try {
+        const assetsByClass = await storage.getUserAssetsByClass(req.user.id);
+        
+        // If no assets are returned, return an empty array instead of causing an error
+        if (!assetsByClass || !Array.isArray(assetsByClass)) {
+          console.warn("No assets by class returned, defaulting to empty array");
+          return res.json([]);
+        }
+        
+        console.log("Returning assets by class:", JSON.stringify(assetsByClass));
+        res.json(assetsByClass);
+      } catch (innerErr) {
+        console.error("Detailed error in getUserAssetsByClass:", innerErr);
+        throw innerErr;
       }
-      
-      res.json(assetsByClass);
     } catch (err) {
       console.error("Error in /api/assets/by-class endpoint:", err);
+      console.error("Error details:", err instanceof Error ? err.stack : String(err));
       res.status(500).json({ message: "Failed to fetch assets by class" });
     }
   });
