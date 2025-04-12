@@ -69,17 +69,31 @@ import type { PropertyExpense } from "@shared/schema";
 // Helper function to safely parse property expenses data
 function parsePropertyExpenses(data: any): Record<string, PropertyExpense> {
   try {
+    // Enhanced debugging
+    console.log('[PARSE] Input type:', typeof data);
+    console.log('[PARSE] Input value:', data ? (typeof data === 'object' ? 'Object with keys: ' + Object.keys(data).join(', ') : data.toString().substring(0, 100)) : 'null/undefined');
+    
     // If it's a string, try to parse it as JSON
     if (typeof data === 'string') {
-      return JSON.parse(data) as Record<string, PropertyExpense>;
+      if (data.trim() === '') {
+        console.log('[PARSE] Empty string detected, returning empty object');
+        return {};
+      }
+      
+      const parsedData = JSON.parse(data) as Record<string, PropertyExpense>;
+      console.log('[PARSE] Parsed string into object with keys:', Object.keys(parsedData));
+      return parsedData;
     }
     
-    // If it's already an object, return it
+    // If it's already an object, create a deep clone to break reference cycles
     if (data && typeof data === 'object') {
-      return data as Record<string, PropertyExpense>;
+      console.log('[PARSE] Received object with keys:', Object.keys(data));
+      // Create a deep clone to ensure we're not affected by reference issues
+      return JSON.parse(JSON.stringify(data)) as Record<string, PropertyExpense>;
     }
     
     // Return empty object as fallback
+    console.log('[PARSE] Fallback: returning empty object');
     return {};
   } catch (err) {
     console.error('[ERROR] Failed to parse property expenses:', err);
@@ -235,10 +249,8 @@ export default function AssetDetailPage() {
       rentalFrequency: asset?.rentalFrequency || null,
       vacancyRate: asset?.vacancyRate || null,
       
-      // Property expenses - ensure proper parsing
-      propertyExpenses: typeof asset?.propertyExpenses === 'string'
-        ? JSON.parse(asset.propertyExpenses as string)
-        : asset?.propertyExpenses || {},
+      // Property expenses - use our enhanced parsing function
+      propertyExpenses: parsePropertyExpenses(asset?.propertyExpenses),
       
       // Mortgage fields
       hasMortgage: asset?.hasMortgage || false,
@@ -284,8 +296,8 @@ export default function AssetDetailPage() {
         rentalFrequency: asset.rentalFrequency,
         vacancyRate: asset.vacancyRate,
         
-        // Property expenses
-        propertyExpenses: asset.propertyExpenses || {},
+        // Property expenses - use our parsing function to handle it correctly
+        propertyExpenses: parsePropertyExpenses(asset.propertyExpenses),
         
         // Mortgage fields
         hasMortgage: asset.hasMortgage,
