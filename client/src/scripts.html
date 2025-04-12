@@ -16,26 +16,42 @@
       border-bottom: 2px solid #e0e0e0;
       padding-bottom: 0.5rem;
       margin-bottom: 2rem;
+      color: #1e3a8a;
     }
     .card {
       border: 1px solid #e0e0e0;
       border-radius: 8px;
-      padding: 1rem;
-      margin-bottom: 1rem;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
       background-color: #f9f9f9;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .card h2 {
+      margin-top: 0;
+      color: #1e3a8a;
+      font-size: 1.5rem;
     }
     button {
       background-color: #4a6cf7;
       color: white;
       border: none;
       border-radius: 4px;
-      padding: 0.5rem 1rem;
+      padding: 0.7rem 1.2rem;
       cursor: pointer;
       font-weight: 500;
-      transition: background-color 0.2s;
+      transition: all 0.2s;
+      font-size: 0.95rem;
     }
     button:hover {
       background-color: #3a5cda;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button:disabled {
+      background-color: #a0aec0;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
     }
     pre {
       background-color: #f0f0f0;
@@ -43,12 +59,39 @@
       border-radius: 4px;
       overflow: auto;
       margin-top: 1rem;
+      max-height: 400px;
+      font-size: 0.85rem;
     }
     .success {
       color: #2e7d32;
     }
     .error {
       color: #c62828;
+    }
+    .output-log {
+      margin-top: 20px;
+    }
+    .log-entry {
+      font-family: monospace;
+      padding: 4px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .log-entry.error {
+      color: #c62828;
+      background-color: #ffebee;
+      padding: 4px 8px;
+    }
+    .status-message {
+      margin: 15px 0;
+      padding: 10px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    .status-message.success {
+      background-color: #e8f5e9;
+    }
+    .status-message.error {
+      background-color: #ffebee;
     }
   </style>
 </head>
@@ -57,30 +100,78 @@
   
   <div class="card">
     <h2>Update Assets with Expenses</h2>
-    <p>This script will update all assets with expenses that match the expense categories defined in their asset classes.</p>
+    <p>This script will update all assets with expenses that match the expense categories defined in their asset classes. This helps demonstrate the expense tracking features of myAssetPlace.</p>
+    
     <button id="update-expenses-btn">Run Script</button>
-    <pre id="update-expenses-output">Click "Run Script" to execute</pre>
+    
+    <div id="status-message" class="status-message" style="display: none;"></div>
+    
+    <div class="output-log" id="output-log" style="display: none;">
+      <h3>Execution Log:</h3>
+      <div id="log-entries"></div>
+    </div>
   </div>
 
-  <script>
-    document.getElementById('update-expenses-btn').addEventListener('click', async () => {
-      const outputElement = document.getElementById('update-expenses-output');
-      outputElement.textContent = 'Running script...\n';
-      outputElement.className = '';
-
+  <script type="module">
+    import { runExpenseUpdate } from '/scripts/update-assets-with-expenses.js';
+    
+    const updateButton = document.getElementById('update-expenses-btn');
+    const statusMessage = document.getElementById('status-message');
+    const outputLog = document.getElementById('output-log');
+    const logEntries = document.getElementById('log-entries');
+    
+    updateButton.addEventListener('click', async () => {
       try {
-        // Load the script
-        const scriptModule = await import('/scripts/update-assets-with-expenses.js');
+        // Clear previous output
+        statusMessage.style.display = 'none';
+        outputLog.style.display = 'none';
+        logEntries.innerHTML = '';
         
-        // Execute the script - this will happen automatically when the module is imported
-        outputElement.textContent += 'Script executed successfully!\n';
-        outputElement.className = 'success';
+        // Disable button during execution
+        updateButton.disabled = true;
+        updateButton.textContent = 'Running...';
+        
+        // Execute the script
+        const result = await runExpenseUpdate();
+        
+        // Display status message
+        statusMessage.textContent = result.message;
+        statusMessage.className = `status-message ${result.success ? 'success' : 'error'}`;
+        statusMessage.style.display = 'block';
+        
+        // Display logs if available
+        if (result.logs && result.logs.length > 0) {
+          outputLog.style.display = 'block';
+          
+          result.logs.forEach(([type, message]) => {
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type === 'error' ? 'error' : ''}`;
+            logEntry.textContent = message;
+            logEntries.appendChild(logEntry);
+          });
+          
+          // Scroll to the bottom of the log
+          logEntries.scrollTop = logEntries.scrollHeight;
+        }
       } catch (error) {
-        outputElement.textContent += `Error executing script: ${error.message}\n`;
-        outputElement.className = 'error';
         console.error('Error executing script:', error);
+        
+        statusMessage.textContent = `Error: ${error.message || 'Unknown error occurred'}`;
+        statusMessage.className = 'status-message error';
+        statusMessage.style.display = 'block';
+      } finally {
+        // Re-enable button
+        updateButton.disabled = false;
+        updateButton.textContent = 'Run Script';
       }
     });
+    
+    // Auto-run the script if URL contains ?autorun=true
+    if (window.location.search.includes('autorun=true')) {
+      setTimeout(() => {
+        updateButton.click();
+      }, 1000);
+    }
   </script>
 </body>
 </html>

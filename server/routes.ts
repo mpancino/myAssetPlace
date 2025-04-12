@@ -1,4 +1,4 @@
-import type { Express, Request, Response, NextFunction } from "express";
+import express, { type Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import path from "path";
 import { storage } from "./storage";
@@ -19,6 +19,7 @@ import { z } from "zod";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
 import { upload, getFileUrl, deleteFile } from "./utils/upload";
+import path from "path";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
@@ -26,6 +27,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Set up direct admin login for easier testing
   await setupDirectAdminLogin(app);
+  
+  // Serve scripts directory
+  app.use('/scripts', express.static(path.join(process.cwd(), 'scripts')));
 
   // Custom middleware to check if user is admin
   const isAdmin = (req: any, res: any, next: any) => {
