@@ -233,6 +233,82 @@ export class DatabaseStorage implements IStorage {
     return updatedAsset;
   }
   
+  async linkOffsetAccount(cashAccountId: number, loanId: number): Promise<boolean> {
+    try {
+      // First check that the cash account and loan exist and belong to the same user
+      const cashAccount = await this.getAsset(cashAccountId);
+      const loan = await this.getAsset(loanId);
+      
+      if (!cashAccount || !loan) {
+        return false;
+      }
+      
+      // Verify the assets belong to the same user
+      if (cashAccount.userId !== loan.userId) {
+        return false;
+      }
+      
+      // Verify the cash account is actually a cash account
+      if (cashAccount.assetClassId !== 1) { // Assuming cash accounts have assetClassId=1
+        return false;
+      }
+      
+      // Verify the loan is actually a loan (liability)
+      if (!loan.isLiability) {
+        return false;
+      }
+      
+      // Update the cash account to be linked to the loan
+      await db
+        .update(assets)
+        .set({
+          isOffsetAccount: true,
+          offsetLinkedLoanId: loanId,
+        })
+        .where(eq(assets.id, cashAccountId));
+        
+      return true;
+    } catch (error) {
+      console.error("Error linking offset account:", error);
+      return false;
+    }
+  }
+  
+  async unlinkOffsetAccount(cashAccountId: number): Promise<boolean> {
+    try {
+      // Update the cash account to remove the link
+      await db
+        .update(assets)
+        .set({
+          isOffsetAccount: false,
+          offsetLinkedLoanId: null,
+        })
+        .where(eq(assets.id, cashAccountId));
+        
+      return true;
+    } catch (error) {
+      console.error("Error unlinking offset account:", error);
+      return false;
+    }
+  }
+  
+  async getLinkedOffsetAccounts(loanId: number): Promise<Asset[]> {
+    try {
+      const offsetAccounts = await db
+        .select()
+        .from(assets)
+        .where(and(
+          eq(assets.offsetLinkedLoanId, loanId),
+          eq(assets.isOffsetAccount, true)
+        ));
+        
+      return offsetAccounts;
+    } catch (error) {
+      console.error("Error getting linked offset accounts:", error);
+      return [];
+    }
+  }
+  
   async deleteAsset(id: number): Promise<boolean> {
     try {
       const result = await db

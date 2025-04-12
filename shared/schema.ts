@@ -126,7 +126,7 @@ export const assets = pgTable("assets", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const assetsRelations = relations(assets, ({ one }) => ({
+export const assetsRelations = relations(assets, ({ one, many }) => ({
   user: one(users, {
     fields: [assets.userId],
     references: [users.id],
@@ -138,6 +138,11 @@ export const assetsRelations = relations(assets, ({ one }) => ({
   assetHoldingType: one(assetHoldingTypes, {
     fields: [assets.assetHoldingTypeId],
     references: [assetHoldingTypes.id],
+  }),
+  // For offset accounts feature
+  offsetLinkedLoan: one(assets, {
+    fields: [assets.offsetLinkedLoanId],
+    references: [assets.id],
   }),
 }));
 
