@@ -30,19 +30,17 @@ export default function AssetClassPage() {
     enabled: !!classId
   });
 
-  // Fetch assets for this asset class
+  // Fetch all assets
   const { 
-    data: assets, 
+    data: allAssets = [], 
     isLoading: assetsLoading 
   } = useQuery<Asset[]>({ 
     queryKey: ['/api/assets'],
-    queryFn: async () => {
-      const res = await fetch(`/api/assets?assetClassId=${classId}`);
-      if (!res.ok) throw new Error('Failed to fetch assets');
-      return res.json();
-    },
     enabled: !!classId
   });
+  
+  // Filter assets by class ID (client-side filtering as backup)
+  const assets = allAssets.filter(asset => asset.assetClassId === parseInt(classId));
   
   // Fetch the user's country for currency information
   const {
