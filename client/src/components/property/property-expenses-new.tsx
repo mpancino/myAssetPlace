@@ -256,6 +256,8 @@ export function PropertyExpenses({
     }
     
     try {
+      console.log('[PROPERTY_EXPENSES] Adding new expense');
+      
       // Create a new expense object
       const id = uuidv4();
       const annualTotal = calculateAnnualTotal(amount, newFrequency);
@@ -275,23 +277,25 @@ export function PropertyExpenses({
         [id]: newExpense
       };
       
-      // Update state
+      // Update both local state and context
+      console.log('[PROPERTY_EXPENSES] Updating local and context state with', Object.keys(updatedExpenses).length, 'expenses');
       setExpenses(updatedExpenses);
+      setContextExpenses(updatedExpenses);
       
-      // Notify parent
+      // Notify parent component
       onChange(updatedExpenses);
       
       // Reset form
       resetForm();
     } catch (err) {
-      console.error('Error adding expense:', err);
+      console.error('[PROPERTY_EXPENSES] Error adding expense:', err);
       toast({
         title: "Error",
         description: "Failed to add expense",
         variant: "destructive",
       });
     }
-  }, [newCategory, newDescription, newAmount, newFrequency, expenses, onChange, calculateAnnualTotal, resetForm, toast]);
+  }, [newCategory, newDescription, newAmount, newFrequency, expenses, onChange, calculateAnnualTotal, resetForm, toast, setContextExpenses]);
   
   // Update an existing expense
   const handleUpdateExpense = useCallback(() => {
@@ -316,6 +320,8 @@ export function PropertyExpenses({
     }
     
     try {
+      console.log('[PROPERTY_EXPENSES] Updating expense with id:', editingId);
+      
       // Get the existing expense
       const existingExpense = expenses[editingId];
       if (!existingExpense) {
@@ -340,8 +346,10 @@ export function PropertyExpenses({
         [editingId]: updatedExpense
       };
       
-      // Update state
+      // Update both local state and context
+      console.log('[PROPERTY_EXPENSES] Updating local and context state with updated expense');
       setExpenses(updatedExpenses);
+      setContextExpenses(updatedExpenses);
       
       // Notify parent
       onChange(updatedExpenses);
@@ -349,18 +357,20 @@ export function PropertyExpenses({
       // Reset form
       resetForm();
     } catch (err) {
-      console.error('Error updating expense:', err);
+      console.error('[PROPERTY_EXPENSES] Error updating expense:', err);
       toast({
         title: "Error",
         description: "Failed to update expense",
         variant: "destructive",
       });
     }
-  }, [editingId, newCategory, newDescription, newAmount, newFrequency, expenses, onChange, calculateAnnualTotal, resetForm, toast]);
+  }, [editingId, newCategory, newDescription, newAmount, newFrequency, expenses, onChange, calculateAnnualTotal, resetForm, toast, setContextExpenses]);
   
   // Delete an expense
   const handleDeleteExpense = useCallback((id: string) => {
     try {
+      console.log('[PROPERTY_EXPENSES] Deleting expense with id:', id);
+      
       // Check if expense exists
       if (!expenses[id]) {
         throw new Error(`Expense with ID ${id} not found`);
@@ -369,20 +379,22 @@ export function PropertyExpenses({
       // Create a copy without the deleted expense
       const { [id]: _, ...updatedExpenses } = expenses;
       
-      // Update state
+      // Update both local state and context
+      console.log('[PROPERTY_EXPENSES] Updating local and context state after deletion');
       setExpenses(updatedExpenses);
+      setContextExpenses(updatedExpenses);
       
       // Notify parent
       onChange(updatedExpenses);
     } catch (err) {
-      console.error('Error deleting expense:', err);
+      console.error('[PROPERTY_EXPENSES] Error deleting expense:', err);
       toast({
         title: "Error",
         description: "Failed to delete expense",
         variant: "destructive",
       });
     }
-  }, [expenses, onChange, toast]);
+  }, [expenses, onChange, toast, setContextExpenses]);
   
   // Calculate the total annual expenses
   const totalAnnualExpenses = Object.values(expenses).reduce(
