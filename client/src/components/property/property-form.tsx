@@ -29,6 +29,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { PropertyExpenses } from "@/components/property/property-expenses";
 
 interface PropertyFormProps {
   onSubmit: (data: InsertProperty) => void;
@@ -652,7 +653,22 @@ export function PropertyForm({
           </CardContent>
         </Card>
 
-        <Button type="submit" disabled={isSubmitting} className="w-full">
+        {/* Property Expenses Section */}
+        <FormField
+          control={form.control}
+          name="propertyExpenses"
+          render={({ field }) => (
+            <FormItem>
+              <PropertyExpenses 
+                value={field.value as Record<string, any>}
+                onChange={field.onChange}
+              />
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Button type="submit" disabled={isSubmitting} className="w-full mt-4">
           {isSubmitting ? "Saving..." : "Save Property"}
         </Button>
       </form>
