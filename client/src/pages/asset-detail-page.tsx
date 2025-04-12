@@ -161,8 +161,18 @@ export default function AssetDetailPage() {
   // Add debug Effect to track property expenses after asset loads/updates
   useEffect(() => {
     if (asset?.propertyExpenses && !isLoadingAsset) {
-      console.log("ASSET DATA CHANGED: Property expenses updated:", asset.propertyExpenses);
-      console.log("Number of expenses:", Object.keys(asset.propertyExpenses || {}).length);
+      try {
+        // Parse the property expenses to ensure we get the actual data structure
+        const parsedExpenses = typeof asset.propertyExpenses === 'string' 
+          ? JSON.parse(asset.propertyExpenses as string) 
+          : asset.propertyExpenses;
+          
+        console.log("ASSET DATA CHANGED: Property expenses updated:", parsedExpenses);
+        console.log("Number of expenses:", Object.keys(parsedExpenses || {}).length);
+        console.log("Raw property expenses type:", typeof asset.propertyExpenses);
+      } catch (err) {
+        console.error("Error parsing property expenses in debug effect:", err);
+      }
     }
   }, [asset, isLoadingAsset]);
   

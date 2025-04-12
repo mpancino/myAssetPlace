@@ -347,14 +347,17 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
   }, []);
   
   // COMPLETELY DISABLED the sync logic as it was interfering with our direct database writes
-  // Now we simply initialize our local state from props on first mount
+  // Now we always initialize from props to ensure we're using the latest server data
   useEffect(() => {
-    // Only initialize expenses on first mount or after a reset
-    if (Object.keys(expenses).length === 0 && Object.keys(value || {}).length > 0) {
-      console.log('[INITIALIZATION] Setting initial expense data from props');
+    // Always use the value from props to ensure we have the latest server data
+    if (Object.keys(value || {}).length > 0) {
+      console.log('[INITIALIZATION] Setting expense data from server props:', Object.keys(value || {}).length, 'expenses');
       setExpenses(value || {});
+    } else if (Object.keys(expenses).length > 0 && Object.keys(value || {}).length === 0) {
+      // If we have local expenses but server returned none, warn about potential data loss
+      console.warn('[DATA INCONSISTENCY] Server returned no expenses but local state has expenses');
     }
-  }, [expenses, value]);
+  }, [value, expenses]);
 
   // Handler for adding a new expense
   const handleAddExpense = useCallback(() => {
