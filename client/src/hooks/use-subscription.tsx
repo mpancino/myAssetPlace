@@ -4,8 +4,8 @@ import {
   SubscriptionPlan, 
   UserSubscription 
 } from "@shared/schema";
-import { getQueryFn } from "../lib/queryClient";
-import { useToast } from "./use-toast";
+import { getQueryFn } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 type SubscriptionContextType = {
   userSubscription: (UserSubscription & { plan: SubscriptionPlan }) | null;
@@ -23,6 +23,7 @@ export const SubscriptionContext = createContext<SubscriptionContextType | null>
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
+  const [upgradeFeature, setUpgradeFeature] = useState<string | null>(null);
   
   const {
     data: userSubscription,
@@ -121,12 +122,20 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Show upgrade prompt for a specific feature
-  const [upgradeFeature, setUpgradeFeature] = useState<string | null>(null);
-  
   // This will be exposed so components can trigger the upgrade modal
   const showUpgradePrompt = (feature: string) => {
-    setUpgradeFeature(feature);
+    // For now, just show a toast with upgrade message
+    // In a full implementation, this would trigger the upgrade modal
+    toast({
+      title: "Upgrade Required",
+      description: `Your current plan doesn't include access to ${feature}. Please upgrade to unlock this feature.`,
+      variant: "destructive",
+    });
+    
+    // Note: A more complete implementation would use:
+    // 1. Import the useUpgradePrompt hook
+    // 2. Call showUpgradePrompt from the hook
+    // But we want to avoid circular dependencies
   };
 
   return (
