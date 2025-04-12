@@ -122,6 +122,30 @@ export const assets = pgTable("assets", {
   startDate: date("start_date"),
   endDate: date("end_date"),
   originalLoanAmount: real("original_loan_amount"),
+  // Property specific fields
+  propertyType: text("property_type"), // residential, commercial, land, etc.
+  address: text("address"),
+  suburb: text("suburb"),
+  state: text("state"),
+  postcode: text("postcode"),
+  country: text("country"),
+  bedrooms: integer("bedrooms"),
+  bathrooms: integer("bathrooms"),
+  landSize: real("land_size"), // in square meters
+  floorArea: real("floor_area"), // in square meters
+  parkingSpaces: integer("parking_spaces"),
+  isRental: boolean("is_rental").default(false),
+  rentalIncome: real("rental_income"), // monthly rental income
+  rentalFrequency: text("rental_frequency"), // weekly, fortnightly, monthly
+  vacancyRate: real("vacancy_rate"), // percent of time property is vacant
+  propertyExpenses: json("property_expenses"), // e.g., strata, council rates, insurance, maintenance
+  mortgageId: integer("mortgage_id"), // link to associated mortgage (if any)
+  // Maps/API-related fields
+  longitude: real("longitude"),
+  latitude: real("latitude"),
+  mapThumbnailUrl: text("map_thumbnail_url"),
+  lastValuationDate: date("last_valuation_date"),
+  lastValuationSource: text("last_valuation_source"), // manual, api, etc.
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -267,6 +291,28 @@ export const insertLoanSchema = insertAssetSchema.extend({
   originalLoanAmount: z.number().min(0, "Original loan amount must be greater than 0").max(1000000000, "Loan amount cannot exceed 1 billion"),
 });
 
+export const insertPropertySchema = insertAssetSchema.extend({
+  propertyType: z.enum(["residential", "commercial", "industrial", "land", "rural", "other"]),
+  address: z.string().min(1, "Property address is required"),
+  suburb: z.string().min(1, "Suburb/city is required"),
+  state: z.string().min(1, "State/territory is required"),
+  postcode: z.string().min(1, "Postcode is required"),
+  country: z.string().default("Australia"),
+  bedrooms: z.number().int().min(0).optional(),
+  bathrooms: z.number().int().min(0).optional(),
+  landSize: z.number().min(0).optional(),
+  floorArea: z.number().min(0).optional(),
+  parkingSpaces: z.number().int().min(0).optional(),
+  isRental: z.boolean().default(false),
+  rentalIncome: z.number().min(0).optional(),
+  rentalFrequency: z.enum(["weekly", "fortnightly", "monthly"]).optional(),
+  vacancyRate: z.number().min(0).max(100).default(0).optional(),
+  propertyExpenses: z.record(z.string(), z.number()).optional(),
+  mortgageId: z.number().optional(),
+  longitude: z.number().optional(),
+  latitude: z.number().optional(),
+});
+
 export const insertCountrySchema = createInsertSchema(countries).omit({
   id: true,
 });
@@ -305,6 +351,7 @@ export type Asset = typeof assets.$inferSelect;
 export type InsertAsset = z.infer<typeof insertAssetSchema>;
 export type InsertCashAccount = z.infer<typeof insertCashAccountSchema>;
 export type InsertLoan = z.infer<typeof insertLoanSchema>;
+export type InsertProperty = z.infer<typeof insertPropertySchema>;
 
 export type SubscriptionPlan = typeof subscriptionPlans.$inferSelect;
 export type InsertSubscriptionPlan = z.infer<typeof insertSubscriptionPlanSchema>;
