@@ -73,6 +73,82 @@ export function calculateLoanPayment(
 }
 
 /**
+ * Calculate the principal and interest components of a loan payment
+ * 
+ * @param loanAmount Current loan balance
+ * @param rate Annual interest rate (as a decimal, e.g., 0.05 for 5%)
+ * @param paymentAmount The periodic payment amount
+ * @param paymentsPerYear Number of payments per year (default: 12)
+ * @returns Object containing principal and interest components of the payment
+ */
+export function calculatePrincipalAndInterest(
+  loanAmount: number,
+  rate: number,
+  paymentAmount: number,
+  paymentsPerYear: number = 12
+): { principal: number; interest: number } {
+  const periodicRate = rate / paymentsPerYear;
+  
+  // Calculate interest for this period
+  const interestPayment = loanAmount * periodicRate;
+  
+  // Calculate principal for this period
+  const principalPayment = paymentAmount - interestPayment;
+  
+  return {
+    principal: principalPayment,
+    interest: interestPayment
+  };
+}
+
+/**
+ * Generate an amortization schedule for a loan
+ * 
+ * @param principal The initial loan amount
+ * @param rate Annual interest rate (as a decimal, e.g., 0.05 for 5%)
+ * @param years Loan term in years
+ * @param paymentsPerYear Number of payments per year (default: 12)
+ * @param periods Number of periods to calculate (default: all periods)
+ * @returns Array of payment objects containing payment details for each period
+ */
+export function generateAmortizationSchedule(
+  principal: number,
+  rate: number,
+  years: number,
+  paymentsPerYear: number = 12,
+  periods: number = years * paymentsPerYear
+): Array<{
+  period: number;
+  payment: number;
+  principal: number;
+  interest: number;
+  balance: number;
+}> {
+  const schedule = [];
+  const paymentAmount = calculateLoanPayment(principal, rate, years, paymentsPerYear);
+  let balance = principal;
+  
+  for (let period = 1; period <= periods; period++) {
+    const { principal: principalPayment, interest: interestPayment } = 
+      calculatePrincipalAndInterest(balance, rate, paymentAmount, paymentsPerYear);
+    
+    balance -= principalPayment;
+    
+    schedule.push({
+      period,
+      payment: paymentAmount,
+      principal: principalPayment,
+      interest: interestPayment,
+      balance: balance > 0 ? balance : 0 // Ensure we don't show negative balance due to rounding
+    });
+    
+    if (balance <= 0) break;
+  }
+  
+  return schedule;
+}
+
+/**
  * Calculate the compound annual growth rate (CAGR)
  * CAGR = (FV / PV)^(1/n) - 1
  * 
