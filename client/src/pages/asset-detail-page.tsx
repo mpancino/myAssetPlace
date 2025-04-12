@@ -1133,53 +1133,7 @@ export default function AssetDetailPage() {
                           )}
                         </div>
                         
-                        {/* Property Expenses */}
-                        {asset && asset.propertyExpenses && typeof asset.propertyExpenses === 'object' && 
-                         Object.keys(asset.propertyExpenses).length > 0 && (
-                          <div className="mt-4">
-                            <h3 className="font-medium mb-2 flex items-center">
-                              <Receipt className="mr-2 h-4 w-4" /> Property Expenses
-                            </h3>
-                            <div className="bg-muted p-4 rounded-md">
-                              <Table>
-                                <TableHeader>
-                                  <TableRow>
-                                    <TableHead>Category</TableHead>
-                                    <TableHead>Description</TableHead>
-                                    <TableHead>Amount</TableHead>
-                                    <TableHead>Frequency</TableHead>
-                                    <TableHead>Annual Total</TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {Object.values(asset.propertyExpenses as Record<string, PropertyExpense>)
-                                    .map((expense: PropertyExpense) => (
-                                      <TableRow key={expense.id}>
-                                        <TableCell>{expense.category}</TableCell>
-                                        <TableCell>{expense.description}</TableCell>
-                                        <TableCell>{formatCurrency(expense.amount)}</TableCell>
-                                        <TableCell>
-                                          {expense.frequency.charAt(0).toUpperCase() + expense.frequency.slice(1)}
-                                        </TableCell>
-                                        <TableCell>{formatCurrency(expense.annualTotal)}</TableCell>
-                                      </TableRow>
-                                    ))}
-                                </TableBody>
-                                <TableFooter>
-                                  <TableRow>
-                                    <TableCell colSpan={4}>Total Annual Expenses</TableCell>
-                                    <TableCell className="font-medium">
-                                      {formatCurrency(
-                                        Object.values(asset.propertyExpenses as Record<string, PropertyExpense>)
-                                          .reduce((sum: number, expense: PropertyExpense) => sum + expense.annualTotal, 0)
-                                      )}
-                                    </TableCell>
-                                  </TableRow>
-                                </TableFooter>
-                              </Table>
-                            </div>
-                          </div>
-                        )}
+                        {/* Property Expenses have been moved to a dedicated tab */}
                         
                         {/* Rental Information */}
                         {asset && asset.isRental && (
@@ -1551,94 +1505,45 @@ export default function AssetDetailPage() {
                       <MortgageDetails property={asset} />
                     )}
                     
-                    {/* Property Expenses Section */}
-                    {isEditing ? (
-                      <Card className="col-span-1 md:col-span-2">
+                    {/* Property Expenses Section - moved to dedicated tab */}
+                    <div className="mt-4">
+                      <Card>
                         <CardHeader>
                           <CardTitle className="flex items-center">
                             <Receipt className="mr-2 h-4 w-4" /> Property Expenses
-                            <span className="ml-2 text-xs text-muted-foreground">
-                              (Last updated: {new Date().toLocaleTimeString()})
-                            </span>
                           </CardTitle>
                           <CardDescription>
-                            Add, edit or remove expenses associated with this property
+                            {asset && asset.propertyExpenses && typeof asset.propertyExpenses === 'object' && 
+                             Object.keys(asset.propertyExpenses).length > 0 ? (
+                              <>
+                                This property has {Object.keys(asset.propertyExpenses).length} expenses.
+                                <Button 
+                                  variant="link" 
+                                  className="p-0 h-auto text-primary"
+                                  onClick={() => setActiveTab("expenses")}
+                                >
+                                  View expenses tab for details
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                No expenses have been added yet.
+                                <Button 
+                                  variant="link" 
+                                  className="p-0 h-auto text-primary"
+                                  onClick={() => {
+                                    setActiveTab("expenses");
+                                    if (!isEditing) setIsEditing(true);
+                                  }}
+                                >
+                                  Add expenses
+                                </Button>
+                              </>
+                            )}
                           </CardDescription>
                         </CardHeader>
-                        <CardContent>
-                          <FormField
-                            control={form.control}
-                            name="propertyExpenses"
-                            render={({ field }) => (
-                              <FormItem>
-                                <PropertyExpenses 
-                                  value={field.value as Record<string, PropertyExpense> || {}}
-                                  onChange={field.onChange}
-                                  currencySymbol="$"
-                                />
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </CardContent>
                       </Card>
-                    ) : (
-                      asset && asset.propertyExpenses && typeof asset.propertyExpenses === 'object' && 
-                      Object.keys(asset.propertyExpenses).length > 0 && (
-                        <Card className="col-span-1 md:col-span-2">
-                          <CardHeader>
-                            <CardTitle className="flex items-center">
-                              <Receipt className="mr-2 h-4 w-4" /> 
-                              Property Expenses
-                              {/* Add debug info */}
-                              <span className="ml-2 text-xs text-muted-foreground">
-                                ({Object.keys(asset.propertyExpenses).length} items | Last updated: {new Date().toLocaleTimeString()})
-                              </span>
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent>
-                            {/* Debug info rendered via useEffect below */}
-                            
-                            <Table>
-                              <TableHeader>
-                                <TableRow>
-                                  <TableHead>Category</TableHead>
-                                  <TableHead>Description</TableHead>
-                                  <TableHead>Amount</TableHead>
-                                  <TableHead>Frequency</TableHead>
-                                  <TableHead>Annual Total</TableHead>
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {Object.values(asset.propertyExpenses as Record<string, PropertyExpense>)
-                                  .map((expense: PropertyExpense) => (
-                                    <TableRow key={expense.id}>
-                                      <TableCell>{expense.category}</TableCell>
-                                      <TableCell>{expense.description}</TableCell>
-                                      <TableCell>{formatCurrency(expense.amount)}</TableCell>
-                                      <TableCell>
-                                        {expense.frequency.charAt(0).toUpperCase() + expense.frequency.slice(1)}
-                                      </TableCell>
-                                      <TableCell>{formatCurrency(expense.annualTotal)}</TableCell>
-                                    </TableRow>
-                                  ))}
-                              </TableBody>
-                              <TableFooter>
-                                <TableRow>
-                                  <TableCell colSpan={4}>Total Annual Expenses</TableCell>
-                                  <TableCell>
-                                    {formatCurrency(
-                                      Object.values(asset.propertyExpenses as Record<string, PropertyExpense>)
-                                        .reduce((total: number, expense: PropertyExpense) => total + expense.annualTotal, 0)
-                                    )}
-                                  </TableCell>
-                                </TableRow>
-                              </TableFooter>
-                            </Table>
-                          </CardContent>
-                        </Card>
-                      )
-                    )}
+                    </div>
                   </div>
                 )}
               </TabsContent>
