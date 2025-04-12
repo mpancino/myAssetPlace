@@ -349,15 +349,37 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
   // COMPLETELY DISABLED the sync logic as it was interfering with our direct database writes
   // Now we always initialize from props to ensure we're using the latest server data
   useEffect(() => {
+    // Parse and convert property expenses if they're in string format
+    const parseExpenses = (expenseData: any): Record<string, PropertyExpense> => {
+      try {
+        // If it's a string, try to parse it as JSON
+        if (typeof expenseData === 'string') {
+          return JSON.parse(expenseData) as Record<string, PropertyExpense>;
+        }
+        
+        // If it's already an object, return it
+        if (expenseData && typeof expenseData === 'object') {
+          return expenseData as Record<string, PropertyExpense>;
+        }
+        
+        // Return empty object as fallback
+        return {};
+      } catch (err) {
+        console.error('[ERROR] Failed to parse property expenses in component:', err);
+        return {};
+      }
+    };
+    
     // Always use the value from props to ensure we have the latest server data
-    if (Object.keys(value || {}).length > 0) {
-      console.log('[INITIALIZATION] Setting expense data from server props:', Object.keys(value || {}).length, 'expenses');
-      setExpenses(value || {});
-    } else if (Object.keys(expenses).length > 0 && Object.keys(value || {}).length === 0) {
+    const parsedValue = parseExpenses(value);
+    if (Object.keys(parsedValue).length > 0) {
+      console.log('[INITIALIZATION] Setting expense data from server props:', Object.keys(parsedValue).length, 'expenses');
+      setExpenses(parsedValue);
+    } else if (Object.keys(expenses).length > 0 && Object.keys(parsedValue).length === 0) {
       // If we have local expenses but server returned none, warn about potential data loss
       console.warn('[DATA INCONSISTENCY] Server returned no expenses but local state has expenses');
     }
-  }, [value, expenses]);
+  }, [value]);
 
   // Handler for adding a new expense
   const handleAddExpense = useCallback(() => {

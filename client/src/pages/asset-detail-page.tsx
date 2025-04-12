@@ -1730,7 +1730,7 @@ export default function AssetDetailPage() {
                           />
                         ) : asset.propertyExpenses ? (
                           <PropertyExpenses
-                            value={asset.propertyExpenses as Record<string, PropertyExpense>}
+                            value={parsePropertyExpenses(asset.propertyExpenses)}
                             onChange={(value) => {
                               // Read-only when not editing
                               console.log("Property expenses component triggered onChange in read-only mode");
@@ -1758,7 +1758,7 @@ export default function AssetDetailPage() {
                                 <p className="text-sm text-muted-foreground mb-1">Total Annual Expenses</p>
                                 <p className="text-2xl font-bold text-destructive">
                                   {formatCurrency(
-                                    Object.values(asset.propertyExpenses as Record<string, PropertyExpense>)
+                                    Object.values(parsePropertyExpenses(asset.propertyExpenses))
                                       .reduce((total, expense) => total + expense.annualTotal, 0)
                                   )}
                                 </p>
@@ -1768,7 +1768,7 @@ export default function AssetDetailPage() {
                                 <p className="text-sm text-muted-foreground mb-1">Monthly Average</p>
                                 <p className="text-2xl font-bold">
                                   {formatCurrency(
-                                    Object.values(asset.propertyExpenses as Record<string, PropertyExpense>)
+                                    Object.values(parsePropertyExpenses(asset.propertyExpenses))
                                       .reduce((total, expense) => total + expense.annualTotal, 0) / 12
                                   )}
                                 </p>
@@ -1777,7 +1777,7 @@ export default function AssetDetailPage() {
                               <div className="border rounded-lg p-4 text-center">
                                 <p className="text-sm text-muted-foreground mb-1">Expense Categories</p>
                                 <p className="text-2xl font-bold">
-                                  {new Set(Object.values(asset.propertyExpenses as Record<string, PropertyExpense>)
+                                  {new Set(Object.values(parsePropertyExpenses(asset.propertyExpenses))
                                     .map(expense => expense.category)).size}
                                 </p>
                               </div>
