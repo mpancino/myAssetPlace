@@ -98,6 +98,33 @@ export async function createDemoAssets(userId: number): Promise<Asset[]> {
       bedrooms: 3,
       bathrooms: 2,
       parkingSpaces: 1,
+      // Add demo property expenses for primary residence
+      propertyExpenses: {
+        "expense-home-1": {
+          id: "expense-home-1",
+          category: "Insurance",
+          description: "Home and contents insurance",
+          amount: 1200,
+          frequency: "annually",
+          annualTotal: 1200
+        },
+        "expense-home-2": {
+          id: "expense-home-2",
+          category: "Utilities",
+          description: "Water and electricity",
+          amount: 250,
+          frequency: "quarterly",
+          annualTotal: 1000
+        },
+        "expense-home-3": {
+          id: "expense-home-3",
+          category: "Maintenance",
+          description: "Gardening service",
+          amount: 80,
+          frequency: "monthly",
+          annualTotal: 960
+        }
+      },
       hasMortgage: true,
       mortgageAmount: 280000,
       mortgageInterestRate: 4.5,
@@ -131,6 +158,33 @@ export async function createDemoAssets(userId: number): Promise<Asset[]> {
       rentalIncome: 1900,
       rentalFrequency: "monthly",
       vacancyRate: 5,
+      // Add demo property expenses
+      propertyExpenses: {
+        "expense-1": {
+          id: "expense-1",
+          category: "Insurance",
+          description: "Building insurance",
+          amount: 800,
+          frequency: "annually",
+          annualTotal: 800
+        },
+        "expense-2": {
+          id: "expense-2",
+          category: "Property Tax",
+          description: "Annual council rates",
+          amount: 1200,
+          frequency: "annually",
+          annualTotal: 1200
+        },
+        "expense-3": {
+          id: "expense-3",
+          category: "Maintenance",
+          description: "General upkeep",
+          amount: 150,
+          frequency: "monthly",
+          annualTotal: 1800
+        }
+      },
       hasMortgage: true,
       mortgageAmount: 250000,
       mortgageInterestRate: 3.85,
