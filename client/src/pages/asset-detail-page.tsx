@@ -1056,7 +1056,8 @@ export default function AssetDetailPage() {
                         </div>
                         
                         {/* Property Expenses */}
-                        {asset && asset.propertyExpenses && Object.keys(asset.propertyExpenses).length > 0 && (
+                        {asset && asset.propertyExpenses && typeof asset.propertyExpenses === 'object' && 
+                         Object.keys(asset.propertyExpenses).length > 0 && (
                           <div className="mt-4">
                             <h3 className="font-medium mb-2 flex items-center">
                               <Receipt className="mr-2 h-4 w-4" /> Property Expenses
@@ -1073,27 +1074,26 @@ export default function AssetDetailPage() {
                                   </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                  {Object.values(asset.propertyExpenses).map((expense: PropertyExpense) => (
-                                    <TableRow key={expense.id}>
-                                      <TableCell>{expense.category}</TableCell>
-                                      <TableCell>{expense.description}</TableCell>
-                                      <TableCell>{formatCurrency(expense.amount)}</TableCell>
-                                      <TableCell>
-                                        {expense.frequency.charAt(0).toUpperCase() + expense.frequency.slice(1)}
-                                      </TableCell>
-                                      <TableCell>{formatCurrency(expense.annualTotal)}</TableCell>
-                                    </TableRow>
-                                  ))}
+                                  {Object.values(asset.propertyExpenses as Record<string, PropertyExpense>)
+                                    .map((expense: PropertyExpense) => (
+                                      <TableRow key={expense.id}>
+                                        <TableCell>{expense.category}</TableCell>
+                                        <TableCell>{expense.description}</TableCell>
+                                        <TableCell>{formatCurrency(expense.amount)}</TableCell>
+                                        <TableCell>
+                                          {expense.frequency.charAt(0).toUpperCase() + expense.frequency.slice(1)}
+                                        </TableCell>
+                                        <TableCell>{formatCurrency(expense.annualTotal)}</TableCell>
+                                      </TableRow>
+                                    ))}
                                 </TableBody>
                                 <TableFooter>
                                   <TableRow>
                                     <TableCell colSpan={4}>Total Annual Expenses</TableCell>
                                     <TableCell className="font-medium">
                                       {formatCurrency(
-                                        Object.values(asset.propertyExpenses).reduce(
-                                          (sum, expense) => sum + expense.annualTotal, 
-                                          0
-                                        )
+                                        Object.values(asset.propertyExpenses as Record<string, PropertyExpense>)
+                                          .reduce((sum: number, expense: PropertyExpense) => sum + expense.annualTotal, 0)
                                       )}
                                     </TableCell>
                                   </TableRow>
@@ -1473,54 +1473,83 @@ export default function AssetDetailPage() {
                       <MortgageDetails property={asset} />
                     )}
                     
-                    {/* Property Expenses Table */}
-                    {(asset as any).propertyExpenses && Object.keys((asset as any).propertyExpenses).length > 0 && (
+                    {/* Property Expenses Section */}
+                    {isEditing ? (
                       <Card className="col-span-1 md:col-span-2">
                         <CardHeader>
                           <CardTitle className="flex items-center">
                             <Receipt className="mr-2 h-4 w-4" /> Property Expenses
                           </CardTitle>
+                          <CardDescription>
+                            Add, edit or remove expenses associated with this property
+                          </CardDescription>
                         </CardHeader>
                         <CardContent>
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>Category</TableHead>
-                                <TableHead>Description</TableHead>
-                                <TableHead>Amount</TableHead>
-                                <TableHead>Frequency</TableHead>
-                                <TableHead>Annual Total</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {Object.values((asset as any).propertyExpenses).map((expense: PropertyExpense) => (
-                                <TableRow key={expense.id}>
-                                  <TableCell>{expense.category}</TableCell>
-                                  <TableCell>{expense.description}</TableCell>
-                                  <TableCell>{formatCurrency(expense.amount)}</TableCell>
-                                  <TableCell>
-                                    {expense.frequency.charAt(0).toUpperCase() + expense.frequency.slice(1)}
-                                  </TableCell>
-                                  <TableCell>{formatCurrency(expense.annualTotal)}</TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                            <TableFooter>
-                              <TableRow>
-                                <TableCell colSpan={4}>Total Annual Expenses</TableCell>
-                                <TableCell>
-                                  {formatCurrency(
-                                    Object.values((asset as any).propertyExpenses).reduce(
-                                      (total, expense: PropertyExpense) => total + expense.annualTotal,
-                                      0
-                                    )
-                                  )}
-                                </TableCell>
-                              </TableRow>
-                            </TableFooter>
-                          </Table>
+                          <FormField
+                            control={form.control}
+                            name="propertyExpenses"
+                            render={({ field }) => (
+                              <FormItem>
+                                <PropertyExpenses 
+                                  value={field.value as Record<string, PropertyExpense> || {}}
+                                  onChange={field.onChange}
+                                  currencySymbol="$"
+                                />
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
                         </CardContent>
                       </Card>
+                    ) : (
+                      asset && asset.propertyExpenses && typeof asset.propertyExpenses === 'object' && 
+                      Object.keys(asset.propertyExpenses).length > 0 && (
+                        <Card className="col-span-1 md:col-span-2">
+                          <CardHeader>
+                            <CardTitle className="flex items-center">
+                              <Receipt className="mr-2 h-4 w-4" /> Property Expenses
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>Category</TableHead>
+                                  <TableHead>Description</TableHead>
+                                  <TableHead>Amount</TableHead>
+                                  <TableHead>Frequency</TableHead>
+                                  <TableHead>Annual Total</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {Object.values(asset.propertyExpenses as Record<string, PropertyExpense>)
+                                  .map((expense: PropertyExpense) => (
+                                    <TableRow key={expense.id}>
+                                      <TableCell>{expense.category}</TableCell>
+                                      <TableCell>{expense.description}</TableCell>
+                                      <TableCell>{formatCurrency(expense.amount)}</TableCell>
+                                      <TableCell>
+                                        {expense.frequency.charAt(0).toUpperCase() + expense.frequency.slice(1)}
+                                      </TableCell>
+                                      <TableCell>{formatCurrency(expense.annualTotal)}</TableCell>
+                                    </TableRow>
+                                  ))}
+                              </TableBody>
+                              <TableFooter>
+                                <TableRow>
+                                  <TableCell colSpan={4}>Total Annual Expenses</TableCell>
+                                  <TableCell>
+                                    {formatCurrency(
+                                      Object.values(asset.propertyExpenses as Record<string, PropertyExpense>)
+                                        .reduce((total: number, expense: PropertyExpense) => total + expense.annualTotal, 0)
+                                    )}
+                                  </TableCell>
+                                </TableRow>
+                              </TableFooter>
+                            </Table>
+                          </CardContent>
+                        </Card>
+                      )
                     )}
                   </div>
                 )}
