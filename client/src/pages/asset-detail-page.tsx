@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { MortgageDetails } from "@/components/property/mortgage-details";
 import { PropertyExpenses, PropertyExpenseAnalysis } from "@/components/property/property-expenses-new";
+import { InvestmentExpenses, InvestmentExpenseAnalysis, InvestmentExpense } from "@/components/expense/investment-expenses";
 import { 
   ArrowLeft, 
   BarChart3,
@@ -178,6 +179,7 @@ export default function AssetDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [currentPropertyExpenses, setCurrentPropertyExpenses] = useState<Record<string, PropertyExpense> | undefined>(undefined);
+  const [currentInvestmentExpenses, setCurrentInvestmentExpenses] = useState<Record<string, InvestmentExpense> | undefined>(undefined);
   
   // Fetch the asset details
   const { data: asset, isLoading: isLoadingAsset } = useQuery<Asset>({
@@ -1790,8 +1792,9 @@ export default function AssetDetailPage() {
                 )}
               </TabsContent>
               
-              {/* Expenses Tab - Dedicated tab for property expenses */}
+              {/* Expenses Tab - Dedicated tab for property and investment expenses */}
               <TabsContent value="expenses" className="space-y-4 pt-4">
+                {/* Real Estate Expenses */}
                 {asset && selectedClass?.name?.toLowerCase() === "real estate" && (
                   <div className="space-y-6">
                     {/* Expense Management Card */}
@@ -1910,6 +1913,93 @@ export default function AssetDetailPage() {
                           </div>
                         </CardContent>
                       </Card>
+                    )}
+                  </div>
+                )}
+                
+                {/* Investment Expenses */}
+                {asset && selectedClass?.name?.toLowerCase() === "investments" && (
+                  <div className="space-y-6">
+                    {/* Investment Expense Management Card */}
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="flex items-center">
+                          <BarChart3 className="mr-2 h-5 w-5 text-primary" /> 
+                          Investment Expenses
+                          {updateAssetMutation.isPending && (
+                            <Loader2 className="ml-2 h-4 w-4 animate-spin text-primary" />
+                          )}
+                          {updateAssetMutation.isSuccess && (
+                            <CheckCircle2 className="ml-2 h-4 w-4 text-green-500" />
+                          )}
+                        </CardTitle>
+                        <CardDescription>
+                          Manage expenses related to this investment
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {isEditing ? (
+                          <FormField
+                            control={form.control}
+                            name="investmentExpenses"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormControl>
+                                  <InvestmentExpenses
+                                    key={`investment-expenses-edit-${asset.id}`}
+                                    value={field.value as Record<string, InvestmentExpense> || {}}
+                                    onChange={(newExpenses) => {
+                                      console.log("Investment expense component updated with", Object.keys(newExpenses).length, "expenses");
+                                      
+                                      // Update the form field without immediate database save
+                                      field.onChange(newExpenses);
+                                      
+                                      // Update state tracker to monitor changes
+                                      setCurrentInvestmentExpenses(newExpenses);
+                                    }}
+                                    assetClassId={asset?.assetClassId}
+                                    isEditMode={isEditing}
+                                    isSaving={updateAssetMutation.isPending}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        ) : asset.investmentExpenses ? (
+                          <div className="relative">
+                            {/* Read-only overlay when not in edit mode */}
+                            <div className="absolute inset-0 bg-transparent z-10" onClick={() => setIsEditing(true)}></div>
+                            <InvestmentExpenses
+                              key={`investment-expenses-view-${asset.id}`}
+                              value={parseInvestmentExpenses(asset.investmentExpenses)}
+                              onChange={(value) => {
+                                // Read-only when not editing - should trigger edit mode
+                                console.log("Investment expenses component triggered onChange in read-only mode");
+                                // We shouldn't reach here because of the overlay
+                              }}
+                              assetClassId={asset?.assetClassId}
+                              isEditMode={false}
+                            />
+                          </div>
+                        ) : (
+                          <div className="text-center p-6 border rounded border-dashed">
+                            <p className="text-muted-foreground mb-4">No investment expenses have been added yet.</p>
+                            <Button variant="outline" onClick={() => setIsEditing(true)}>
+                              <Plus className="mr-2 h-4 w-4" /> Add Expenses
+                            </Button>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                    
+                    {/* Investment Expense Analysis */}
+                    {asset.investmentExpenses && Object.keys(parseInvestmentExpenses(asset.investmentExpenses)).length > 0 && (
+                      <InvestmentExpenseAnalysis 
+                        key={`investment-expense-analysis-${asset.id}`}
+                        expenses={parseInvestmentExpenses(asset.investmentExpenses)}
+                        annualIncome={asset.annualIncome || 0}
+                      />
                     )}
                   </div>
                 )}
