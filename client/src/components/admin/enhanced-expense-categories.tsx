@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -44,6 +44,9 @@ export function EnhancedExpenseCategoriesInput({
   value, 
   onChange 
 }: EnhancedExpenseCategoriesInputProps) {
+  // Use a ref to track the original value and avoid unnecessary updates
+  const originalValueRef = useRef<string | null>(null);
+  
   // State for expense categories
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   
@@ -57,16 +60,21 @@ export function EnhancedExpenseCategoriesInput({
   const [categoryDescription, setCategoryDescription] = useState("");
   const [categoryFrequency, setCategoryFrequency] = useState<'monthly' | 'quarterly' | 'annually'>('monthly');
   
-  // Load categories from value
+  // Load categories from value - only on initial load or when edit is not in progress
   useEffect(() => {
-    console.log("Loading categories from value:", value);
+    // Skip processing if value has not changed from our last update
+    if (originalValueRef.current === value) {
+      console.log("Value is unchanged, skipping reload");
+      return;
+    }
     
-    // Skip reloading if edit dialog is open to prevent losing edit state
+    // Skip processing if edit dialog is open
     if (isEditDialogOpen) {
       console.log("Edit dialog is open, skipping reload of categories");
       return;
     }
     
+    console.log("Loading categories from value:", value);
     try {
       const parsed = value ? JSON.parse(value) : [];
       console.log("Parsed value:", parsed);
@@ -91,17 +99,24 @@ export function EnhancedExpenseCategoriesInput({
         console.log("Invalid format, setting empty categories array");
         setCategories([]);
       }
+      
+      // Update the ref to track this processed value
+      originalValueRef.current = value;
     } catch (error) {
       console.error("Error parsing expense categories:", error);
       setCategories([]);
     }
   }, [value, isEditDialogOpen]);
   
-  // Update parent when categories change
+  // Update parent when categories change from within this component
   const updateParent = (newCategories: ExpenseCategory[]) => {
     console.log("Updating parent with categories:", newCategories);
     const jsonString = JSON.stringify(newCategories);
     console.log("JSON string being sent to parent:", jsonString);
+    
+    // Update our ref to avoid processing our own update
+    originalValueRef.current = jsonString;
+    
     onChange(jsonString);
     console.log("Parent update complete");
   };
@@ -120,7 +135,7 @@ export function EnhancedExpenseCategoriesInput({
     
     // Check if category already exists
     if (categories.some(cat => cat.name.toLowerCase() === categoryName.trim().toLowerCase())) {
-      // Maybe show toast or highlight the existing entry
+      console.error("A category with this name already exists");
       return;
     }
     
@@ -131,6 +146,7 @@ export function EnhancedExpenseCategoriesInput({
       defaultFrequency: categoryFrequency
     };
     
+    console.log("Adding new category:", newCategory);
     const newCategories = [...categories, newCategory];
     setCategories(newCategories);
     updateParent(newCategories);
@@ -138,22 +154,27 @@ export function EnhancedExpenseCategoriesInput({
     setIsAddDialogOpen(false);
   };
   
-  // Start editing a category
+  // Start editing a category - this manually opens the dialog
   const handleStartEdit = (category: ExpenseCategory) => {
     console.log("Starting edit for category:", category);
-    setEditingCategory(category);
-    setCategoryName(category.name);
-    setCategoryDescription(category.description || "");
-    setCategoryFrequency(category.defaultFrequency || "monthly");
+    
+    // Force a defensive copy to ensure we don't lose this category if state updates
+    const categoryCopy = { ...category };
+    
+    setEditingCategory(categoryCopy);
+    setCategoryName(categoryCopy.name);
+    setCategoryDescription(categoryCopy.description || "");
+    setCategoryFrequency(categoryCopy.defaultFrequency || "monthly");
     setIsEditDialogOpen(true);
+    
     console.log("Edit dialog opened with values:", {
-      name: category.name,
-      description: category.description || "",
-      frequency: category.defaultFrequency || "monthly"
+      name: categoryCopy.name,
+      description: categoryCopy.description || "",
+      frequency: categoryCopy.defaultFrequency || "monthly"
     });
   };
   
-  // Update an existing category
+  // Update an existing category when save is clicked
   const handleUpdateCategory = () => {
     console.log("Attempting to update category");
     console.log("Current editing category:", editingCategory);
@@ -173,7 +194,7 @@ export function EnhancedExpenseCategoriesInput({
       return;
     }
     
-    // Make a defensive copy of categories in case they've been reloaded
+    // Make a defensive copy of categories
     const currentCategories = [...categories];
     console.log("Current categories array for update:", currentCategories);
     
@@ -195,12 +216,12 @@ export function EnhancedExpenseCategoriesInput({
     
     console.log("Updated category object:", updatedCategory);
     
-    // Find the category to update - even if the array has changed
+    // Find the category to update
     const categoryToUpdateIndex = currentCategories.findIndex(cat => cat.id === editingCategory.id);
     
     if (categoryToUpdateIndex === -1) {
       console.error("Original category no longer exists in the array!");
-      // If the category doesn't exist anymore, we'll add it
+      // If the category doesn't exist anymore (rare case), add it
       currentCategories.push(updatedCategory);
     } else {
       // Replace the category at its current position
@@ -208,6 +229,8 @@ export function EnhancedExpenseCategoriesInput({
     }
     
     console.log("New categories array:", currentCategories);
+    
+    // Update state and parent - this should happen before closing dialog
     setCategories(currentCategories);
     updateParent(currentCategories);
     console.log("Parent updated with new categories");
@@ -217,11 +240,12 @@ export function EnhancedExpenseCategoriesInput({
       resetForm();
       setIsEditDialogOpen(false);
       console.log("Edit dialog closed and form reset");
-    }, 100); // Small delay to ensure state updates complete
+    }, 200); // Longer delay to ensure state updates complete
   };
   
   // Delete a category
   const handleDeleteCategory = (id: string) => {
+    console.log("Deleting category with ID:", id);
     const newCategories = categories.filter(cat => cat.id !== id);
     setCategories(newCategories);
     updateParent(newCategories);
@@ -244,6 +268,90 @@ export function EnhancedExpenseCategoriesInput({
   // Get displayable frequency text
   const getFrequencyText = (frequency: string) => {
     return frequency.charAt(0).toUpperCase() + frequency.slice(1);
+  };
+  
+  // Create a standalone edit dialog that won't auto-close
+  const renderEditDialog = () => {
+    if (!isEditDialogOpen || !editingCategory) return null;
+    
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
+        <div className="relative bg-background border rounded-lg shadow-lg w-full max-w-md mx-4 p-6 overflow-auto max-h-[calc(100vh-2rem)]">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold">Edit Expense Category</h3>
+            <p className="text-sm text-muted-foreground">
+              Update the details of this expense category
+            </p>
+          </div>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label htmlFor="editCategoryName" className="text-sm font-medium">
+                Category Name
+              </label>
+              <Input
+                id="editCategoryName"
+                value={categoryName}
+                onChange={(e) => setCategoryName(e.target.value)}
+                placeholder="e.g., Property Tax, Insurance, Utilities"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="editCategoryDescription" className="text-sm font-medium">
+                Description
+              </label>
+              <Textarea
+                id="editCategoryDescription"
+                value={categoryDescription}
+                onChange={(e) => setCategoryDescription(e.target.value)}
+                placeholder="Description of this expense category"
+                rows={3}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="editCategoryFrequency" className="text-sm font-medium">
+                Default Frequency
+              </label>
+              <Select 
+                value={categoryFrequency} 
+                onValueChange={(value) => setCategoryFrequency(value as 'monthly' | 'quarterly' | 'annually')}
+              >
+                <SelectTrigger id="editCategoryFrequency">
+                  <SelectValue placeholder="Select frequency" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                  <SelectItem value="quarterly">Quarterly</SelectItem>
+                  <SelectItem value="annually">Annually</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <div className="flex justify-end gap-2 mt-6">
+            <Button
+              variant="outline" 
+              onClick={() => {
+                console.log("Cancel button clicked");
+                resetForm();
+                setIsEditDialogOpen(false);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleUpdateCategory} 
+              disabled={!categoryName.trim()}
+            >
+              Save Changes
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   };
   
   return (
@@ -429,89 +537,8 @@ export function EnhancedExpenseCategoriesInput({
         ))}
       </div>
       
-      {/* Edit Category Dialog */}
-      <Dialog 
-        open={isEditDialogOpen} 
-        onOpenChange={(open) => {
-          console.log("Dialog open change:", open);
-          if (!open) {
-            // Only close if user explicitly requests it
-            console.log("Dialog closing by user action");
-            setIsEditDialogOpen(false);
-            resetForm();
-          }
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Expense Category</DialogTitle>
-            <DialogDescription>
-              Update the details of this expense category
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label htmlFor="editCategoryName" className="text-sm font-medium">
-                Category Name
-              </label>
-              <Input
-                id="editCategoryName"
-                value={categoryName}
-                onChange={(e) => setCategoryName(e.target.value)}
-                placeholder="e.g., Property Tax, Insurance, Utilities"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <label htmlFor="editCategoryDescription" className="text-sm font-medium">
-                Description
-              </label>
-              <Textarea
-                id="editCategoryDescription"
-                value={categoryDescription}
-                onChange={(e) => setCategoryDescription(e.target.value)}
-                placeholder="Description of this expense category"
-                rows={3}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <label htmlFor="editCategoryFrequency" className="text-sm font-medium">
-                Default Frequency
-              </label>
-              <Select 
-                value={categoryFrequency} 
-                onValueChange={(value) => setCategoryFrequency(value as 'monthly' | 'quarterly' | 'annually')}
-              >
-                <SelectTrigger id="editCategoryFrequency">
-                  <SelectValue placeholder="Select frequency" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                  <SelectItem value="quarterly">Quarterly</SelectItem>
-                  <SelectItem value="annually">Annually</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button
-              variant="outline" 
-              onClick={() => {
-                resetForm();
-                setIsEditDialogOpen(false);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleUpdateCategory} disabled={!categoryName.trim()}>
-              Save Changes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Render the custom edit dialog */}
+      {renderEditDialog()}
       
       <small className="text-muted-foreground block mt-4">
         Add relevant expense categories for this asset class. Each category can have a description
