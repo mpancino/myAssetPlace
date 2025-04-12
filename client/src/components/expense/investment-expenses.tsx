@@ -129,6 +129,10 @@ export function InvestmentExpenses({
   isSaving = false,
 }: InvestmentExpensesProps) {
   const { toast } = useToast();
+  const { 
+    investmentExpenses: contextExpenses, 
+    setInvestmentExpenses: setContextExpenses 
+  } = useExpenses();
   
   // Fetch expense categories from the asset class
   const { expenseCategories, isLoading: isLoadingCategories } = useAssetClassDetails(assetClassId);
@@ -154,6 +158,13 @@ export function InvestmentExpenses({
     console.log(`[INV_EXPENSES:${Date.now()}] useEffect triggered with value:`, value);
     console.log(`[INV_EXPENSES:${Date.now()}] Type of value:`, typeof value);
     console.log(`[INV_EXPENSES:${Date.now()}] isEditMode:`, isEditMode);
+    
+    // First, check if we have data in the context
+    if (Object.keys(contextExpenses).length > 0) {
+      console.log(`[INV_EXPENSES:${Date.now()}] Using data from context with ${Object.keys(contextExpenses).length} items`);
+      setExpenses(contextExpenses);
+      return;
+    }
     
     if (value === undefined || value === null) {
       console.log(`[INV_EXPENSES:${Date.now()}] Value is null/undefined, returning early`);
@@ -197,12 +208,18 @@ export function InvestmentExpenses({
         };
       });
       
+      // Only update context if we got meaningful data and didn't already have context data
+      if (Object.keys(normalizedExpenses).length > 0) {
+        console.log(`[INV_EXPENSES:${Date.now()}] Setting context with ${Object.keys(normalizedExpenses).length} expenses`);
+        setContextExpenses(normalizedExpenses);
+      }
+      
       setExpenses(normalizedExpenses);
     } catch (err) {
       console.error('Failed to parse investment expenses data:', err);
       setExpenses({});
     }
-  }, [value]);
+  }, [value, contextExpenses, setContextExpenses]);
   
   // Calculate annual total based on amount and frequency
   const calculateAnnualTotal = useCallback((amount: number, frequency: string): number => {
@@ -271,10 +288,13 @@ export function InvestmentExpenses({
         [id]: newExpense
       };
       
-      // Update state
+      // Update local state
       setExpenses(updatedExpenses);
       
-      // Notify parent
+      // Update global context
+      setContextExpenses(updatedExpenses);
+      
+      // Notify parent component
       onChange(updatedExpenses);
       
       // Reset form
@@ -336,10 +356,13 @@ export function InvestmentExpenses({
         [editingId]: updatedExpense
       };
       
-      // Update state
+      // Update local state
       setExpenses(updatedExpenses);
       
-      // Notify parent
+      // Update global context
+      setContextExpenses(updatedExpenses);
+      
+      // Notify parent component
       onChange(updatedExpenses);
       
       // Reset form
@@ -365,10 +388,13 @@ export function InvestmentExpenses({
       // Create a copy without the deleted expense
       const { [id]: _, ...updatedExpenses } = expenses;
       
-      // Update state
+      // Update local state
       setExpenses(updatedExpenses);
       
-      // Notify parent
+      // Update global context
+      setContextExpenses(updatedExpenses);
+      
+      // Notify parent component
       onChange(updatedExpenses);
     } catch (err) {
       console.error('Error deleting expense:', err);
