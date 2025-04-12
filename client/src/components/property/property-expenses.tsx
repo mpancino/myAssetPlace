@@ -52,7 +52,7 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
     const annualTotal = calculateAnnualTotal(newExpense.amount, newExpense.frequency);
     
     const updatedExpenses = {
-      ...value,
+      ...expenses,
       [id]: {
         id,
         ...newExpense,
@@ -71,7 +71,7 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
   };
 
   const handleUpdateExpense = (expenseId: string) => {
-    const expense = value[expenseId];
+    const expense = expenses[expenseId];
     if (!expense) return;
     
     const updatedExpense = {
@@ -81,7 +81,7 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
     };
     
     const updatedExpenses = {
-      ...value,
+      ...expenses,
       [expenseId]: updatedExpense,
     };
     
@@ -96,7 +96,7 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
   };
 
   const handleDeleteExpense = (expenseId: string) => {
-    const updatedExpenses = { ...value };
+    const updatedExpenses = { ...expenses };
     delete updatedExpenses[expenseId];
     onChange(updatedExpenses);
   };
@@ -121,7 +121,7 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
     });
   };
 
-  const totalAnnualExpenses = Object.values(value).reduce(
+  const totalAnnualExpenses = Object.values(expenses).reduce(
     (total, expense) => total + expense.annualTotal,
     0
   );
@@ -143,7 +143,7 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
 
   return (
     <div className="space-y-4">
-      {Object.values(value).length > 0 && (
+      {Object.values(expenses).length > 0 && (
         <Table>
           <TableHeader>
             <TableRow>
@@ -156,7 +156,7 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
             </TableRow>
           </TableHeader>
           <TableBody>
-            {Object.values(value).map((expense) => (
+            {Object.values(expenses).map((expense) => (
               <TableRow key={expense.id}>
                 {editingExpenseId === expense.id ? (
                   <>

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Pencil, Trash2, MapPin, Home, Building, DollarSign, BedDouble, Bath, Car, CreditCard } from "lucide-react";
 import { useLocation } from "wouter";
 import { formatCurrency } from "@/lib/utils";
-import { type PropertyExpense } from "./property-expenses";
+import { PropertyExpense } from "@shared/schema";
 import { calculateLoanPayment } from "@shared/calculations";
 
 interface PropertyCardProps {
