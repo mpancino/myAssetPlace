@@ -60,6 +60,13 @@ export function EnhancedExpenseCategoriesInput({
   // Load categories from value
   useEffect(() => {
     console.log("Loading categories from value:", value);
+    
+    // Skip reloading if edit dialog is open to prevent losing edit state
+    if (isEditDialogOpen) {
+      console.log("Edit dialog is open, skipping reload of categories");
+      return;
+    }
+    
     try {
       const parsed = value ? JSON.parse(value) : [];
       console.log("Parsed value:", parsed);
@@ -88,7 +95,7 @@ export function EnhancedExpenseCategoriesInput({
       console.error("Error parsing expense categories:", error);
       setCategories([]);
     }
-  }, [value]);
+  }, [value, isEditDialogOpen]);
   
   // Update parent when categories change
   const updateParent = (newCategories: ExpenseCategory[]) => {
@@ -166,12 +173,16 @@ export function EnhancedExpenseCategoriesInput({
       return;
     }
     
+    // Make a defensive copy of categories in case they've been reloaded
+    const currentCategories = [...categories];
+    console.log("Current categories array for update:", currentCategories);
+    
     // Check if category name already exists and it's not the one being edited
-    const existingIndex = categories.findIndex(
+    const existingIndex = currentCategories.findIndex(
       cat => cat.name.toLowerCase() === categoryName.trim().toLowerCase() && cat.id !== editingCategory.id
     );
     if (existingIndex !== -1) {
-      console.error("A category with this name already exists:", categories[existingIndex]);
+      console.error("A category with this name already exists:", currentCategories[existingIndex]);
       return;
     }
     
@@ -184,21 +195,29 @@ export function EnhancedExpenseCategoriesInput({
     
     console.log("Updated category object:", updatedCategory);
     
-    const newCategories = categories.map(cat => {
-      if (cat.id === editingCategory.id) {
-        console.log("Replacing category", cat, "with", updatedCategory);
-        return updatedCategory;
-      }
-      return cat;
-    });
+    // Find the category to update - even if the array has changed
+    const categoryToUpdateIndex = currentCategories.findIndex(cat => cat.id === editingCategory.id);
     
-    console.log("New categories array:", newCategories);
-    setCategories(newCategories);
-    updateParent(newCategories);
+    if (categoryToUpdateIndex === -1) {
+      console.error("Original category no longer exists in the array!");
+      // If the category doesn't exist anymore, we'll add it
+      currentCategories.push(updatedCategory);
+    } else {
+      // Replace the category at its current position
+      currentCategories[categoryToUpdateIndex] = updatedCategory;
+    }
+    
+    console.log("New categories array:", currentCategories);
+    setCategories(currentCategories);
+    updateParent(currentCategories);
     console.log("Parent updated with new categories");
-    resetForm();
-    setIsEditDialogOpen(false);
-    console.log("Edit dialog closed and form reset");
+    
+    // Only close dialog after successful update
+    setTimeout(() => {
+      resetForm();
+      setIsEditDialogOpen(false);
+      console.log("Edit dialog closed and form reset");
+    }, 100); // Small delay to ensure state updates complete
   };
   
   // Delete a category
@@ -411,7 +430,18 @@ export function EnhancedExpenseCategoriesInput({
       </div>
       
       {/* Edit Category Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+      <Dialog 
+        open={isEditDialogOpen} 
+        onOpenChange={(open) => {
+          console.log("Dialog open change:", open);
+          if (!open) {
+            // Only close if user explicitly requests it
+            console.log("Dialog closing by user action");
+            setIsEditDialogOpen(false);
+            resetForm();
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Expense Category</DialogTitle>
