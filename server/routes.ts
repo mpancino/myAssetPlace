@@ -305,6 +305,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to update asset class" });
     }
   });
+  
+  // Add PATCH endpoint as an alternative to PUT for asset classes
+  app.patch("/api/asset-classes/:id", isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const validatedData = insertAssetClassSchema.partial().parse(req.body);
+      const assetClass = await storage.updateAssetClass(id, validatedData);
+      if (!assetClass) {
+        return res.status(404).json({ message: "Asset class not found" });
+      }
+      res.json(assetClass);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ errors: err.errors });
+      }
+      res.status(500).json({ message: "Failed to update asset class" });
+    }
+  });
+  
+  // Add DELETE endpoint for asset classes
+  app.delete("/api/asset-classes/:id", isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Check if this asset class is in use
+      const assetsUsingClass = await storage.listAssets(req.user!.id, undefined, { assetClassId: id });
+      if (assetsUsingClass.length > 0) {
+        return res.status(400).json({ 
+          message: "Cannot delete asset class that is in use by assets",
+          assetCount: assetsUsingClass.length
+        });
+      }
+      
+      const success = await storage.deleteAssetClass(id);
+      if (!success) {
+        return res.status(404).json({ message: "Asset class not found" });
+      }
+      
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Error deleting asset class:", err);
+      res.status(500).json({ message: "Failed to delete asset class" });
+    }
+  });
 
   // Assets routes
   app.get("/api/assets", async (req, res) => {
