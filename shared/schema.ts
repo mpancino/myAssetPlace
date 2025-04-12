@@ -113,6 +113,9 @@ export const assets = pgTable("assets", {
   accountPurpose: text("account_purpose"), // emergency, general, etc.
   isOffsetAccount: boolean("is_offset_account").default(false),
   offsetLinkedLoanId: integer("offset_linked_loan_id"),
+  // Account balance history for cash accounts
+  balanceHistory: json("balance_history"),
+  transactionCategories: json("transaction_categories"),
   // Loan specific fields
   loanProvider: text("loan_provider"),
   interestRateType: text("interest_rate_type"), // fixed, variable
@@ -150,6 +153,23 @@ export const assets = pgTable("assets", {
   mortgageLender: text("mortgage_lender"),
   mortgageType: text("mortgage_type"), // fixed, variable
   mortgagePaymentFrequency: text("mortgage_payment_frequency"), // weekly, fortnightly, monthly
+  // Share/Stock specific fields
+  ticker: text("ticker"), // Stock ticker symbol
+  exchange: text("exchange"), // Stock exchange
+  sharesQuantity: real("shares_quantity"), // Number of shares owned
+  currentPrice: real("current_price"), // Current price per share
+  lastPriceUpdateDate: date("last_price_update_date"), // Date of last price update
+  purchaseHistory: json("purchase_history"), // History of purchases
+  dividendYield: real("dividend_yield"), // Dividend yield percentage
+  dividendHistory: json("dividend_history"), // History of dividends received
+  // Stock Option specific fields
+  isStockOption: boolean("is_stock_option").default(false),
+  grantDate: date("grant_date"), // Date options were granted
+  expirationDate: date("expiration_date"), // Date options expire
+  strikePrice: real("strike_price"), // Price at which options can be exercised
+  optionQuantity: integer("option_quantity"), // Number of options
+  vestingSchedule: json("vesting_schedule"), // Schedule of vesting dates
+  vestedQuantity: integer("vested_quantity"), // Number of vested options
   // Maps/API-related fields
   longitude: real("longitude"),
   latitude: real("latitude"),
@@ -351,6 +371,58 @@ export const insertPropertySchema = insertAssetSchema.extend({
   purchaseDate: z.date().optional(),
 });
 
+// Stock/Share schema - for REQ-121 through REQ-127
+export const insertShareSchema = insertAssetSchema.extend({
+  ticker: z.string().min(1, "Ticker symbol is required"),
+  exchange: z.string().min(1, "Exchange name is required"),
+  sharesQuantity: z.number().min(0, "Quantity must be greater than 0"),
+  currentPrice: z.number().min(0, "Current price must be greater than 0"),
+  purchaseDate: z.date(),
+  dividendYield: z.number().min(0).max(100).optional(),
+  purchaseHistory: z.array(z.object({
+    id: z.string(),
+    date: z.date(),
+    quantity: z.number().min(0),
+    pricePerShare: z.number().min(0),
+    fees: z.number().min(0).optional(),
+    notes: z.string().optional(),
+  })).optional(),
+  dividendHistory: z.array(z.object({
+    id: z.string(),
+    date: z.date(),
+    amount: z.number().min(0),
+    frankedAmount: z.number().min(0).optional(),
+    notes: z.string().optional(),
+  })).optional(),
+  investmentExpenses: z.record(z.string(), z.object({
+    id: z.string(),
+    category: z.string(),
+    description: z.string(),
+    amount: z.number(),
+    frequency: z.string(),
+    annualTotal: z.number()
+  })).optional(),
+});
+
+// Employee Stock Options schema - for REQ-141 through REQ-147
+export const insertStockOptionSchema = insertAssetSchema.extend({
+  isStockOption: z.literal(true).default(true),
+  ticker: z.string().min(1, "Underlying stock ticker symbol is required"),
+  exchange: z.string().min(1, "Exchange name is required"),
+  strikePrice: z.number().min(0, "Strike price must be greater than 0"),
+  optionQuantity: z.number().int().min(1, "Option quantity must be at least 1"),
+  grantDate: z.date(),
+  expirationDate: z.date(),
+  currentPrice: z.number().min(0, "Current stock price must be greater than 0").optional(),
+  vestingSchedule: z.array(z.object({
+    id: z.string(),
+    date: z.date(),
+    quantity: z.number().int().min(0),
+    isVested: z.boolean().default(false),
+  })).optional(),
+  vestedQuantity: z.number().int().min(0).optional(),
+});
+
 export const insertCountrySchema = createInsertSchema(countries).omit({
   id: true,
 });
@@ -390,6 +462,8 @@ export type InsertAsset = z.infer<typeof insertAssetSchema>;
 export type InsertCashAccount = z.infer<typeof insertCashAccountSchema>;
 export type InsertLoan = z.infer<typeof insertLoanSchema>;
 export type InsertProperty = z.infer<typeof insertPropertySchema>;
+export type InsertShare = z.infer<typeof insertShareSchema>;
+export type InsertStockOption = z.infer<typeof insertStockOptionSchema>;
 
 // Expense category definition for administrators
 export type ExpenseCategory = {
@@ -417,6 +491,49 @@ export type InvestmentExpense = {
   amount: number;
   frequency: string;
   annualTotal: number;
+};
+
+// Share transaction types for purchase history
+export type SharePurchaseTransaction = {
+  id: string;
+  date: Date;
+  quantity: number;
+  pricePerShare: number;
+  fees?: number;
+  notes?: string;
+};
+
+// Dividend transaction type for dividend history
+export type DividendTransaction = {
+  id: string;
+  date: Date;
+  amount: number;
+  frankedAmount?: number;
+  notes?: string;
+};
+
+// Balance history entry for cash accounts
+export type BalanceHistoryEntry = {
+  id: string;
+  date: Date;
+  balance: number;
+  notes?: string;
+};
+
+// Transaction category for cash accounts
+export type TransactionCategory = {
+  id: string;
+  name: string;
+  type: 'income' | 'expense';
+  color?: string;
+};
+
+// Stock option vesting schedule entry
+export type VestingScheduleEntry = {
+  id: string;
+  date: Date;
+  quantity: number;
+  isVested: boolean;
 };
 
 export type SubscriptionPlan = typeof subscriptionPlans.$inferSelect;
