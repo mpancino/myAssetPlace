@@ -74,7 +74,7 @@ export function PropertyCard({
             )}
             {property.hasMortgage && (
               <Badge variant="outline" className="bg-primary/10 text-primary">
-                <CreditCard className="h-3 w-3 mr-1" /> Mortgaged
+                <CreditCard className="h-3 w-3 mr-1" /> Has Mortgage
               </Badge>
             )}
           </div>
