@@ -45,23 +45,31 @@ export default function DashboardPage() {
     queryKey: ["/api/assets"],
     enabled: !!user,
   });
-
-  // Fetch assets grouped by class for allocation
-  const { data: assetsByClass = [] } = useQuery<{ assetClass: AssetClass, totalValue: number }[]>({
-    queryKey: ["/api/assets/by-class"],
-    enabled: !!user,
-  });
   
   // Fetch asset classes for allocation chart
   const { data: assetClasses = [] } = useQuery<AssetClass[]>({
     queryKey: ["/api/asset-classes"],
     enabled: !!user,
   });
-  
+
   // Fetch asset holding types for allocation chart
   const { data: holdingTypes = [] } = useQuery<AssetHoldingType[]>({
     queryKey: ["/api/asset-holding-types"],
     enabled: !!user,
+  });
+  
+  // Instead of using the broken server endpoint, calculate asset class allocation on the client
+  // Create a map of asset class totals
+  const assetsByClass = assetClasses.map(assetClass => {
+    // Sum the total value of assets in this class
+    const classAssets = assets.filter(asset => asset.assetClassId === assetClass.id);
+    const totalValue = classAssets.reduce((sum, asset) => sum + asset.value, 0);
+    
+    // Return in the same format as the API would
+    return {
+      assetClass,
+      totalValue
+    };
   });
   
   // Add sample data mutation
