@@ -104,6 +104,24 @@ export const assets = pgTable("assets", {
   incomeYield: real("income_yield"),
   expenses: json("expenses"),
   isHidden: boolean("is_hidden").default(false).notNull(),
+  isLiability: boolean("is_liability").default(false).notNull(),
+  // Cash account specific fields
+  interestRate: real("interest_rate"),
+  accountNumber: text("account_number"),
+  institution: text("institution"),
+  accountType: text("account_type"), // savings, checking, etc.
+  accountPurpose: text("account_purpose"), // emergency, general, etc.
+  isOffsetAccount: boolean("is_offset_account").default(false),
+  offsetLinkedLoanId: integer("offset_linked_loan_id"),
+  // Loan specific fields
+  loanProvider: text("loan_provider"),
+  interestRateType: text("interest_rate_type"), // fixed, variable
+  loanTerm: integer("loan_term"), // in months
+  paymentFrequency: text("payment_frequency"), // monthly, weekly, etc.
+  paymentAmount: real("payment_amount"),
+  startDate: date("start_date"),
+  endDate: date("end_date"),
+  originalLoanAmount: real("original_loan_amount"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -218,6 +236,28 @@ export const insertAssetSchema = createInsertSchema(assets).omit({
   updatedAt: true,
 });
 
+export const insertCashAccountSchema = insertAssetSchema.extend({
+  accountNumber: z.string().optional(),
+  institution: z.string().min(1, "Bank/institution name is required"),
+  accountType: z.enum(["savings", "checking", "term_deposit", "other"]),
+  interestRate: z.number().min(0).max(100).optional(),
+  accountPurpose: z.enum(["general", "emergency", "savings", "investment", "other"]).optional(),
+  isOffsetAccount: z.boolean().optional().default(false),
+  offsetLinkedLoanId: z.number().optional(),
+});
+
+export const insertLoanSchema = insertAssetSchema.extend({
+  isLiability: z.literal(true).default(true),
+  loanProvider: z.string().min(1, "Loan provider is required"),
+  interestRate: z.number().min(0).max(100),
+  interestRateType: z.enum(["fixed", "variable"]),
+  loanTerm: z.number().min(1, "Loan term must be at least 1 month"),
+  paymentFrequency: z.enum(["weekly", "fortnightly", "monthly", "quarterly", "annually"]),
+  paymentAmount: z.number().min(0, "Payment amount must be greater than 0"),
+  startDate: z.date(),
+  originalLoanAmount: z.number().min(0, "Original loan amount must be greater than 0"),
+});
+
 export const insertCountrySchema = createInsertSchema(countries).omit({
   id: true,
 });
@@ -254,6 +294,8 @@ export type InsertAssetClass = z.infer<typeof insertAssetClassSchema>;
 
 export type Asset = typeof assets.$inferSelect;
 export type InsertAsset = z.infer<typeof insertAssetSchema>;
+export type InsertCashAccount = z.infer<typeof insertCashAccountSchema>;
+export type InsertLoan = z.infer<typeof insertLoanSchema>;
 
 export type SubscriptionPlan = typeof subscriptionPlans.$inferSelect;
 export type InsertSubscriptionPlan = z.infer<typeof insertSubscriptionPlanSchema>;

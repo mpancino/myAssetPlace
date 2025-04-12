@@ -3,9 +3,9 @@
 This document outlines the development roadmap for the myAssetPlace financial management platform, organizing all 372 requirements from the Product Design Document (PDD v1.12) into a structured build order.
 
 **Document Information**
-* **Version:** 1.1
+* **Version:** 1.2
 * **Date:** April 11, 2025
-* **Last Updated:** April 11, 2025
+* **Last Updated:** April 12, 2025
 * **Status:** Active
 
 ## Build Phases Overview
@@ -185,12 +185,12 @@ The development is divided into 11 logical phases:
 
 ### Phase 3: Core Asset Management (Vertical Slice 1 - Cash Accounts & Loans)
 
-- [ ] `[REQ-029]` Asset class navigation
-- [ ] `[REQ-030]` Asset summary view implementation
-- [ ] `[REQ-031]` Individual asset details view
-- [ ] `[REQ-032]` Asset configuration (add, edit, delete)
+- [x] `[REQ-029]` Asset class navigation
+- [x] `[REQ-030]` Asset summary view implementation
+- [x] `[REQ-031]` Individual asset details view
+- [x] `[REQ-032]` Asset configuration (add, edit, delete)
 - [ ] `[REQ-035]` Financial metrics display
-- [ ] `[REQ-103]` Asset class page overview/summary
+- [x] `[REQ-103]` Asset class page overview/summary
 - [ ] `[REQ-134]` Bank account management (cash)
 - [ ] `[REQ-135]` Balance tracking (cash)
 - [ ] `[REQ-136]` Interest rate input (cash)
@@ -203,18 +203,18 @@ The development is divided into 11 logical phases:
 - [ ] `[REQ-157]` Loan balance tracking
 - [ ] `[REQ-158]` Offset account integration with loans
 - [ ] `[REQ-159]` Loan holding type classification
-- [ ] `[REQ-174]` Balance sheet tab implementation (basic version)
+- [x] `[REQ-174]` Balance sheet tab implementation (basic version)
 - [ ] `[REQ-180]` Asset allocation visualization (basic version)
-- [ ] `[REQ-181]` Quick action buttons (add asset)
+- [x] `[REQ-181]` Quick action buttons (add asset)
 - [ ] `[REQ-203]` Asset view switching implementation
-- [ ] `[REQ-218]` Card design for asset representation
-- [ ] `[REQ-219]` Data tables for asset lists
-- [ ] `[REQ-243]` Asset class landing pages
-- [ ] `[REQ-244]` Asset detail/edit wizard (basic mode)
+- [x] `[REQ-218]` Card design for asset representation
+- [x] `[REQ-219]` Data tables for asset lists
+- [x] `[REQ-243]` Asset class landing pages
+- [x] `[REQ-244]` Asset detail/edit wizard (basic mode)
 - [ ] `[REQ-245]` Asset detail/edit wizard (advanced mode)
 - [ ] `[REQ-266]` Cash/loan specific components
-- [ ] `[REQ-297]` Asset visibility filtering
-- [ ] `[REQ-307]` Asset visibility status tracking
+- [x] `[REQ-297]` Asset visibility filtering
+- [x] `[REQ-307]` Asset visibility status tracking
 - [ ] `[REQ-340]` Dashboard integration for cash/loans
 
 ### Phase 4: Core Asset Management (Vertical Slice 2 - Real Estate & Mortgages)
