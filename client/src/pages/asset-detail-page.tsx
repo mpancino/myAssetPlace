@@ -221,6 +221,10 @@ export default function AssetDetailPage() {
     mutationFn: async (values: AssetDetailFormValues) => {
       if (!assetId) return null;
       
+      // Log the values being sent in the request to debug property expenses
+      console.log("Sending PATCH request with data:", JSON.stringify(values));
+      console.log("Property expenses:", values.propertyExpenses);
+      
       const res = await apiRequest("PATCH", `/api/assets/${assetId}`, values);
       const data = await res.json();
       return data as Asset;

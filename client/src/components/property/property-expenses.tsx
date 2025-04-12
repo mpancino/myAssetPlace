@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -32,9 +32,16 @@ interface PropertyExpensesProps {
 export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: PropertyExpensesProps) {
   const [isAddingExpense, setIsAddingExpense] = useState(false);
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
+  const [expenses, setExpenses] = useState<Record<string, PropertyExpense>>(value || {});
   
-  // Ensure value is always an object (even if it's null or undefined)
-  const expenses = value || {};
+  // Sync expenses with incoming value prop when it changes from outside
+  useEffect(() => {
+    // Only update if value is not null/undefined and has different contents
+    if (value && JSON.stringify(value) !== JSON.stringify(expenses)) {
+      console.log("Updating expenses from value prop:", value);
+      setExpenses(value);
+    }
+  }, [value]);
   
   const [newExpense, setNewExpense] = useState<Omit<PropertyExpense, "id" | "annualTotal">>({
     category: "",
@@ -60,7 +67,13 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
       },
     };
     
+    // Update local state
+    setExpenses(updatedExpenses);
+    // Propagate change to parent
     onChange(updatedExpenses);
+    
+    console.log("After adding expense:", updatedExpenses);
+    
     setNewExpense({
       category: "",
       description: "",
@@ -85,7 +98,13 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
       [expenseId]: updatedExpense,
     };
     
+    // Update local state
+    setExpenses(updatedExpenses);
+    // Propagate change to parent
     onChange(updatedExpenses);
+    
+    console.log("After updating expense:", updatedExpenses);
+    
     setEditingExpenseId(null);
     setNewExpense({
       category: "",
@@ -98,7 +117,13 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
   const handleDeleteExpense = (expenseId: string) => {
     const updatedExpenses = { ...expenses };
     delete updatedExpenses[expenseId];
+    
+    // Update local state
+    setExpenses(updatedExpenses);
+    // Propagate change to parent
     onChange(updatedExpenses);
+    
+    console.log("After deleting expense:", updatedExpenses);
   };
 
   const handleStartEdit = (expense: PropertyExpense) => {
