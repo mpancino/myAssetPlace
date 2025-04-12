@@ -45,6 +45,7 @@ export function PropertyForm({
   assetClassId,
 }: PropertyFormProps) {
   const [isRental, setIsRental] = useState(defaultValues?.isRental || false);
+  const [hasMortgage, setHasMortgage] = useState(defaultValues?.hasMortgage || false);
 
   // Fetch asset classes for dropdown
   const { data: assetClasses = [] } = useQuery<AssetClass[]>({
@@ -86,6 +87,16 @@ export function PropertyForm({
       rentalFrequency: defaultValues?.rentalFrequency || "monthly",
       vacancyRate: defaultValues?.vacancyRate || 0,
       propertyExpenses: defaultValues?.propertyExpenses || {},
+      
+      // Mortgage fields
+      hasMortgage: defaultValues?.hasMortgage || false,
+      mortgageAmount: defaultValues?.mortgageAmount || 0,
+      mortgageInterestRate: defaultValues?.mortgageInterestRate || 0,
+      mortgageTerm: defaultValues?.mortgageTerm || 360, // Default 30 years (360 months)
+      mortgageStartDate: defaultValues?.mortgageStartDate || undefined,
+      mortgageLender: defaultValues?.mortgageLender || "",
+      mortgageType: defaultValues?.mortgageType || "variable",
+      mortgagePaymentFrequency: defaultValues?.mortgagePaymentFrequency || "monthly",
     },
   });
 

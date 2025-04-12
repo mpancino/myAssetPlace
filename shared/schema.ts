@@ -307,7 +307,18 @@ export const insertPropertySchema = insertAssetSchema.extend({
   rentalIncome: z.number().min(0).optional(),
   rentalFrequency: z.enum(["weekly", "fortnightly", "monthly"]).optional(),
   vacancyRate: z.number().min(0).max(100).default(0).optional(),
-  propertyExpenses: z.record(z.string(), z.number()).optional(),
+  propertyExpenses: z.record(z.string(), z.any()).optional(),
+  
+  // Mortgage fields
+  hasMortgage: z.boolean().default(false),
+  mortgageAmount: z.number().min(0).optional(),
+  mortgageInterestRate: z.number().min(0).max(100).optional(),
+  mortgageTerm: z.number().min(1).max(1200).optional(), // In months (100 years max)
+  mortgageStartDate: z.date().optional(),
+  mortgageLender: z.string().optional(),
+  mortgageType: z.enum(["fixed", "variable"]).optional(),
+  mortgagePaymentFrequency: z.enum(["weekly", "fortnightly", "monthly"]).optional(),
+  
   mortgageId: z.number().optional(),
   longitude: z.number().optional(),
   latitude: z.number().optional(),
