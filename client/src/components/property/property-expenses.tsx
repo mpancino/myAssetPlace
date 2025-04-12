@@ -59,12 +59,16 @@ export function PropertyExpenseAnalysis({
   expenses, 
   rentalIncome = 0,
   rentalFrequency = "monthly",
-  currencySymbol = "$"
+  currencySymbol = "$",
+  isSaving = false,
+  isSaved = false
 }: {
   expenses: Record<string, PropertyExpense>;
   rentalIncome?: number;
   rentalFrequency?: string;
   currencySymbol?: string;
+  isSaving?: boolean;
+  isSaved?: boolean;
 }) {
   // Calculate total annual expenses
   const totalAnnualExpenses = useMemo(() => 

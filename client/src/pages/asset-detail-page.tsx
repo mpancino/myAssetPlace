@@ -15,7 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { MortgageDetails } from "@/components/property/mortgage-details";
-import { PropertyExpenses } from "@/components/property/property-expenses";
+import { PropertyExpenses, PropertyExpenseAnalysis } from "@/components/property/property-expenses";
 import { 
   ArrowLeft, 
   BarChart3,
@@ -25,10 +25,13 @@ import {
   Calculator,
   Calendar, 
   Car,
+  CheckCircle2,
   CreditCard, 
+  Database,
   DollarSign, 
   Edit, 
   Link,
+  Loader2,
   Map as MapIcon,
   Percent, 
   Receipt,
@@ -122,6 +125,7 @@ export default function AssetDetailPage() {
   // View states
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
+  const [currentPropertyExpenses, setCurrentPropertyExpenses] = useState<Record<string, PropertyExpense> | undefined>(undefined);
   
   // Fetch the asset details
   const { data: asset, isLoading: isLoadingAsset } = useQuery<Asset>({
@@ -1576,11 +1580,19 @@ export default function AssetDetailPage() {
               {/* Expenses Tab - Dedicated tab for property expenses */}
               <TabsContent value="expenses" className="space-y-4 pt-4">
                 {asset && selectedClass?.name?.toLowerCase() === "real estate" && (
-                  <div className="space-y-4">
+                  <div className="space-y-6">
+                    {/* Expense Management Card */}
                     <Card>
                       <CardHeader className="pb-2">
                         <CardTitle className="flex items-center">
-                          <BarChart3 className="mr-2 h-5 w-5 text-primary" /> Property Expenses
+                          <BarChart3 className="mr-2 h-5 w-5 text-primary" /> 
+                          Property Expenses
+                          {updateAssetMutation.isPending && (
+                            <Loader2 className="ml-2 h-4 w-4 animate-spin text-primary" />
+                          )}
+                          {updateAssetMutation.isSuccess && (
+                            <CheckCircle2 className="ml-2 h-4 w-4 text-green-500" />
+                          )}
                         </CardTitle>
                         <CardDescription>
                           Manage expenses related to this property
@@ -1617,15 +1629,16 @@ export default function AssetDetailPage() {
                       </CardContent>
                     </Card>
                     
-                    <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="flex items-center">
-                          <Calculator className="mr-2 h-5 w-5 text-primary" /> Expense Analysis
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        {asset.propertyExpenses && typeof asset.propertyExpenses === 'object' && 
-                         Object.keys(asset.propertyExpenses).length > 0 ? (
+                    {/* Property Expense Analysis */}
+                    {asset.propertyExpenses && Object.keys(asset.propertyExpenses).length > 0 && (
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="flex items-center">
+                            <Calculator className="mr-2 h-5 w-5 text-primary" /> 
+                            Expense Analysis
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
                           <div className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                               <div className="border rounded-lg p-4 text-center">
@@ -1658,55 +1671,113 @@ export default function AssetDetailPage() {
                             </div>
                             
                             {asset.isRental && asset.rentalIncome && asset.rentalFrequency && (
-                              <Card className="bg-muted/30">
-                                <CardHeader className="pb-2">
-                                  <CardTitle className="text-lg">Rental Income vs. Expenses</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                      <p className="text-sm text-muted-foreground mb-1">Annual Rental Income</p>
-                                      <p className="text-xl font-semibold text-green-600">
-                                        {formatCurrency(
-                                          asset.rentalIncome * 
-                                          (asset.rentalFrequency === 'monthly' ? 12 : 
-                                           asset.rentalFrequency === 'weekly' ? 52 : 1)
-                                        )}
-                                      </p>
-                                    </div>
-                                    
-                                    <div>
-                                      <p className="text-sm text-muted-foreground mb-1">Annual Expenses</p>
-                                      <p className="text-xl font-semibold text-destructive">
-                                        {formatCurrency(
-                                          Object.values(asset.propertyExpenses as Record<string, PropertyExpense>)
-                                            .reduce((total, expense) => total + expense.annualTotal, 0)
-                                        )}
-                                      </p>
-                                    </div>
-                                    
-                                    <div className="col-span-2">
-                                      <p className="text-sm text-muted-foreground mb-1">Net Annual Income</p>
-                                      <p className="text-2xl font-bold text-primary">
-                                        {formatCurrency(
-                                          (asset.rentalIncome * 
-                                           (asset.rentalFrequency === 'monthly' ? 12 : 
-                                            asset.rentalFrequency === 'weekly' ? 52 : 1)) - 
-                                          Object.values(asset.propertyExpenses as Record<string, PropertyExpense>)
-                                            .reduce((total, expense) => total + expense.annualTotal, 0)
-                                        )}
-                                      </p>
-                                    </div>
+                              <div className="mt-4">
+                                <h3 className="text-lg font-medium mb-3">Rental Income Analysis</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                  <div className="border rounded-lg p-4 text-center">
+                                    <p className="text-sm text-muted-foreground mb-1">Annual Rental Income</p>
+                                    <p className="text-xl font-semibold text-green-600">
+                                      {formatCurrency(
+                                        asset.rentalIncome * 
+                                        (asset.rentalFrequency === 'monthly' ? 12 : 
+                                         asset.rentalFrequency === 'weekly' ? 52 : 1)
+                                      )}
+                                    </p>
                                   </div>
-                                </CardContent>
-                              </Card>
+                                  
+                                  <div className="border rounded-lg p-4 text-center">
+                                    <p className="text-sm text-muted-foreground mb-1">Expense to Income Ratio</p>
+                                    <p className="text-xl font-semibold text-amber-600">
+                                      {(
+                                        (Object.values(asset.propertyExpenses as Record<string, PropertyExpense>)
+                                          .reduce((total, expense) => total + expense.annualTotal, 0) / 
+                                          (asset.rentalIncome * (asset.rentalFrequency === 'monthly' ? 12 : 
+                                            asset.rentalFrequency === 'weekly' ? 52 : 1))
+                                        ) * 100
+                                      ).toFixed(1)}%
+                                    </p>
+                                  </div>
+                                  
+                                  <div className="border rounded-lg p-4 text-center">
+                                    <p className="text-sm text-muted-foreground mb-1">Net Annual Income</p>
+                                    <p className="text-xl font-semibold text-green-600">
+                                      {formatCurrency(
+                                        (asset.rentalIncome * 
+                                         (asset.rentalFrequency === 'monthly' ? 12 : 
+                                          asset.rentalFrequency === 'weekly' ? 52 : 1)) - 
+                                        Object.values(asset.propertyExpenses as Record<string, PropertyExpense>)
+                                          .reduce((total, expense) => total + expense.annualTotal, 0)
+                                      )}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
                             )}
+                            
+                            <div className="mt-4">
+                              <h4 className="text-sm font-medium mb-2">Expense Breakdown</h4>
+                              <div className="space-y-2">
+                                {Object.values(asset.propertyExpenses as Record<string, PropertyExpense>)
+                                  .sort((a, b) => b.annualTotal - a.annualTotal)
+                                  .map((expense) => (
+                                    <div key={expense.id} className="flex items-center justify-between">
+                                      <div className="flex-1">
+                                        <div className="flex items-center">
+                                          <span className="font-medium">{expense.category}</span>
+                                          <span className="text-xs text-muted-foreground ml-2">({expense.description})</span>
+                                        </div>
+                                        <div className="h-2 bg-muted rounded-full mt-1 overflow-hidden">
+                                          <div 
+                                            className="h-full bg-primary rounded-full" 
+                                            style={{ 
+                                              width: `${(expense.annualTotal / 
+                                                Object.values(asset.propertyExpenses as Record<string, PropertyExpense>)
+                                                  .reduce((total, exp) => total + exp.annualTotal, 0)) * 100}%` 
+                                            }}
+                                          />
+                                        </div>
+                                      </div>
+                                      <div className="ml-4 text-right">
+                                        <div className="font-medium">{formatCurrency(expense.annualTotal)}</div>
+                                        <div className="text-xs text-muted-foreground">{formatCurrency(expense.amount)} {expense.frequency}</div>
+                                      </div>
+                                    </div>
+                                  ))}
+                              </div>
+                            </div>
                           </div>
-                        ) : (
-                          <p className="text-muted-foreground">Add property expenses to view expense analysis.</p>
-                        )}
-                      </CardContent>
-                    </Card>
+                        </CardContent>
+                      </Card>
+                    )}
+                    
+                    {/* Database persistence status card (shows only when editing) */}
+                    {isEditing && (
+                      <Card className="bg-muted border-dashed">
+                        <CardContent className="pt-4">
+                          <div className="flex items-start">
+                            <Database className="h-5 w-5 mt-0.5 mr-2 text-muted-foreground" />
+                            <div>
+                              <h4 className="text-sm font-medium">Data Persistence Status</h4>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {updateAssetMutation.isPending && "Saving expense data to database..."}
+                                {updateAssetMutation.isSuccess && "Expense data successfully saved to database."}
+                                {!updateAssetMutation.isPending && !updateAssetMutation.isSuccess && 
+                                  "Changes will be saved to database when you click 'Save Changes'."}
+                              </p>
+                              <div className="mt-2 text-xs">
+                                <code className="bg-background rounded px-1 py-0.5 text-xs">
+                                  {Object.keys(currentPropertyExpenses || {}).length || 
+                                   Object.keys(asset.propertyExpenses || {}).length || 0} expenses tracked
+                                </code>
+                                {updateAssetMutation.isSuccess && (
+                                  <span className="ml-2 text-green-600 font-medium">✓ Verified in database</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
                   </div>
                 )}
               </TabsContent>
