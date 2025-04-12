@@ -735,6 +735,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Safely extract properties with type checking - support both formats
               const category = String(((expense as any).category || (expense as any).categoryId) || '');
               const amount = Number(expense.amount || 0);
+              const description = String(((expense as any).description || (expense as any).name) || '');
+              
               // Check if frequency property exists, defaulting to monthly
               const frequency = typeof (expense as any).frequency === 'string' 
                 ? String((expense as any).frequency) 
@@ -755,8 +757,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Mark this signature as seen
               dedupeTracker[dedupeKey] = true;
               
-              // Keep this expense
-              dedupedExpenses[key] = expense;
+              // Calculate annualTotal if needed
+              const multiplier = frequency === 'monthly' ? 12 : (frequency === 'quarterly' ? 4 : 1);
+              const annualTotal = (expense as any).annualTotal || (amount * multiplier);
+              
+              // Create a normalized expense object that will satisfy validation
+              dedupedExpenses[key] = {
+                ...expense,
+                // Ensure both property name formats exist
+                category,
+                categoryId: category,
+                description,
+                name: description,
+                annualTotal
+              };
             }
           });
           
@@ -801,6 +815,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Safely extract properties with type checking
               const category = String(((expense as any).category || (expense as any).categoryId) || '');
               const amount = Number(expense.amount || 0);
+              const description = String(((expense as any).description || (expense as any).name) || '');
+              
               // Check if frequency property exists, defaulting to monthly
               const frequency = typeof (expense as any).frequency === 'string' 
                 ? String((expense as any).frequency) 
@@ -821,8 +837,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Mark this signature as seen
               dedupeTracker[dedupeKey] = true;
               
-              // Keep this expense
-              dedupedExpenses[key] = expense;
+              // Calculate annualTotal if needed
+              const multiplier = frequency === 'monthly' ? 12 : (frequency === 'quarterly' ? 4 : 1);
+              const annualTotal = (expense as any).annualTotal || (amount * multiplier);
+              
+              // Create a normalized expense object that will satisfy validation
+              dedupedExpenses[key] = {
+                ...expense,
+                // Ensure both property name formats exist
+                category,
+                categoryId: category,
+                description,
+                name: description,
+                annualTotal
+              };
             }
           });
           
