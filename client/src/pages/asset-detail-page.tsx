@@ -208,8 +208,10 @@ export default function AssetDetailPage() {
       rentalFrequency: asset?.rentalFrequency || null,
       vacancyRate: asset?.vacancyRate || null,
       
-      // Property expenses
-      propertyExpenses: asset?.propertyExpenses || {},
+      // Property expenses - ensure proper parsing
+      propertyExpenses: typeof asset?.propertyExpenses === 'string'
+        ? JSON.parse(asset.propertyExpenses as string)
+        : asset?.propertyExpenses || {},
       
       // Mortgage fields
       hasMortgage: asset?.hasMortgage || false,
