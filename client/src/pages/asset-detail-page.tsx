@@ -1802,7 +1802,7 @@ export default function AssetDetailPage() {
                                     <p className="text-sm text-muted-foreground mb-1">Expense to Income Ratio</p>
                                     <p className="text-xl font-semibold text-amber-600">
                                       {(
-                                        (Object.values(asset.propertyExpenses as Record<string, PropertyExpense>)
+                                        (Object.values(parsePropertyExpenses(asset.propertyExpenses))
                                           .reduce((total, expense) => total + expense.annualTotal, 0) / 
                                           (asset.rentalIncome * (asset.rentalFrequency === 'monthly' ? 12 : 
                                             asset.rentalFrequency === 'weekly' ? 52 : 1))
@@ -1818,7 +1818,7 @@ export default function AssetDetailPage() {
                                         (asset.rentalIncome * 
                                          (asset.rentalFrequency === 'monthly' ? 12 : 
                                           asset.rentalFrequency === 'weekly' ? 52 : 1)) - 
-                                        Object.values(asset.propertyExpenses as Record<string, PropertyExpense>)
+                                        Object.values(parsePropertyExpenses(asset.propertyExpenses))
                                           .reduce((total, expense) => total + expense.annualTotal, 0)
                                       )}
                                     </p>
@@ -1830,7 +1830,7 @@ export default function AssetDetailPage() {
                             <div className="mt-4">
                               <h4 className="text-sm font-medium mb-2">Expense Breakdown</h4>
                               <div className="space-y-2">
-                                {Object.values(asset.propertyExpenses as Record<string, PropertyExpense>)
+                                {Object.values(parsePropertyExpenses(asset.propertyExpenses))
                                   .sort((a, b) => b.annualTotal - a.annualTotal)
                                   .map((expense) => (
                                     <div key={expense.id} className="flex items-center justify-between">
@@ -1844,7 +1844,7 @@ export default function AssetDetailPage() {
                                             className="h-full bg-primary rounded-full" 
                                             style={{ 
                                               width: `${(expense.annualTotal / 
-                                                Object.values(asset.propertyExpenses as Record<string, PropertyExpense>)
+                                                Object.values(parsePropertyExpenses(asset.propertyExpenses))
                                                   .reduce((total, exp) => total + exp.annualTotal, 0)) * 100}%` 
                                             }}
                                           />
@@ -1880,7 +1880,7 @@ export default function AssetDetailPage() {
                               <div className="mt-2 text-xs">
                                 <code className="bg-background rounded px-1 py-0.5 text-xs">
                                   {Object.keys(currentPropertyExpenses || {}).length || 
-                                   Object.keys(asset.propertyExpenses || {}).length || 0} expenses tracked
+                                   Object.keys(parsePropertyExpenses(asset.propertyExpenses)).length || 0} expenses tracked
                                 </code>
                                 {savePropertyExpensesMutation.isSuccess && (
                                   <span className="ml-2 text-green-600 font-medium">✓ Verified in database</span>
