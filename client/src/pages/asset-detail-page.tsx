@@ -927,6 +927,168 @@ export default function AssetDetailPage() {
                 </Card>
               </TabsContent>
               
+              {/* Property Info Tab */}
+              <TabsContent value="property" className="space-y-4 pt-4">
+                {asset && selectedClass?.name?.toLowerCase() === "real estate" && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Property Details</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                        <div className="grid grid-cols-1 gap-4">
+                          {/* Property Features */}
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                            {asset.bedrooms && (
+                              <div className="flex items-center">
+                                <BedDouble className="mr-2 h-4 w-4 text-muted-foreground" />
+                                <div>
+                                  <p className="text-sm text-muted-foreground">Bedrooms</p>
+                                  <p className="font-medium">{asset.bedrooms}</p>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {asset.bathrooms && (
+                              <div className="flex items-center">
+                                <Bath className="mr-2 h-4 w-4 text-muted-foreground" />
+                                <div>
+                                  <p className="text-sm text-muted-foreground">Bathrooms</p>
+                                  <p className="font-medium">{asset.bathrooms}</p>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {asset.parkingSpaces && asset.parkingSpaces > 0 && (
+                              <div className="flex items-center">
+                                <Car className="mr-2 h-4 w-4 text-muted-foreground" />
+                                <div>
+                                  <p className="text-sm text-muted-foreground">Parking Spaces</p>
+                                  <p className="font-medium">{asset.parkingSpaces}</p>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {asset.landSize && asset.landSize > 0 && (
+                              <div className="flex items-center">
+                                <MapIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                                <div>
+                                  <p className="text-sm text-muted-foreground">Land Size</p>
+                                  <p className="font-medium">{asset.landSize} m²</p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Property address information */}
+                          {asset.address && (
+                            <div className="mt-4">
+                              <h3 className="font-medium mb-2">Property Address</h3>
+                              <div className="bg-muted p-4 rounded-md">
+                                <p>{asset.address}</p>
+                                {asset.suburb && <p>{asset.suburb}</p>}
+                                {asset.state && asset.postcode && <p>{asset.state}, {asset.postcode}</p>}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    {/* Rental Income Card */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Rental Information</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        {/* Rental status */}
+                        <div>
+                          <div className="text-sm text-muted-foreground mb-1">Rental Status</div>
+                          <div className="font-medium">
+                            {asset.isRental ? "Investment Property" : "Owner-Occupied"}
+                          </div>
+                        </div>
+                        
+                        {/* Show rental details only if it's a rental property */}
+                        {asset.isRental && (
+                          <>
+                            <div>
+                              <div className="text-sm text-muted-foreground mb-1">Weekly Rent</div>
+                              <div className="font-medium">{asset.weeklyRent ? formatCurrency(asset.weeklyRent) : "Not specified"}</div>
+                            </div>
+                            
+                            <div>
+                              <div className="text-sm text-muted-foreground mb-1">Annual Rental Income</div>
+                              <div className="font-medium">{asset.weeklyRent ? formatCurrency(asset.weeklyRent * 52) : "Not specified"}</div>
+                            </div>
+                            
+                            <div>
+                              <div className="text-sm text-muted-foreground mb-1">Rental Yield</div>
+                              <div className="font-medium">
+                                {asset.weeklyRent && asset.value
+                                  ? `${((asset.weeklyRent * 52 / asset.value) * 100).toFixed(2)}%`
+                                  : "Not available"
+                                }
+                              </div>
+                            </div>
+                          </>
+                        )}
+                      </CardContent>
+                    </Card>
+                    
+                    {/* Property Expenses Table */}
+                    {asset.propertyExpenses && Object.keys(asset.propertyExpenses).length > 0 && (
+                      <Card className="col-span-1 md:col-span-2">
+                        <CardHeader>
+                          <CardTitle className="flex items-center">
+                            <Receipt className="mr-2 h-4 w-4" /> Property Expenses
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Category</TableHead>
+                                <TableHead>Description</TableHead>
+                                <TableHead>Amount</TableHead>
+                                <TableHead>Frequency</TableHead>
+                                <TableHead>Annual Total</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {Object.values(asset.propertyExpenses).map((expense: PropertyExpense) => (
+                                <TableRow key={expense.id}>
+                                  <TableCell>{expense.category}</TableCell>
+                                  <TableCell>{expense.description}</TableCell>
+                                  <TableCell>{formatCurrency(expense.amount)}</TableCell>
+                                  <TableCell>
+                                    {expense.frequency.charAt(0).toUpperCase() + expense.frequency.slice(1)}
+                                  </TableCell>
+                                  <TableCell>{formatCurrency(expense.annualTotal)}</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                            <TableFooter>
+                              <TableRow>
+                                <TableCell colSpan={4}>Total Annual Expenses</TableCell>
+                                <TableCell>
+                                  {formatCurrency(
+                                    Object.values(asset.propertyExpenses).reduce(
+                                      (total, expense) => total + expense.annualTotal,
+                                      0
+                                    )
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            </TableFooter>
+                          </Table>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                )}
+              </TabsContent>
+              
               <TabsContent value="performance" className="space-y-4 pt-4">
                 {/* Performance charts and trends would go here */}
                 <Card>
