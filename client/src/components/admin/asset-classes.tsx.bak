@@ -87,9 +87,6 @@ export default function AssetClasses() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  // Core asset classes are protected and cannot be deleted
-  const protectedAssetClassIds = [1, 2, 3, 4, 5, 6, 8, 9];
-  
   // Query to fetch asset classes
   const { data: assetClasses = [], isLoading: isLoadingAssetClasses } = useQuery<AssetClass[]>({
     queryKey: ["/api/asset-classes"],
@@ -252,11 +249,6 @@ export default function AssetClasses() {
   const handleEditClick = (assetClass: AssetClass) => {
     setSelectedAssetClass(assetClass);
     setIsEditDialogOpen(true);
-  };
-
-  // Function to check if an asset class is protected (core)
-  const isProtectedAssetClass = (assetClassId: number) => {
-    return protectedAssetClassIds.includes(assetClassId);
   };
 
   return (
@@ -472,7 +464,7 @@ export default function AssetClasses() {
                         </Button>
                         
                         {/* Only show delete button for non-core asset classes */}
-                        {!isProtectedAssetClass(assetClass.id) && (
+                        {![1, 2, 3, 4, 5, 6, 8, 9].includes(assetClass.id) && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button variant="ghost" size="icon" className="text-destructive">

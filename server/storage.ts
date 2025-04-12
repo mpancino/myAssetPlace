@@ -216,6 +216,25 @@ export class DatabaseStorage implements IStorage {
   
   async deleteAssetClass(id: number): Promise<boolean> {
     try {
+      // Protect core asset classes from deletion
+      const protectedAssetClassIds = [1, 2, 3, 4, 5, 6, 8, 9];
+      if (protectedAssetClassIds.includes(id)) {
+        console.error(`Cannot delete protected asset class with ID ${id}`);
+        return false;
+      }
+      
+      // Check if the asset class exists
+      const [assetClass] = await db
+        .select()
+        .from(assetClasses)
+        .where(eq(assetClasses.id, id));
+        
+      if (!assetClass) {
+        console.error(`Asset class with ID ${id} not found`);
+        return false;
+      }
+      
+      // Delete the asset class
       const result = await db
         .delete(assetClasses)
         .where(eq(assetClasses.id, id));
