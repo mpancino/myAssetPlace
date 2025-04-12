@@ -1095,6 +1095,9 @@ export default function AssetDetailPage() {
                         </CardContent>
                       </Card>
                     )}
+                    
+                    {/* Mortgage Details */}
+                    {asset && <MortgageDetails property={asset} />}
                   </div>
                 )}
               </TabsContent>

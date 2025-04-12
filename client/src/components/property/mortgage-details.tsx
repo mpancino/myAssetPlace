@@ -35,6 +35,14 @@ import { formatCurrency } from "@/lib/utils";
 import { Asset } from "@shared/schema";
 import { calculateLoanPayment, calculatePrincipalAndInterest, generateAmortizationSchedule } from "@shared/calculations";
 
+// Define property with mortgage fields
+interface PropertyWithMortgage extends Asset {
+  mortgageAmount?: number;
+  mortgageInterestRate?: number;
+  mortgageTerm?: number;
+  mortgageStartDate?: string;
+}
+
 interface MortgageDetailsProps {
   property: Asset;
 }
@@ -44,12 +52,15 @@ export function MortgageDetails({ property }: MortgageDetailsProps) {
   const [page, setPage] = useState(1);
   const pageSize = 12; // Show 1 year of payments
   
+  // Cast property to PropertyWithMortgage type to access mortgage fields
+  const propertyWithMortgage = property as PropertyWithMortgage;
+  
   // Extract mortgage details from property
-  const mortgageAmount = (property as any).mortgageAmount || 0;
-  const interestRate = (property as any).mortgageInterestRate || 0;
-  const termInMonths = (property as any).mortgageTerm || 0;
+  const mortgageAmount = propertyWithMortgage.mortgageAmount || 0;
+  const interestRate = propertyWithMortgage.mortgageInterestRate || 0;
+  const termInMonths = propertyWithMortgage.mortgageTerm || 0;
   const termInYears = termInMonths / 12;
-  const startDate = (property as any).mortgageStartDate || property.purchaseDate;
+  const startDate = propertyWithMortgage.mortgageStartDate || property.purchaseDate;
   
   // Check if mortgage exists
   const hasMortgage = mortgageAmount > 0 && interestRate > 0 && termInMonths > 0;
