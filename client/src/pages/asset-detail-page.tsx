@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DatePicker } from "@/components/ui/date-picker";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { MortgageDetails } from "@/components/property/mortgage-details";
@@ -1022,6 +1023,205 @@ export default function AssetDetailPage() {
               <TabsContent value="property" className="space-y-4 pt-4">
                 {asset && selectedClass?.name?.toLowerCase() === "real estate" && asset && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Mortgage Information Card - Only shown when editing */}
+                    {isEditing && (
+                      <Card className="col-span-1 md:col-span-2">
+                        <CardHeader>
+                          <CardTitle className="flex items-center">
+                            <DollarSign className="mr-2 h-5 w-5" /> Mortgage Information
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <FormField
+                            control={form.control}
+                            name="hasMortgage"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="text-base">Property Mortgage</FormLabel>
+                                  <FormDescription>
+                                    Does this property have a mortgage?
+                                  </FormDescription>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value === true}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                          
+                          {form.watch("hasMortgage") && (
+                            <div className="space-y-4 animate-in fade-in-50 duration-300">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField
+                                  control={form.control}
+                                  name="mortgageAmount"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Mortgage Amount ($)</FormLabel>
+                                      <FormControl>
+                                        <Input
+                                          type="number"
+                                          step="0.01"
+                                          placeholder="Enter mortgage amount"
+                                          onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : 0)}
+                                          value={field.value || ""}
+                                        />
+                                      </FormControl>
+                                      <FormDescription>
+                                        Current outstanding mortgage balance
+                                      </FormDescription>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                
+                                <FormField
+                                  control={form.control}
+                                  name="mortgageLender"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Mortgage Lender</FormLabel>
+                                      <FormControl>
+                                        <Input 
+                                          placeholder="e.g., ANZ, Commonwealth Bank" 
+                                          {...field} 
+                                          value={field.value || ""}
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField
+                                  control={form.control}
+                                  name="mortgageInterestRate"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Interest Rate (%)</FormLabel>
+                                      <FormControl>
+                                        <Input
+                                          type="number"
+                                          step="0.01"
+                                          min="0"
+                                          max="100"
+                                          placeholder="Enter interest rate"
+                                          onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : 0)}
+                                          value={field.value || ""}
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                
+                                <FormField
+                                  control={form.control}
+                                  name="mortgageType"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Interest Rate Type</FormLabel>
+                                      <Select
+                                        value={field.value || ""}
+                                        onValueChange={field.onChange}
+                                      >
+                                        <FormControl>
+                                          <SelectTrigger>
+                                            <SelectValue placeholder="Select interest rate type" />
+                                          </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                          <SelectItem value="fixed">Fixed</SelectItem>
+                                          <SelectItem value="variable">Variable</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField
+                                  control={form.control}
+                                  name="mortgageTerm"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Loan Term (months)</FormLabel>
+                                      <FormControl>
+                                        <Input
+                                          type="number"
+                                          min="1"
+                                          max="1200"
+                                          placeholder="e.g., 360 for 30 years"
+                                          onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : 360)}
+                                          value={field.value || ""}
+                                        />
+                                      </FormControl>
+                                      <FormDescription>
+                                        Total term of the mortgage (e.g., 360 months = 30 years)
+                                      </FormDescription>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                
+                                <FormField
+                                  control={form.control}
+                                  name="mortgageStartDate"
+                                  render={({ field }) => (
+                                    <FormItem className="flex flex-col">
+                                      <FormLabel>Mortgage Start Date</FormLabel>
+                                      <DatePicker
+                                        date={field.value ? new Date(field.value) : null}
+                                        setDate={field.onChange}
+                                      />
+                                      <FormDescription>
+                                        When did the mortgage begin?
+                                      </FormDescription>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+                              
+                              <FormField
+                                control={form.control}
+                                name="mortgagePaymentFrequency"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Payment Frequency</FormLabel>
+                                    <Select
+                                      value={field.value || ""}
+                                      onValueChange={field.onChange}
+                                    >
+                                      <FormControl>
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Select payment frequency" />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        <SelectItem value="weekly">Weekly</SelectItem>
+                                        <SelectItem value="fortnightly">Fortnightly</SelectItem>
+                                        <SelectItem value="monthly">Monthly</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    )}
+                    
                     <Card>
                       <CardHeader>
                         <CardTitle>Property Details</CardTitle>
@@ -1127,6 +1327,11 @@ export default function AssetDetailPage() {
                       </CardContent>
                     </Card>
                     
+                    {/* Mortgage Details - Only shown when not editing */}
+                    {!isEditing && asset.hasMortgage && (
+                      <MortgageDetails property={asset} />
+                    )}
+                    
                     {/* Property Expenses Table */}
                     {(asset as any).propertyExpenses && Object.keys((asset as any).propertyExpenses).length > 0 && (
                       <Card className="col-span-1 md:col-span-2">
@@ -1176,9 +1381,6 @@ export default function AssetDetailPage() {
                         </CardContent>
                       </Card>
                     )}
-                    
-                    {/* Mortgage Details */}
-                    {asset && selectedClass?.name === "Real Estate" && <MortgageDetails property={asset} />}
                   </div>
                 )}
               </TabsContent>
