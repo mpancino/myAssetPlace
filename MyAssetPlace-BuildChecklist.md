@@ -121,10 +121,12 @@ Status indicators:
   - ✅ Purchase price & date tracking [REQ-124]
 
 - ⚠️ **Property Expenses**
-  - ⚠️ Expense category tracking [REQ-121] - Implementation needs stabilization
+  - ⚠️ Expense category tracking [REQ-121, REQ-113] - Implementation needs stabilization
   - ⚠️ Expense amount & frequency [REQ-122] - Implementation needs stabilization
   - ⚠️ Annual expense calculation [REQ-124] - Implementation exists but needs improvement
-  - ❌ Expense deduplication - Currently being implemented to fix bugs
+  - ⚠️ Expense deduplication - Currently being implemented to fix bugs
+  - ⚠️ Property-specific expense categories [REQ-065] - Basic implementation but needs enhancement
+  - ⚠️ Expense-to-value ratio calculation - Implementation exists but needs improvement
 
 - ✅ **Rental Income**
   - ✅ Rental income tracking [REQ-125] 
@@ -142,18 +144,20 @@ Status indicators:
 
 ## Phase 5: Tax Foundation
 - ❌ **Tax Framework**
-  - ❌ Income tax calculation [REQ-135]
+  - ❌ Income tax calculation [REQ-135, REQ-150]
   - ❌ Capital gains tax calculation [REQ-136] 
   - ❌ Dividend tax calculation [REQ-137]
   - ❌ Tax impact visualization [REQ-138]
-  - ❌ Tax rates by country and holding type [REQ-139]
+  - ❌ Tax rates by country and holding type [REQ-139, REQ-101]
   - ❌ Pre-tax and post-tax view options [REQ-140]
+  - ❌ Clear explanations of applied tax calculations [REQ-011, REQ-012]
 
 - ⚠️ **Tax Configuration**
   - ⚠️ Tax brackets setup [REQ-098] - Schema exists but limited UI/functionality
   - ⚠️ Capital gains rate configuration [REQ-099] - Schema exists but limited UI/functionality
   - ⚠️ Dividend tax rate configuration [REQ-100] - Schema exists but limited UI/functionality
-  - ❌ Special tax treatment by holding type [REQ-143]
+  - ❌ Special tax treatment by holding type [REQ-062, REQ-143]
+  - ❌ Tax projections incorporating administrator rules [REQ-102]
 
 ## Phase 6: Cash & Equity Assets
 - ⚠️ **Cash & Bank Account Management**
@@ -177,51 +181,64 @@ Status indicators:
 
 ## Phase 7: Financial Projections
 - ❌ **Projection Engine**
-  - ❌ Multi-year financial projections [REQ-036, REQ-160]
-  - ❌ Asset selection for projections [REQ-036]
-  - ❌ Basic mode with default scenarios [REQ-038]
-  - ❌ Advanced mode with adjustable parameters [REQ-039]
-  - ❌ Projection year limits by subscription [REQ-040]
+  - ❌ Multi-year financial projections [REQ-036, REQ-160, REQ-178]
+  - ❌ Asset selection for projections [REQ-036, REQ-164]
+  - ❌ Basic mode with simplified projections [REQ-038, REQ-160, REQ-162]
+  - ❌ Advanced mode with adjustable parameters [REQ-039, REQ-161, REQ-163]
+  - ❌ Projection year limits by subscription [REQ-040, REQ-075, REQ-178]
   - ❌ Detailed breakdowns by asset class/type [REQ-041, REQ-166]
+  - ❌ Include only visible/accessible assets [REQ-166, REQ-085]
+
+- ❌ **Projection UI & Visualization**
+  - ❌ Projection period display options [REQ-167]
+  - ❌ Cashflow summary visualization [REQ-175]
+  - ❌ Projection summary charts [REQ-176, REQ-177]
+  - ❌ Future net worth dashboard tiles [REQ-179]
 
 - ❌ **Projection Scenarios**
   - ❌ Low/medium/high growth scenarios [REQ-161]
-  - ❌ Inflation adjustment [REQ-162]
+  - ❌ Inflation adjustment options [REQ-162, REQ-163]
   - ❌ Income reinvestment options [REQ-163]
-  - ❌ Asset-specific growth rates [REQ-164]
+  - ❌ Asset-specific growth rate customization [REQ-164]
   - ❌ Retirement planning scenarios [REQ-165]
 
 ## Phase 8: Subscription Management
 - ❌ **Subscription Enforcement**
-  - ❌ Plan limit enforcement [REQ-077]
-  - ❌ Upgrade prompts [REQ-077]
-  - ❌ Mode restriction handling [REQ-079, REQ-080]
+  - ❌ Plan limit enforcement [REQ-077, REQ-081]
+  - ❌ Upgrade prompts when limits are reached [REQ-077]
+  - ❌ Mode restriction handling for downgraded accounts [REQ-079, REQ-080]
   - ❌ Asset hiding based on LIFO principle [REQ-084, REQ-085]
+  - ❌ Feature hiding for inaccessible modes [REQ-086]
   - ❌ Renewal notifications [REQ-082]
+  - ❌ Free tier fallback for expired subscriptions [REQ-078, REQ-087]
 
 - ⚠️ **Subscription UI**
   - ⚠️ Plan management interface [REQ-043] - Basic implementation
   - ❌ Billing history view [REQ-043]
-  - ❌ Plan comparison [REQ-044]
+  - ❌ Plan comparison visualization [REQ-044]
   - ❌ Upgrade/downgrade workflow [REQ-044]
+  - ❌ Basic/Advanced mode toggle visibility control [REQ-048, REQ-049]
 
 ## Phase 9: External API Integrations
 - ❌ **Property Valuation Integration**
-  - ❌ Property API integration [REQ-167]
+  - ❌ Property API integration [REQ-167, REQ-053]
   - ❌ Address validation [REQ-168]
   - ❌ Historical price data retrieval [REQ-169]
   - ❌ Valuation estimate display [REQ-170]
+  - ❌ API access restriction by subscription [REQ-073]
 
 - ❌ **Stock/Share Price Integration**
-  - ❌ Stock market data integration [REQ-173]
+  - ❌ Stock market data integration [REQ-173, REQ-053]
   - ❌ Symbol lookup [REQ-174]
   - ❌ Automatic price updates [REQ-175]
   - ❌ Market indices tracking [REQ-176]
+  - ❌ API access restriction by subscription [REQ-073]
 
 - ❌ **Geolocation Services**
   - ❌ Location-based property data [REQ-178]
   - ❌ Map visualization [REQ-179]
   - ❌ Address autocompletion [REQ-180]
+  - ❌ API key management for geolocation services [REQ-068]
 
 ## Phase 10: Polish & Advanced Features
 - ❌ **Data Import/Export**
@@ -245,39 +262,52 @@ Status indicators:
 
 ### High Priority
 1. ⚠️ **Fix Critical Defects**
-   - Fix PropertyExpenses component category display issue (DEF-001)
+   - Fix PropertyExpenses component category display issue (DEF-001) where categories show as "[object Object]"
    - Fix property expense deduplication issues in Phase 4 [REQ-121, REQ-122, REQ-124]
+   - Fix TypeScript errors in asset-detail-page.tsx related to expense handling
 
 2. ⚠️ **Stabilize Core Features**
-   - Complete expense categories for asset classes [REQ-065]
+   - Complete expense categories implementation for asset classes [REQ-065]
+   - Standardize expense handling between PropertyExpenses and InvestmentExpenses components
+   - Improve ExpenseContext API for consistent expense management
    - Improve security implementation (CSRF, cookies) [REQ-371, REQ-372]
-   - Fix TypeScript errors in asset-detail-page.tsx
 
 ### Medium Priority
-1. ⚠️ **Admin Configuration Enhancements**
+1. ⚠️ **Subscription Management (Phase 8)**
+   - Implement subscription enforcement [REQ-077, REQ-081]
+   - Develop upgrade prompts when limits are reached [REQ-077]
+   - Implement Basic/Advanced mode access control [REQ-074, REQ-048, REQ-049]
+   - Add projection year limits by subscription [REQ-075, REQ-178]
+
+2. ⚠️ **Admin Configuration Enhancements (Phase 2)**
    - Complete tax rules configuration for holding types [REQ-056, REQ-059, REQ-060]
    - Enhance admin configuration screens [REQ-251]
    - Implement holding type expense configuration [REQ-061]
-
-2. ⚠️ **Subscription Management**
-   - Implement subscription enforcement [REQ-077]
-   - Complete interface mode access control [REQ-074]
-   - Implement projection year limits by subscription [REQ-075]
+   - Add configuration for available external APIs by country [REQ-053]
 
 ### Lower Priority
-1. ❌ **API Integration Setup**
-   - Add API key management for admin [REQ-068]
-   - Configure available external APIs by country [REQ-053]
-   - Implement API integration access control [REQ-073]
+1. ❌ **API Integration Setup (Phase 9)**
+   - Implement API key management for admin [REQ-068]
+   - Configure API integration access control based on subscription [REQ-073]
+   - Set up framework for property valuation API [REQ-167]
+   - Set up framework for stock/share price API [REQ-173]
 
-2. ❌ **Tax Framework Foundation**
-   - Start implementing the tax calculation framework [REQ-135 to REQ-140]
+2. ❌ **Financial Projections Foundation (Phase 7)**
+   - Implement basic projection engine [REQ-036, REQ-160]
+   - Create projection UI with summary visualization [REQ-176, REQ-177]
+   - Add asset selection for projections [REQ-036, REQ-164]
+
+3. ❌ **Tax Framework Foundation (Phase 5)**
+   - Implement income tax calculation [REQ-135, REQ-150]
+   - Create capital gains tax calculation [REQ-136]
+   - Add tax impact visualization [REQ-138]
    - Build on existing tax configuration schema
 
 ## Defects
 | ID | Description | Component | Priority | Status |
 |---|---|---|---|---|
 | DEF-001 | PropertyExpenses component displays "[object Object]" in category dropdown menu instead of category names | PropertyExpenses | High | 🔄 In Progress |
+| DEF-002 | TypeScript errors in asset-detail-page.tsx related to expense handling and property types | AssetDetailPage | High | ⏳ Not Started |
 
 ## Implementation Notes
 1. We should NOT implement cryptocurrency or any asset classes not explicitly mentioned in the PDD
