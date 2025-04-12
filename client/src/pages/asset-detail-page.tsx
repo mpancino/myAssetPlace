@@ -71,6 +71,33 @@ const assetDetailSchema = z.object({
   growthRate: z.number().optional().nullable(),
   incomeYield: z.number().optional().nullable(),
   isHidden: z.boolean().default(false),
+  
+  // Property-specific fields
+  propertyType: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  suburb: z.string().optional().nullable(),
+  city: z.string().optional().nullable(),
+  state: z.string().optional().nullable(),
+  postcode: z.string().optional().nullable(),
+  country: z.string().optional().nullable(),
+  bedrooms: z.number().optional().nullable(),
+  bathrooms: z.number().optional().nullable(),
+  parkingSpaces: z.number().optional().nullable(),
+  landSize: z.number().optional().nullable(),
+  isRental: z.boolean().optional().nullable(),
+  rentalIncome: z.number().optional().nullable(),
+  rentalFrequency: z.string().optional().nullable(),
+  vacancyRate: z.number().optional().nullable(),
+  
+  // Mortgage fields
+  hasMortgage: z.boolean().optional().nullable(),
+  mortgageLender: z.string().optional().nullable(),
+  mortgageAmount: z.number().optional().nullable(),
+  mortgageInterestRate: z.number().optional().nullable(),
+  mortgageType: z.string().optional().nullable(),
+  mortgageTerm: z.number().optional().nullable(),
+  mortgageStartDate: z.date().optional().nullable(),
+  mortgagePaymentFrequency: z.string().optional().nullable(),
 });
 
 type AssetDetailFormValues = z.infer<typeof assetDetailSchema>;
@@ -147,6 +174,33 @@ export default function AssetDetailPage() {
         growthRate: asset.growthRate,
         incomeYield: asset.incomeYield,
         isHidden: asset.isHidden,
+        
+        // Property-specific fields
+        propertyType: asset.propertyType,
+        address: asset.address,
+        suburb: asset.suburb,
+        city: asset.city,
+        state: asset.state,
+        postcode: asset.postcode,
+        country: asset.country,
+        bedrooms: asset.bedrooms,
+        bathrooms: asset.bathrooms,
+        parkingSpaces: asset.parkingSpaces,
+        landSize: asset.landSize,
+        isRental: asset.isRental,
+        rentalIncome: asset.rentalIncome,
+        rentalFrequency: asset.rentalFrequency,
+        vacancyRate: asset.vacancyRate,
+        
+        // Mortgage fields
+        hasMortgage: asset.hasMortgage,
+        mortgageLender: asset.mortgageLender,
+        mortgageAmount: asset.mortgageAmount,
+        mortgageInterestRate: asset.mortgageInterestRate,
+        mortgageType: asset.mortgageType,
+        mortgageTerm: asset.mortgageTerm,
+        mortgageStartDate: asset.mortgageStartDate ? new Date(asset.mortgageStartDate) : null,
+        mortgagePaymentFrequency: asset.mortgagePaymentFrequency,
       });
     }
   }, [asset, form]);
@@ -241,6 +295,33 @@ export default function AssetDetailPage() {
         growthRate: asset.growthRate,
         incomeYield: asset.incomeYield,
         isHidden: asset.isHidden,
+        
+        // Property-specific fields
+        propertyType: asset.propertyType,
+        address: asset.address,
+        suburb: asset.suburb,
+        city: asset.city,
+        state: asset.state,
+        postcode: asset.postcode,
+        country: asset.country,
+        bedrooms: asset.bedrooms,
+        bathrooms: asset.bathrooms,
+        parkingSpaces: asset.parkingSpaces,
+        landSize: asset.landSize,
+        isRental: asset.isRental,
+        rentalIncome: asset.rentalIncome,
+        rentalFrequency: asset.rentalFrequency,
+        vacancyRate: asset.vacancyRate,
+        
+        // Mortgage fields
+        hasMortgage: asset.hasMortgage,
+        mortgageLender: asset.mortgageLender,
+        mortgageAmount: asset.mortgageAmount,
+        mortgageInterestRate: asset.mortgageInterestRate,
+        mortgageType: asset.mortgageType,
+        mortgageTerm: asset.mortgageTerm,
+        mortgageStartDate: asset.mortgageStartDate ? new Date(asset.mortgageStartDate) : null,
+        mortgagePaymentFrequency: asset.mortgagePaymentFrequency,
       });
     }
     setIsEditing(false);
