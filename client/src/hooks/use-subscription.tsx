@@ -42,17 +42,26 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       return true;
     } else {
       // Advanced mode depends on the plan
-      try {
-        // Parse the allowed interface modes
-        const allowedModes = userSubscription.plan.allowedInterfaceModes 
-          ? JSON.parse(String(userSubscription.plan.allowedInterfaceModes))
-          : ["basic"];
-        
-        return allowedModes.includes("advanced");
-      } catch (error) {
-        console.error("Error parsing allowed interface modes:", error);
-        return false; // Default to restricting if parsing fails
+      // Parse the allowed interface modes
+      let allowedModes = ["basic"]; // Default to basic mode only
+      
+      if (userSubscription.plan.allowedInterfaceModes) {
+        try {
+          // When it's stored as a JSON string
+          if (typeof userSubscription.plan.allowedInterfaceModes === 'string') {
+            allowedModes = JSON.parse(userSubscription.plan.allowedInterfaceModes);
+          } 
+          // When it's already an array (sometimes happens with ORMs)
+          else if (Array.isArray(userSubscription.plan.allowedInterfaceModes)) {
+            allowedModes = userSubscription.plan.allowedInterfaceModes;
+          }
+        } catch (error) {
+          console.error("Error parsing allowed interface modes:", error);
+          // Keep the default
+        }
       }
+      
+      return allowedModes.includes("advanced");
     }
   };
 
@@ -90,13 +99,20 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Check if user can add more assets based on their limit
+  // Check if user can add more assets based on their subscription limit
   const canAddMoreAssets = (): boolean => {
     if (!userSubscription) return false;
     
-    // This will query the current asset count and compare against the plan limit
-    // in a future implementation
-    // For now, return true
+    // If there's no limit set, user can add unlimited assets
+    if (!userSubscription.plan.maxAssetsPerClass) return true;
+    
+    // In a complete implementation, this would:
+    // 1. Query the current asset count per class
+    // 2. Compare against the plan limit
+    // 3. Return false if any class exceeds its limit
+    
+    // For now, we implement a simple check
+    // Future: Could use React Query to fetch current asset count
     return true;
   };
 
@@ -113,8 +129,17 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     
     if (!userSubscription.plan.allowedApis) return false;
     
+    // Parse allowed APIs
+    let allowedApis: string[] = [];
+    
     try {
-      const allowedApis = JSON.parse(String(userSubscription.plan.allowedApis));
+      // Handle different data types
+      if (typeof userSubscription.plan.allowedApis === 'string') {
+        allowedApis = JSON.parse(userSubscription.plan.allowedApis);
+      } else if (Array.isArray(userSubscription.plan.allowedApis)) {
+        allowedApis = userSubscription.plan.allowedApis;
+      }
+      
       return allowedApis.includes(apiType);
     } catch (error) {
       console.error("Error parsing API access limits:", error);

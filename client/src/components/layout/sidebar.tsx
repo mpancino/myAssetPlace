@@ -224,7 +224,10 @@ export default function Sidebar({ className }: SidebarProps) {
         <div className="mt-3 space-y-3">
           {/* Interface Mode Toggle */}
           <div className="px-2 py-1">
-            <ModeToggle />
+            <ModeToggle 
+              currentMode={user?.preferredMode || "basic"} 
+              allowedModes={["basic", "advanced"]} 
+            />
           </div>
           
           <NavLink href="/settings" icon={<Settings className="h-5 w-5 mr-3" />}>

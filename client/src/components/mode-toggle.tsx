@@ -10,6 +10,8 @@ import { Loader2 } from "lucide-react";
 
 interface ModeToggleProps {
   className?: string;
+  currentMode?: string;
+  allowedModes?: string[];
 }
 
 export default function ModeToggle({ className }: ModeToggleProps) {

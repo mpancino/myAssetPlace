@@ -9,8 +9,16 @@ import {
   CardContent,
   CardFooter
 } from "@/components/ui/card";
-import { ArrowUpCircle } from "lucide-react";
+import { ArrowUpCircle, Sparkles } from "lucide-react";
 
+/**
+ * Types of feature protection based on subscription limitations:
+ * - mode: Limits access to basic/advanced interface modes
+ * - assetClass: Limits access to specific asset classes
+ * - holdingType: Limits access to specific holding types (e.g., trust accounts)
+ * - assetLimit: Prevents adding more assets if the plan's limit is reached
+ * - apiAccess: Controls access to external APIs (property valuation, stock data, etc.)
+ */
 type ProtectionType = 
   | { type: "mode"; mode: "basic" | "advanced" }
   | { type: "assetClass"; id: number }
