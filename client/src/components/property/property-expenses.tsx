@@ -223,50 +223,78 @@ export function PropertyExpenses({
     setEditingExpenseId(null);
   }, []);
 
-  // Initialize expenses from props - critical for data persistence
-  useEffect(() => {
+  // Function to parse and normalize expense data - used at initialization and after edits
+  const parseExpenseData = useCallback((inputValue: any): Record<string, PropertyExpense> => {
     let parsedExpenses: Record<string, PropertyExpense> = {};
     
     try {
-      console.log('[PROPERTY EXPENSES] Initializing with value type:', typeof value);
+      console.log('[PROPERTY EXPENSES] Parsing expense data of type:', typeof inputValue);
       
       // Handle string format (needs parsing)
-      if (typeof value === 'string') {
-        const stringValue = String(value);
+      if (typeof inputValue === 'string') {
+        const stringValue = String(inputValue);
         try {
           if (!stringValue || stringValue === '') {
             console.log('[PROPERTY EXPENSES] Empty string received');
-            parsedExpenses = {};
           } else {
             parsedExpenses = JSON.parse(stringValue);
             console.log('[PROPERTY EXPENSES] Successfully parsed string to object');
           }
         } catch (parseError) {
           console.error('[PROPERTY EXPENSES] JSON parse error:', parseError);
-          parsedExpenses = {};
         }
       } 
       // Handle object format (direct use with deep clone)
-      else if (value && typeof value === 'object') {
+      else if (inputValue && typeof inputValue === 'object') {
         // Create a deep clone to avoid reference issues
-        parsedExpenses = JSON.parse(JSON.stringify(value));
+        parsedExpenses = JSON.parse(JSON.stringify(inputValue));
       }
       
-      console.log('[PROPERTY EXPENSES] Setting initial expense data:', 
-        Object.keys(parsedExpenses).length, 'expenses');
+      // Ensure each expense has all required properties with the correct types
+      const normalizedExpenses: Record<string, PropertyExpense> = {};
+      
+      Object.entries(parsedExpenses).forEach(([id, expense]) => {
+        if (expense && typeof expense === 'object' && 'id' in expense) {
+          normalizedExpenses[id] = {
+            id: expense.id as string,
+            category: expense.category as string || 'Other',
+            description: expense.description as string || '',
+            amount: typeof expense.amount === 'number' ? expense.amount : 0,
+            frequency: ['monthly', 'quarterly', 'annually'].includes(expense.frequency as string) 
+              ? expense.frequency as string 
+              : 'monthly',
+            annualTotal: typeof expense.annualTotal === 'number' 
+              ? expense.annualTotal 
+              : calculateAnnualTotal(
+                  typeof expense.amount === 'number' ? expense.amount : 0,
+                  ['monthly', 'quarterly', 'annually'].includes(expense.frequency as string) 
+                    ? expense.frequency as string 
+                    : 'monthly'
+                )
+          };
+        }
+      });
+      
+      console.log('[PROPERTY EXPENSES] Normalized expense data:', 
+        Object.keys(normalizedExpenses).length, 'expenses');
         
-      if (Object.keys(parsedExpenses).length > 0) {
-        console.log('[PROPERTY EXPENSES] Expense IDs:', Object.keys(parsedExpenses));
+      if (Object.keys(normalizedExpenses).length > 0) {
+        console.log('[PROPERTY EXPENSES] Expense IDs:', Object.keys(normalizedExpenses));
       }
       
-      // Update local state with parsed expenses
-      setExpenses(parsedExpenses);
-      
+      return normalizedExpenses;
     } catch (err) {
-      console.error('[PROPERTY EXPENSES] Initialization error:', err);
-      setExpenses({});
+      console.error('[PROPERTY EXPENSES] Parse error:', err);
+      return {};
     }
-  }, [value]);
+  }, [calculateAnnualTotal]);
+  
+  // Initialize expenses from props - critical for data persistence
+  useEffect(() => {
+    const parsedExpenses = parseExpenseData(value);
+    // Update local state with parsed expenses
+    setExpenses(parsedExpenses);
+  }, [value, parseExpenseData]);
 
   // Handler for adding a new expense
   const handleAddExpense = useCallback(() => {
