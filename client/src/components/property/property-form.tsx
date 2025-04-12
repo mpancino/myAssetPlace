@@ -433,8 +433,11 @@ export function PropertyForm({
                       <Input
                         type="number"
                         min="0"
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                        value={field.value === null || field.value === undefined ? '' : field.value}
                       />
                     </FormControl>
                     <FormMessage />
@@ -453,8 +456,11 @@ export function PropertyForm({
                         type="number"
                         min="0"
                         step="0.5"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                        value={field.value === null || field.value === undefined ? '' : field.value}
                       />
                     </FormControl>
                     <FormMessage />
@@ -472,8 +478,11 @@ export function PropertyForm({
                       <Input
                         type="number"
                         min="0"
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                        onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : undefined)}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                        value={field.value === null || field.value === undefined ? '' : field.value}
                       />
                     </FormControl>
                     <FormMessage />
@@ -493,10 +502,11 @@ export function PropertyForm({
                       <Input
                         type="number"
                         min="0"
-                        {...field}
-                        onChange={(e) => 
-                          field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)
-                        }
+                        onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                        value={field.value === null || field.value === undefined ? '' : field.value}
                       />
                     </FormControl>
                     <FormMessage />
@@ -514,10 +524,11 @@ export function PropertyForm({
                       <Input
                         type="number"
                         min="0"
-                        {...field}
-                        onChange={(e) => 
-                          field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)
-                        }
+                        onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                        value={field.value === null || field.value === undefined ? '' : field.value}
                       />
                     </FormControl>
                     <FormMessage />
@@ -571,8 +582,11 @@ export function PropertyForm({
                           <Input
                             type="number"
                             step="0.01"
-                            {...field}
-                            onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                            onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                            onBlur={field.onBlur}
+                            name={field.name}
+                            ref={field.ref}
+                            value={field.value === null || field.value === undefined ? '' : field.value}
                           />
                         </FormControl>
                         <FormMessage />
@@ -619,8 +633,11 @@ export function PropertyForm({
                           min="0"
                           max="100"
                           step="0.1"
-                          {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                          onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
+                          value={field.value === null || field.value === undefined ? '' : field.value}
                         />
                       </FormControl>
                       <FormDescription>

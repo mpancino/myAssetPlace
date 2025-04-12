@@ -76,7 +76,16 @@ export async function createDemoAssets(userId: number): Promise<Asset[]> {
       purchasePrice: 350000,
       purchaseDate: new Date("2015-06-15").toISOString(),
       growthRate: 4.0,
-      isLiability: false
+      isLiability: false,
+      propertyType: "residential",
+      address: "123 Main Street",
+      suburb: "Cityville",
+      state: "NSW",
+      postcode: "2000",
+      country: "Australia",
+      bedrooms: 3,
+      bathrooms: 2,
+      parkingSpaces: 1
     },
     
     // Loans & Liabilities
