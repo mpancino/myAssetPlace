@@ -33,19 +33,6 @@ export default function AssetClassPage() {
     queryKey: [`/api/asset-classes/${classId}`],
     enabled: !!classId 
   });
-
-  // Debug logs for asset class data
-  useEffect(() => {
-    if (assetClass) {
-      console.log("Asset class loaded successfully:", assetClass);
-      console.log("Asset class ID from URL:", classId);
-      console.log("Asset class ID from data:", assetClass.id);
-    }
-    if (assetClassError) {
-      console.error("Error loading asset class:", assetClassError);
-    }
-  }, [assetClass, assetClassError, classId]);
-
   // Fetch all assets
   const { 
     data: allAssets = [], 
@@ -247,16 +234,10 @@ export default function AssetClassPage() {
               // Check if we're in the real estate asset class
               const isRealEstate = assetClass?.name?.toLowerCase() === 'real estate';
               
-              // Debug logs to see what's happening
-              console.log("Asset class name:", assetClass?.name);
-              console.log("Is Real Estate class?", isRealEstate);
-              console.log("Current asset:", asset);
-              
               // If this is a real estate asset class, use the PropertyCard component
               if (isRealEstate) {
                 // Find the asset's holding type
                 const holdingType = holdingTypes?.find(ht => ht.id === asset.assetHoldingTypeId);
-                console.log("Using PropertyCard for:", asset.name);
                 
                 // Construct a new object with mortgage information to ensure it's passed correctly
                 const propertyWithMortgage = {
