@@ -227,42 +227,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     
     try {
-      // Instead of relying on the problematic getUserAssetsByClass method,
-      // let's implement the functionality directly here
-      console.log("Implementing direct assets by class for user ID:", req.user.id);
+      // Let's use console.error to make sure these logs are visible
+      console.error("Building assets by class manually for user ID:", req.user.id);
       
-      // 1. Get all asset classes
-      const allAssetClasses = await db.select().from(assetClasses);
-      
-      // 2. Get the user's assets
-      const userAssets = await db.select().from(assets).where(eq(assets.userId, req.user.id));
-      
-      // 3. Create a map to track totals by class
-      const resultsByClass = new Map();
-      
-      // Initialize with all classes at zero value
-      for (const ac of allAssetClasses) {
-        resultsByClass.set(ac.id, {
+      try {
+        // Instead of using storage.getUserAssetsByClass, do it directly here
+        // 1. Get all asset classes
+        const allAssetClasses = await db.select().from(assetClasses);
+        console.error(`Found ${allAssetClasses.length} asset classes`);
+        
+        if (!allAssetClasses.length) {
+          console.error("No asset classes found!");
+          return res.json([]);
+        }
+        
+        // 2. Get all user's assets
+        const userAssets = await db.select().from(assets).where(eq(assets.userId, req.user.id));
+        console.error(`Found ${userAssets.length} assets for user`);
+        
+        // 3. Initialize results with all classes at zero
+        const results = allAssetClasses.map(ac => ({
           assetClass: ac,
           totalValue: 0
-        });
-      }
-      
-      // Add up values for each asset class
-      for (const asset of userAssets) {
-        if (asset && asset.assetClassId) {
-          const classResult = resultsByClass.get(asset.assetClassId);
-          if (classResult) {
-            classResult.totalValue += typeof asset.value === 'number' ? asset.value : 0;
+        }));
+        
+        // 4. Add up values by class
+        for (const asset of userAssets) {
+          if (asset && asset.assetClassId) {
+            const resultIndex = results.findIndex(r => r.assetClass.id === asset.assetClassId);
+            if (resultIndex >= 0) {
+              const assetValue = typeof asset.value === 'number' ? asset.value : 0;
+              results[resultIndex].totalValue += assetValue;
+            }
           }
         }
+        
+        console.error(`Successfully built asset class results with ${results.length} classes`);
+        res.json(results);
+      } catch (innerErr) {
+        console.error("Detailed inner error:", innerErr);
+        throw innerErr;
       }
-      
-      // Convert map to array for response
-      const results = Array.from(resultsByClass.values());
-      
-      console.log(`Successfully built asset class results with ${results.length} classes`);
-      res.json(results);
     } catch (err) {
       console.error("Error in /api/assets/by-class endpoint:", err);
       console.error("Error details:", err instanceof Error ? err.stack : String(err));
