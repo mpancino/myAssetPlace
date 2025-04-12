@@ -33,6 +33,9 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
   const [isAddingExpense, setIsAddingExpense] = useState(false);
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
   
+  // Ensure value is always an object (even if it's null or undefined)
+  const expenses = value || {};
+  
   const [newExpense, setNewExpense] = useState<Omit<PropertyExpense, "id" | "annualTotal">>({
     category: "",
     description: "",
