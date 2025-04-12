@@ -4,6 +4,7 @@ import { useLocation, useParams } from "wouter";
 import MainLayout from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -29,7 +30,7 @@ import {
   BedDouble,
   Bath,
   Car,
-  Map
+  Map as MapIcon
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -39,6 +40,7 @@ import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { AssetClass, AssetHoldingType, Asset } from "@shared/schema";
 import { OffsetAccountSection } from "@/components/loans/offset-account-section";
+import { type PropertyExpense } from "@/components/property/property-expenses";
 import { formatCurrency } from "@/lib/utils";
 import { 
   AlertDialog,
@@ -776,7 +778,7 @@ export default function AssetDetailPage() {
                         
                         {/* Property Details */}
                         <div className="grid grid-cols-2 gap-4">
-                          {asset?.bedrooms > 0 && (
+                          {asset && asset.bedrooms && asset.bedrooms > 0 && (
                             <div className="flex items-center">
                               <BedDouble className="mr-2 h-4 w-4 text-muted-foreground" />
                               <div>
@@ -786,7 +788,7 @@ export default function AssetDetailPage() {
                             </div>
                           )}
                           
-                          {asset?.bathrooms > 0 && (
+                          {asset && asset.bathrooms && asset.bathrooms > 0 && (
                             <div className="flex items-center">
                               <Bath className="mr-2 h-4 w-4 text-muted-foreground" />
                               <div>
@@ -796,7 +798,7 @@ export default function AssetDetailPage() {
                             </div>
                           )}
                           
-                          {asset?.parkingSpaces > 0 && (
+                          {asset && asset.parkingSpaces && asset.parkingSpaces > 0 && (
                             <div className="flex items-center">
                               <Car className="mr-2 h-4 w-4 text-muted-foreground" />
                               <div>
@@ -806,9 +808,9 @@ export default function AssetDetailPage() {
                             </div>
                           )}
                           
-                          {asset?.landSize > 0 && (
+                          {asset && asset.landSize && asset.landSize > 0 && (
                             <div className="flex items-center">
-                              <Map className="mr-2 h-4 w-4 text-muted-foreground" />
+                              <MapIcon className="mr-2 h-4 w-4 text-muted-foreground" />
                               <div>
                                 <p className="text-sm text-muted-foreground">Land Size</p>
                                 <p className="font-medium">{asset.landSize} m²</p>
@@ -818,7 +820,7 @@ export default function AssetDetailPage() {
                         </div>
                         
                         {/* Property Expenses */}
-                        {asset?.propertyExpenses && Object.keys(asset.propertyExpenses).length > 0 && (
+                        {asset && asset.propertyExpenses && Object.keys(asset.propertyExpenses).length > 0 && (
                           <div className="mt-4">
                             <h3 className="font-medium mb-2 flex items-center">
                               <Receipt className="mr-2 h-4 w-4" /> Property Expenses
@@ -835,7 +837,7 @@ export default function AssetDetailPage() {
                                   </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                  {Object.values(asset.propertyExpenses).map((expense: any) => (
+                                  {Object.values(asset.propertyExpenses).map((expense: PropertyExpense) => (
                                     <TableRow key={expense.id}>
                                       <TableCell>{expense.category}</TableCell>
                                       <TableCell>{expense.description}</TableCell>
@@ -853,7 +855,7 @@ export default function AssetDetailPage() {
                                     <TableCell className="font-medium">
                                       {formatCurrency(
                                         Object.values(asset.propertyExpenses).reduce(
-                                          (sum: number, expense: any) => sum + expense.annualTotal, 
+                                          (sum, expense) => sum + expense.annualTotal, 
                                           0
                                         )
                                       )}
@@ -866,7 +868,7 @@ export default function AssetDetailPage() {
                         )}
                         
                         {/* Rental Information */}
-                        {asset?.isRental && (
+                        {asset && asset.isRental && (
                           <div className="mt-4">
                             <h3 className="font-medium mb-2 flex items-center">
                               <DollarSign className="mr-2 h-4 w-4" /> Rental Information
