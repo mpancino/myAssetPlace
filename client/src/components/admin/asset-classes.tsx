@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Plus, Trash, Pencil } from "lucide-react";
+import { ExpenseCategoriesInput } from "@/components/admin/expense-categories-input";
 import {
   Form,
   FormControl,
@@ -389,15 +390,11 @@ export default function AssetClasses() {
                       <FormItem>
                         <FormLabel>Expense Categories</FormLabel>
                         <FormControl>
-                          <Textarea
-                            placeholder='["Maintenance", "Insurance", "Taxes"]'
-                            {...field}
+                          <ExpenseCategoriesInput
                             value={field.value || "[]"}
+                            onChange={field.onChange}
                           />
                         </FormControl>
-                        <FormDescription>
-                          Enter as a JSON array of strings
-                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -627,15 +624,11 @@ export default function AssetClasses() {
                   <FormItem>
                     <FormLabel>Expense Categories</FormLabel>
                     <FormControl>
-                      <Textarea
-                        placeholder='["Maintenance", "Insurance", "Taxes"]'
-                        {...field}
+                      <ExpenseCategoriesInput
                         value={field.value || "[]"}
+                        onChange={field.onChange}
                       />
                     </FormControl>
-                    <FormDescription>
-                      Enter as a JSON array of strings
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
