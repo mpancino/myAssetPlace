@@ -330,7 +330,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       
       // Check if this asset class is in use
-      const assetsUsingClass = await storage.listAssets(req.user!.id, undefined, { assetClassId: id });
+      const allAssets = await storage.listAssets(req.user!.id);
+      const assetsUsingClass = allAssets.filter(asset => asset.assetClassId === id);
       if (assetsUsingClass.length > 0) {
         return res.status(400).json({ 
           message: "Cannot delete asset class that is in use by assets",

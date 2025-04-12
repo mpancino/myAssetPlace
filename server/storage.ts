@@ -57,6 +57,7 @@ export interface IStorage {
   getAssetClass(id: number): Promise<AssetClass | undefined>;
   createAssetClass(assetClass: InsertAssetClass): Promise<AssetClass>;
   updateAssetClass(id: number, assetClass: Partial<AssetClass>): Promise<AssetClass | undefined>;
+  deleteAssetClass(id: number): Promise<boolean>;
   listAssetClasses(): Promise<AssetClass[]>;
 
   // Asset operations
@@ -211,6 +212,18 @@ export class DatabaseStorage implements IStorage {
 
   async listAssetClasses(): Promise<AssetClass[]> {
     return db.select().from(assetClasses);
+  }
+  
+  async deleteAssetClass(id: number): Promise<boolean> {
+    try {
+      const result = await db
+        .delete(assetClasses)
+        .where(eq(assetClasses.id, id));
+      return true;
+    } catch (error) {
+      console.error("Error deleting asset class:", error);
+      return false;
+    }
   }
 
   // Asset operations
