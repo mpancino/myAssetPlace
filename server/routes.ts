@@ -217,6 +217,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     try {
       const assetsByClass = await storage.getUserAssetsByClass(req.user.id);
+      
+      // If no assets are returned, return an empty array instead of causing an error
+      if (!assetsByClass || !Array.isArray(assetsByClass)) {
+        console.warn("No assets by class returned, defaulting to empty array");
+        return res.json([]);
+      }
+      
       res.json(assetsByClass);
     } catch (err) {
       console.error("Error in /api/assets/by-class endpoint:", err);
@@ -291,6 +298,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(200).json({ message: "Asset deleted successfully" });
     } catch (err) {
       res.status(500).json({ message: "Failed to delete asset" });
+    }
+  });
+
+  // Offset Account Routes
+  
+  // Link a cash account as an offset account to a loan
+  app.post("/api/assets/offset-link", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      const { cashAccountId, loanId } = req.body;
+      
+      if (!cashAccountId || !loanId) {
+        return res.status(400).json({ message: "Both cashAccountId and loanId are required" });
+      }
+      
+      // Verify assets exist and belong to the user
+      const cashAccount = await storage.getAsset(cashAccountId);
+      const loan = await storage.getAsset(loanId);
+      
+      if (!cashAccount) {
+        return res.status(404).json({ message: "Cash account not found" });
+      }
+      
+      if (!loan) {
+        return res.status(404).json({ message: "Loan not found" });
+      }
+      
+      if (cashAccount.userId !== req.user.id || loan.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to link these assets" });
+      }
+      
+      const success = await storage.linkOffsetAccount(cashAccountId, loanId);
+      
+      if (success) {
+        res.json({ message: "Offset account linked successfully" });
+      } else {
+        res.status(400).json({ message: "Failed to link offset account" });
+      }
+    } catch (err) {
+      res.status(500).json({ message: "Error linking offset account" });
+    }
+  });
+  
+  // Unlink a cash account from being an offset account
+  app.post("/api/assets/offset-unlink", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      const { cashAccountId } = req.body;
+      
+      if (!cashAccountId) {
+        return res.status(400).json({ message: "Cash account ID is required" });
+      }
+      
+      // Verify cash account exists and belongs to the user
+      const cashAccount = await storage.getAsset(cashAccountId);
+      
+      if (!cashAccount) {
+        return res.status(404).json({ message: "Cash account not found" });
+      }
+      
+      if (cashAccount.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to modify this asset" });
+      }
+      
+      const success = await storage.unlinkOffsetAccount(cashAccountId);
+      
+      if (success) {
+        res.json({ message: "Offset account unlinked successfully" });
+      } else {
+        res.status(400).json({ message: "Failed to unlink offset account" });
+      }
+    } catch (err) {
+      res.status(500).json({ message: "Error unlinking offset account" });
+    }
+  });
+  
+  // Get linked offset accounts for a loan
+  app.get("/api/loans/:id/offset-accounts", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      const loanId = parseInt(req.params.id);
+      
+      // Verify loan exists and belongs to the user
+      const loan = await storage.getAsset(loanId);
+      if (!loan) {
+        return res.status(404).json({ message: "Loan not found" });
+      }
+      
+      if (loan.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to access this loan" });
+      }
+      
+      if (!loan.isLiability) {
+        return res.status(400).json({ message: "Specified asset is not a loan" });
+      }
+      
+      const offsetAccounts = await storage.getLinkedOffsetAccounts(loanId);
+      res.json(offsetAccounts);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to fetch offset accounts" });
     }
   });
 
