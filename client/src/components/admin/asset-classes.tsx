@@ -652,7 +652,7 @@ export default function AssetClasses() {
                   <FormItem>
                     <FormLabel>Expense Categories</FormLabel>
                     <FormControl>
-                      <ExpenseCategoriesInput
+                      <EnhancedExpenseCategoriesInput
                         value={field.value || "[]"}
                         onChange={field.onChange}
                       />
