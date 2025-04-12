@@ -330,7 +330,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       
       // Define protected core asset classes (from PDD)
-      const protectedAssetClassIds = [1, 2, 3, 4, 5, 6, 8, 9]; // Core asset classes from PDD
+      const protectedAssetClassIds = [1, 2, 3, 4, 5, 8, 9]; // Core asset classes explicitly mentioned in the PDD
       
       // Check if this is a protected core asset class
       if (protectedAssetClassIds.includes(id)) {
