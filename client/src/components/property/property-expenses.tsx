@@ -1,284 +1,292 @@
-import { useState, useEffect } from "react";
-import { PlusCircle, Trash2, DollarSign } from "lucide-react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
+import { Plus, Trash2, Edit, Check, X } from "lucide-react";
+import { v4 as uuidv4 } from "uuid";
 import { formatCurrency } from "@/lib/utils";
 
-// Define expense categories
-const EXPENSE_CATEGORIES = [
-  "Council Rates",
-  "Strata Fees",
-  "Insurance",
-  "Maintenance",
-  "Utilities",
-  "Management Fees",
-  "Land Tax",
-  "Water Rates",
-  "Other"
-];
-
-// Define expense frequency options
-const EXPENSE_FREQUENCIES = [
-  { value: "weekly", label: "Weekly" },
-  { value: "fortnightly", label: "Fortnightly" },
-  { value: "monthly", label: "Monthly" },
-  { value: "quarterly", label: "Quarterly" },
-  { value: "yearly", label: "Yearly" },
-  { value: "once", label: "One Time" }
-];
-
-// Define types for property expenses
-export interface PropertyExpense {
+export type PropertyExpense = {
   id: string;
   category: string;
   description: string;
   amount: number;
-  frequency: string;
+  frequency: string; // "monthly" | "quarterly" | "annually"
   annualTotal: number;
-}
+};
 
-export interface PropertyExpensesProps {
+type FrequencyMultiplier = {
+  [key: string]: number;
+  monthly: number;
+  quarterly: number;
+  annually: number;
+};
+
+const FREQUENCY_MULTIPLIERS: FrequencyMultiplier = {
+  monthly: 12,
+  quarterly: 4,
+  annually: 1,
+};
+
+interface PropertyExpensesProps {
   value: Record<string, PropertyExpense>;
-  onChange: (expenses: Record<string, PropertyExpense>) => void;
+  onChange: (value: Record<string, PropertyExpense>) => void;
   currencySymbol?: string;
 }
 
-export function PropertyExpenses({ 
-  value = {}, 
-  onChange,
-  currencySymbol = "$"
-}: PropertyExpensesProps) {
-  const [expenses, setExpenses] = useState<Record<string, PropertyExpense>>(value);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [currentExpense, setCurrentExpense] = useState<PropertyExpense>({
-    id: "",
-    category: EXPENSE_CATEGORIES[0],
+export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: PropertyExpensesProps) {
+  const [isAddingExpense, setIsAddingExpense] = useState(false);
+  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
+  
+  const [newExpense, setNewExpense] = useState<Omit<PropertyExpense, "id" | "annualTotal">>({
+    category: "",
     description: "",
     amount: 0,
-    frequency: "yearly",
-    annualTotal: 0
+    frequency: "monthly",
   });
-  const [isEditing, setIsEditing] = useState(false);
 
-  // Calculate annual total from expense amount and frequency
-  const calculateAnnualTotal = (amount: number, frequency: string) => {
-    switch (frequency) {
-      case "weekly":
-        return amount * 52;
-      case "fortnightly":
-        return amount * 26;
-      case "monthly":
-        return amount * 12;
-      case "quarterly":
-        return amount * 4;
-      case "yearly":
-        return amount;
-      case "once":
-        return amount; // One-time expenses are just counted as they are
-      default:
-        return amount;
-    }
+  const calculateAnnualTotal = (amount: number, frequency: string): number => {
+    return amount * (FREQUENCY_MULTIPLIERS[frequency] || 12);
   };
 
-  // Calculate total annual expenses
-  const totalAnnualExpenses = Object.values(expenses).reduce(
-    (sum, expense) => sum + expense.annualTotal, 
+  const handleAddExpense = () => {
+    const id = uuidv4();
+    const annualTotal = calculateAnnualTotal(newExpense.amount, newExpense.frequency);
+    
+    const updatedExpenses = {
+      ...value,
+      [id]: {
+        id,
+        ...newExpense,
+        annualTotal,
+      },
+    };
+    
+    onChange(updatedExpenses);
+    setNewExpense({
+      category: "",
+      description: "",
+      amount: 0, 
+      frequency: "monthly",
+    });
+    setIsAddingExpense(false);
+  };
+
+  const handleUpdateExpense = (expenseId: string) => {
+    const expense = value[expenseId];
+    if (!expense) return;
+    
+    const updatedExpense = {
+      ...expense,
+      ...newExpense,
+      annualTotal: calculateAnnualTotal(newExpense.amount, newExpense.frequency),
+    };
+    
+    const updatedExpenses = {
+      ...value,
+      [expenseId]: updatedExpense,
+    };
+    
+    onChange(updatedExpenses);
+    setEditingExpenseId(null);
+    setNewExpense({
+      category: "",
+      description: "",
+      amount: 0,
+      frequency: "monthly",
+    });
+  };
+
+  const handleDeleteExpense = (expenseId: string) => {
+    const updatedExpenses = { ...value };
+    delete updatedExpenses[expenseId];
+    onChange(updatedExpenses);
+  };
+
+  const handleStartEdit = (expense: PropertyExpense) => {
+    setNewExpense({
+      category: expense.category,
+      description: expense.description,
+      amount: expense.amount,
+      frequency: expense.frequency,
+    });
+    setEditingExpenseId(expense.id);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingExpenseId(null);
+    setNewExpense({
+      category: "",
+      description: "",
+      amount: 0,
+      frequency: "monthly",
+    });
+  };
+
+  const totalAnnualExpenses = Object.values(value).reduce(
+    (total, expense) => total + expense.annualTotal,
     0
   );
 
-  // Handle adding a new expense
-  const handleAddExpense = () => {
-    // Calculate annual total based on amount and frequency
-    const annualTotal = calculateAnnualTotal(currentExpense.amount, currentExpense.frequency);
-    
-    // Create a new expense with a unique ID
-    const newExpense = {
-      ...currentExpense,
-      id: isEditing ? currentExpense.id : Date.now().toString(),
-      annualTotal
-    };
-    
-    // Update expenses state
-    const updatedExpenses = {
-      ...expenses,
-      [newExpense.id]: newExpense
-    };
-    
-    setExpenses(updatedExpenses);
-    onChange(updatedExpenses);
-    
-    // Reset form and close dialog
-    setCurrentExpense({
-      id: "",
-      category: EXPENSE_CATEGORIES[0],
-      description: "",
-      amount: 0,
-      frequency: "yearly",
-      annualTotal: 0
-    });
-    setIsEditing(false);
-    setDialogOpen(false);
-  };
-
-  // Handle removing an expense
-  const handleRemoveExpense = (id: string) => {
-    const { [id]: removedExpense, ...updatedExpenses } = expenses;
-    setExpenses(updatedExpenses);
-    onChange(updatedExpenses);
-  };
-
-  // Handle editing an expense
-  const handleEditExpense = (expense: PropertyExpense) => {
-    setCurrentExpense(expense);
-    setIsEditing(true);
-    setDialogOpen(true);
-  };
-
-  // Update current expense when amount or frequency changes
-  useEffect(() => {
-    if (currentExpense.amount && currentExpense.frequency) {
-      const annualTotal = calculateAnnualTotal(currentExpense.amount, currentExpense.frequency);
-      setCurrentExpense(prev => ({ ...prev, annualTotal }));
-    }
-  }, [currentExpense.amount, currentExpense.frequency]);
-
-  // Update local state when value prop changes
-  useEffect(() => {
-    setExpenses(value || {});
-  }, [value]);
+  const EXPENSE_CATEGORIES = [
+    "Insurance",
+    "Property Tax",
+    "Maintenance",
+    "Management Fee",
+    "Utilities",
+    "Strata/HOA",
+    "Council Rates",
+    "Land Tax",
+    "Gardening",
+    "Cleaning",
+    "Repairs",
+    "Other",
+  ];
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center text-xl">
-          <DollarSign className="mr-2 h-5 w-5" />
-          Property Expenses
-        </CardTitle>
-        <CardDescription>
-          Track regular and one-time expenses associated with this property
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {Object.keys(expenses).length > 0 ? (
-          <>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Frequency</TableHead>
-                  <TableHead>Annual Total</TableHead>
-                  <TableHead className="w-[100px]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {Object.values(expenses).map((expense) => (
-                  <TableRow key={expense.id}>
-                    <TableCell>{expense.category}</TableCell>
-                    <TableCell>{expense.description}</TableCell>
+    <div className="space-y-4">
+      {Object.values(value).length > 0 && (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Category</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead>Amount</TableHead>
+              <TableHead>Frequency</TableHead>
+              <TableHead>Annual Total</TableHead>
+              <TableHead className="w-[100px]">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Object.values(value).map((expense) => (
+              <TableRow key={expense.id}>
+                {editingExpenseId === expense.id ? (
+                  <>
                     <TableCell>
-                      {formatCurrency(expense.amount, currencySymbol)}
+                      <Select
+                        value={newExpense.category}
+                        onValueChange={(value) => setNewExpense({ ...newExpense, category: value })}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {EXPENSE_CATEGORIES.map((category) => (
+                            <SelectItem key={category} value={category}>
+                              {category}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell>
-                      {EXPENSE_FREQUENCIES.find(f => f.value === expense.frequency)?.label}
+                      <Input
+                        value={newExpense.description}
+                        onChange={(e) => setNewExpense({ ...newExpense, description: e.target.value })}
+                        placeholder="Description"
+                      />
                     </TableCell>
                     <TableCell>
-                      {formatCurrency(expense.annualTotal, currencySymbol)}
+                      <Input
+                        type="number"
+                        value={newExpense.amount}
+                        onChange={(e) => setNewExpense({ ...newExpense, amount: parseFloat(e.target.value) || 0 })}
+                        placeholder="0.00"
+                      />
                     </TableCell>
                     <TableCell>
-                      <div className="flex space-x-2">
+                      <Select
+                        value={newExpense.frequency}
+                        onValueChange={(value) => setNewExpense({ ...newExpense, frequency: value })}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select frequency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="monthly">Monthly</SelectItem>
+                          <SelectItem value="quarterly">Quarterly</SelectItem>
+                          <SelectItem value="annually">Annually</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      {formatCurrency(calculateAnnualTotal(newExpense.amount, newExpense.frequency))}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-1">
                         <Button
-                          variant="ghost"
+                          variant="outline"
                           size="icon"
-                          onClick={() => handleEditExpense(expense)}
+                          onClick={() => handleUpdateExpense(expense.id)}
                         >
-                          <PlusCircle className="h-4 w-4" />
+                          <Check className="h-4 w-4" />
                         </Button>
                         <Button
-                          variant="ghost"
+                          variant="outline"
                           size="icon"
-                          onClick={() => handleRemoveExpense(expense.id)}
+                          onClick={handleCancelEdit}
                         >
-                          <Trash2 className="h-4 w-4 text-destructive" />
+                          <X className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <div className="mt-4 flex justify-between items-center pt-2 border-t">
-              <span className="font-medium">Total Annual Expenses:</span>
-              <span className="font-bold">
-                {formatCurrency(totalAnnualExpenses, currencySymbol)}
-              </span>
-            </div>
-          </>
-        ) : (
-          <div className="text-center py-8 text-muted-foreground">
-            No expenses added yet. Click the button below to add property expenses.
-          </div>
-        )}
+                  </>
+                ) : (
+                  <>
+                    <TableCell>{expense.category}</TableCell>
+                    <TableCell>{expense.description}</TableCell>
+                    <TableCell>{formatCurrency(expense.amount)}</TableCell>
+                    <TableCell>
+                      {expense.frequency.charAt(0).toUpperCase() + expense.frequency.slice(1)}
+                    </TableCell>
+                    <TableCell>{formatCurrency(expense.annualTotal)}</TableCell>
+                    <TableCell>
+                      <div className="flex space-x-1">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleStartEdit(expense)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleDeleteExpense(expense.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </>
+                )}
+              </TableRow>
+            ))}
+          </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TableCell colSpan={4}>Total Annual Expenses</TableCell>
+              <TableCell className="font-medium">{formatCurrency(totalAnnualExpenses)}</TableCell>
+              <TableCell></TableCell>
+            </TableRow>
+          </TableFooter>
+        </Table>
+      )}
 
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="mt-4 w-full">
-              <PlusCircle className="mr-2 h-4 w-4" />
-              {isEditing ? "Update Expense" : "Add Expense"}
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{isEditing ? "Edit Expense" : "Add New Expense"}</DialogTitle>
-              <DialogDescription>
-                Enter the details of the property expense below.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
+      {isAddingExpense ? (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
                 <Label htmlFor="category">Category</Label>
                 <Select
-                  value={currentExpense.category}
-                  onValueChange={(value) =>
-                    setCurrentExpense({ ...currentExpense, category: value })
-                  }
+                  value={newExpense.category}
+                  onValueChange={(value) => setNewExpense({ ...newExpense, category: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -290,81 +298,75 @@ export function PropertyExpenses({
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className="grid gap-2">
+              <div>
                 <Label htmlFor="description">Description</Label>
                 <Input
                   id="description"
-                  placeholder="Brief description of expense"
-                  value={currentExpense.description}
-                  onChange={(e) =>
-                    setCurrentExpense({
-                      ...currentExpense,
-                      description: e.target.value,
-                    })
-                  }
+                  value={newExpense.description}
+                  onChange={(e) => setNewExpense({ ...newExpense, description: e.target.value })}
+                  placeholder="e.g., Building insurance"
                 />
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="amount">Amount ({currencySymbol})</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={currentExpense.amount || ""}
-                    onChange={(e) =>
-                      setCurrentExpense({
-                        ...currentExpense,
-                        amount: parseFloat(e.target.value) || 0,
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="frequency">Frequency</Label>
-                  <Select
-                    value={currentExpense.frequency}
-                    onValueChange={(value) =>
-                      setCurrentExpense({ ...currentExpense, frequency: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select frequency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {EXPENSE_FREQUENCIES.map((frequency) => (
-                        <SelectItem key={frequency.value} value={frequency.value}>
-                          {frequency.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <Label htmlFor="amount">Amount ({currencySymbol})</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  value={newExpense.amount || ""}
+                  onChange={(e) => setNewExpense({ ...newExpense, amount: parseFloat(e.target.value) || 0 })}
+                  placeholder="0.00"
+                />
               </div>
-
-              <div className="grid gap-2">
-                <Label>Annual Total</Label>
-                <div className="p-2 border rounded-md bg-muted/20">
-                  {formatCurrency(currentExpense.annualTotal, currencySymbol)}
-                </div>
+              <div>
+                <Label htmlFor="frequency">Frequency</Label>
+                <Select
+                  value={newExpense.frequency}
+                  onValueChange={(value) => setNewExpense({ ...newExpense, frequency: value })}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select frequency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="quarterly">Quarterly</SelectItem>
+                    <SelectItem value="annually">Annually</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setDialogOpen(false)}>
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsAddingExpense(false);
+                  setNewExpense({
+                    category: "",
+                    description: "",
+                    amount: 0,
+                    frequency: "monthly",
+                  });
+                }}
+              >
                 Cancel
               </Button>
-              <Button onClick={handleAddExpense}>
-                {isEditing ? "Update" : "Add"} Expense
+              <Button
+                onClick={handleAddExpense}
+                disabled={!newExpense.category || newExpense.amount <= 0}
+              >
+                Add Expense
               </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </CardContent>
-    </Card>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="flex justify-end">
+          <Button onClick={() => setIsAddingExpense(true)}>
+            <Plus className="mr-2 h-4 w-4" /> Add Expense
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }

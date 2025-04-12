@@ -15,6 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { MortgageDetails } from "@/components/property/mortgage-details";
+import { PropertyExpenses } from "@/components/property/property-expenses";
 import { 
   ArrowLeft, 
   Save, 
@@ -43,7 +44,6 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { AssetClass, AssetHoldingType, Asset } from "@shared/schema";
 import { OffsetAccountSection } from "@/components/loans/offset-account-section";
 import { calculateLoanPayment } from "@shared/calculations";
-import { type PropertyExpense } from "@/components/property/property-expenses";
 import { formatCurrency } from "@/lib/utils";
 import { 
   AlertDialog,
@@ -56,6 +56,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+
+// Import shared types
+import type { PropertyExpense } from "@shared/schema";
 
 // Asset detail validation schema
 const assetDetailSchema = z.object({
@@ -90,6 +93,9 @@ const assetDetailSchema = z.object({
   rentalIncome: z.number().optional().nullable(),
   rentalFrequency: z.string().optional().nullable(),
   vacancyRate: z.number().optional().nullable(),
+  
+  // Property expenses
+  propertyExpenses: z.record(z.string(), z.any()).optional().nullable(),
   
   // Mortgage fields
   hasMortgage: z.boolean().optional().nullable(),
@@ -193,6 +199,9 @@ export default function AssetDetailPage() {
         rentalIncome: asset.rentalIncome,
         rentalFrequency: asset.rentalFrequency,
         vacancyRate: asset.vacancyRate,
+        
+        // Property expenses
+        propertyExpenses: asset.propertyExpenses || {},
         
         // Mortgage fields
         hasMortgage: asset.hasMortgage,
@@ -322,6 +331,9 @@ export default function AssetDetailPage() {
         rentalIncome: asset.rentalIncome,
         rentalFrequency: asset.rentalFrequency,
         vacancyRate: asset.vacancyRate,
+        
+        // Property expenses
+        propertyExpenses: asset.propertyExpenses || {},
         
         // Mortgage fields
         hasMortgage: asset.hasMortgage,

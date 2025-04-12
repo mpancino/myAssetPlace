@@ -375,6 +375,16 @@ export type InsertCashAccount = z.infer<typeof insertCashAccountSchema>;
 export type InsertLoan = z.infer<typeof insertLoanSchema>;
 export type InsertProperty = z.infer<typeof insertPropertySchema>;
 
+// Property expense type
+export type PropertyExpense = {
+  id: string;
+  category: string;
+  description: string;
+  amount: number;
+  frequency: string;
+  annualTotal: number;
+};
+
 export type SubscriptionPlan = typeof subscriptionPlans.$inferSelect;
 export type InsertSubscriptionPlan = z.infer<typeof insertSubscriptionPlanSchema>;
 
