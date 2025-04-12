@@ -272,6 +272,44 @@ export default function AssetClassPage() {
                           {formatCurrency(asset.value, userCountry?.currencySymbol || '$')}
                         </p>
                       </div>
+                      
+                      {/* Mortgage badge and information */}
+                      {assetClass?.name?.toLowerCase() === 'real estate' && asset.hasMortgage && (
+                        <>
+                          <div className="flex justify-between items-center mt-1">
+                            <Badge variant="outline" className="bg-primary/10 text-primary">
+                              <CreditCard className="h-3 w-3 mr-1" /> Mortgaged
+                            </Badge>
+                            <span className="text-sm text-destructive font-medium">
+                              {formatCurrency(asset.mortgageAmount || 0, userCountry?.currencySymbol || '$')}
+                            </span>
+                          </div>
+                          
+                          <div className="mt-1">
+                            <div className="flex justify-between text-xs mb-1">
+                              <span className="text-muted-foreground">Equity:</span>
+                              <span className="text-green-600 font-medium">
+                                {formatCurrency((asset.value || 0) - (asset.mortgageAmount || 0), userCountry?.currencySymbol || '$')}
+                                {asset.value > 0 && (
+                                  <span className="ml-1 text-muted-foreground">
+                                    ({Math.round(((asset.value - (asset.mortgageAmount || 0)) / asset.value) * 100)}%)
+                                  </span>
+                                )}
+                              </span>
+                            </div>
+                            <div className="w-full bg-muted rounded-full h-1.5 dark:bg-gray-700">
+                              <div 
+                                className="bg-green-600 h-1.5 rounded-full"
+                                style={{ 
+                                  width: `${asset.value ? 
+                                    Math.min(100, 100 - (((asset.mortgageAmount || 0) / asset.value) * 100)) : 0}%` 
+                                }}
+                              ></div>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                      
                       {asset.purchasePrice && (
                         <div>
                           <span className="text-sm text-muted-foreground">Purchase Price:</span>
