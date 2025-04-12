@@ -218,6 +218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const assetsByClass = await storage.getUserAssetsByClass(req.user.id);
       res.json(assetsByClass);
     } catch (err) {
+      console.error("Error in /api/assets/by-class endpoint:", err);
       res.status(500).json({ message: "Failed to fetch assets by class" });
     }
   });

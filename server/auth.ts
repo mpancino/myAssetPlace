@@ -264,18 +264,18 @@ export function setupAuth(app: Express) {
           
           res.status(201).json(user);
         });
-      } catch (createUserError) {
+      } catch (createUserError: any) {
         console.error("Error creating demo user:", createUserError);
         res.status(500).json({ 
           message: "Failed to create demo user. Please try the Direct Admin Login instead.",
-          error: createUserError.message
+          error: createUserError.message || "Unknown error"
         });
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Unexpected error in demo user creation:", err);
       res.status(500).json({ 
         message: "An unexpected error occurred while creating a demo user",
-        error: err.message
+        error: err.message || "Unknown error"
       });
     }
   });
@@ -325,9 +325,12 @@ export function setupAuth(app: Express) {
         message: "Sample data added successfully", 
         assetCount: assets.length 
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error adding sample data:", err);
-      res.status(500).json({ message: "Failed to add sample data" });
+      res.status(500).json({ 
+        message: "Failed to add sample data",
+        error: err.message || "Unknown error"
+      });
     }
   });
 }
