@@ -258,13 +258,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateAsset(id: number, assetData: Partial<Asset>): Promise<Asset | undefined> {
-    // Check if we have property expenses in the update and log the details
+    // Log property expenses if present
     if (assetData.propertyExpenses) {
-      const expensesCount = Object.keys(assetData.propertyExpenses).length;
-      console.log(`[STORAGE] Updating asset ${id} with ${expensesCount} expenses`);
+      const propertyExpensesCount = Object.keys(assetData.propertyExpenses).length;
+      console.log(`[STORAGE] Updating asset ${id} with ${propertyExpensesCount} property expenses`);
       console.log(`[STORAGE] Property expenses data:`, JSON.stringify(assetData.propertyExpenses));
     } else {
       console.log(`[STORAGE] Updating asset ${id} without property expenses`);
+    }
+    
+    // Log investment expenses if present
+    if (assetData.investmentExpenses) {
+      const investmentExpensesCount = Object.keys(assetData.investmentExpenses).length;
+      console.log(`[STORAGE] Updating asset ${id} with ${investmentExpensesCount} investment expenses`);
+      console.log(`[STORAGE] Investment expenses data:`, JSON.stringify(assetData.investmentExpenses));
+    } else {
+      console.log(`[STORAGE] Updating asset ${id} without investment expenses`);
     }
     
     // Before update - check current state
@@ -277,6 +286,11 @@ export class DatabaseStorage implements IStorage {
       currentAsset.propertyExpenses ? 
       `Found ${Object.keys(currentAsset.propertyExpenses).length} expenses` : 
       "None");
+      
+    console.log(`[STORAGE] Current investment expenses:`, 
+      currentAsset.investmentExpenses ? 
+      `Found ${Object.keys(currentAsset.investmentExpenses).length} expenses` : 
+      "None");
     
     // Do the update
     const [updatedAsset] = await db
@@ -285,10 +299,16 @@ export class DatabaseStorage implements IStorage {
       .where(eq(assets.id, id))
       .returning();
       
-    // Verify after update  
+    // Verify after update for property expenses
     console.log(`[STORAGE] Updated property expenses:`, 
       updatedAsset.propertyExpenses ? 
       `Found ${Object.keys(updatedAsset.propertyExpenses).length} expenses` : 
+      "None");
+      
+    // Verify after update for investment expenses
+    console.log(`[STORAGE] Updated investment expenses:`, 
+      updatedAsset.investmentExpenses ? 
+      `Found ${Object.keys(updatedAsset.investmentExpenses).length} expenses` : 
       "None");
       
     return updatedAsset;
