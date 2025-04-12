@@ -315,9 +315,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `Found ${Object.keys(req.body.propertyExpenses).length} expenses` : 
         "None");
       
-      // For real estate assets, check for property expenses
+      // For real estate assets, check for property expenses and implement deduplication
       if (asset.assetClassId === 3 && req.body.propertyExpenses) {
         console.log("Detailed property expenses data:", JSON.stringify(req.body.propertyExpenses));
+        
+        // Handle property expenses deduplication
+        try {
+          const expensesData = typeof req.body.propertyExpenses === 'string' 
+            ? JSON.parse(req.body.propertyExpenses) 
+            : req.body.propertyExpenses;
+          
+          // Create a deduplication tracker
+          const dedupeTracker = {};
+          const dedupedExpenses = {};
+          
+          // Sort expenses to prioritize "expense-N" IDs over random UUIDs
+          const sortedEntries = Object.entries(expensesData).sort(([keyA], [keyB]) => {
+            const isOriginalA = keyA.startsWith('expense-');
+            const isOriginalB = keyB.startsWith('expense-');
+            if (isOriginalA && !isOriginalB) return -1;
+            if (!isOriginalA && isOriginalB) return 1;
+            return 0;
+          });
+          
+          // Process entries with deduplication
+          sortedEntries.forEach(([key, expense]) => {
+            if (expense && typeof expense === 'object' && expense.category && expense.amount) {
+              // Create a unique key for this expense signature
+              const dedupeKey = `${expense.category}-${expense.amount}-${expense.frequency || 'monthly'}`;
+              
+              // Skip if we've already seen this signature
+              if (dedupeTracker[dedupeKey]) {
+                console.log(`Deduplicating expense: ${dedupeKey}`);
+                return;
+              }
+              
+              // Mark this signature as seen
+              dedupeTracker[dedupeKey] = true;
+              
+              // Keep this expense
+              dedupedExpenses[key] = expense;
+            }
+          });
+          
+          console.log(`Deduplicated expenses from ${Object.keys(expensesData).length} to ${Object.keys(dedupedExpenses).length}`);
+          req.body.propertyExpenses = JSON.stringify(dedupedExpenses);
+        } catch (err) {
+          console.error("Error during expense deduplication:", err);
+        }
       }
       
       const validatedData = insertAssetSchema.partial().parse(req.body);
