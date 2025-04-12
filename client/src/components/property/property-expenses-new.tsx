@@ -35,6 +35,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAssetClassDetails } from "@/hooks/use-asset-class-details";
 import type { PropertyExpense } from '@shared/schema';
 import { formatCurrency } from "@/lib/utils";
+import { useExpenses } from "@/contexts/ExpenseContext";
 
 // Default expense categories as fallback
 const DEFAULT_EXPENSE_CATEGORIES = [
@@ -132,6 +133,10 @@ export function PropertyExpenses({
   isSaving = false,
 }: PropertyExpensesProps) {
   const { toast } = useToast();
+  const { 
+    propertyExpenses: contextExpenses, 
+    setPropertyExpenses: setContextExpenses 
+  } = useExpenses();
   
   // Fetch expense categories from the asset class
   const { expenseCategories, isLoading: isLoadingCategories } = useAssetClassDetails(assetClassId);
@@ -152,24 +157,56 @@ export function PropertyExpenses({
   const [newAmount, setNewAmount] = useState<number | ''>('');
   const [newFrequency, setNewFrequency] = useState('monthly');
   
-  // Process and normalize the input data
+  // Use effect to log when component renders
+  useEffect(() => {
+    console.log('[PROPERTY_EXPENSES] Component rendering with context data')
+    console.log('[PROPERTY_EXPENSES] Context expenses:', contextExpenses ? Object.keys(contextExpenses).length : 0, 'items');
+    console.log('[PROPERTY_EXPENSES] isEditMode:', isEditMode);
+  }, [contextExpenses, isEditMode]);
+
+  // Process and normalize the input data when it changes from props
   useEffect(() => {
     if (!value) return;
     
     try {
+      console.log('\n[PARSE:PROPERTY] ===== PARSE PROPERTY EXPENSES =====');
+      console.log('[PARSE:PROPERTY] Input type:', typeof value);
+      console.log('[PARSE:PROPERTY] Call stack:', new Error().stack);
+      
       // Parse string input if needed
       let data = value;
       if (typeof value === 'string') {
         data = value ? JSON.parse(value) : {};
       }
       
-      // Set the expenses state
-      setExpenses(data);
+      console.log('[PARSE:PROPERTY] Received object with', Object.keys(data).length, 'items');
+      console.log('[PARSE:PROPERTY] Keys:', Object.keys(data));
+      
+      // Create a deep clone to avoid reference issues
+      const deepClone = JSON.parse(JSON.stringify(data));
+      console.log('[PARSE:PROPERTY] Created deep clone with', Object.keys(deepClone).length, 'items');
+      
+      // Set the expenses state and update context
+      setExpenses(deepClone);
+      setContextExpenses(deepClone);
+      
+      console.log('[PARSE:PROPERTY] ===== END PARSE =====\n');
     } catch (err) {
       console.error('Failed to parse expenses data:', err);
       setExpenses({});
+      setContextExpenses({});
     }
-  }, [value]);
+  }, [value, setContextExpenses]);
+  
+  // Effect to use context data when available
+  useEffect(() => {
+    if (isEditMode) return; // Only use context in read-only mode
+    
+    if (contextExpenses && Object.keys(contextExpenses).length > 0) {
+      console.log('[PROPERTY_EXPENSES] Using data from context with', Object.keys(contextExpenses).length, 'items');
+      setExpenses(contextExpenses);
+    }
+  }, [contextExpenses, isEditMode]);
   
   // Calculate annual total based on amount and frequency
   const calculateAnnualTotal = useCallback((amount: number, frequency: string): number => {
