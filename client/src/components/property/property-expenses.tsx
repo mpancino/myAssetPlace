@@ -430,7 +430,7 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
       title: "Expense deleted",
       description: `Removed ${expenseToDelete.category} expense of ${formatCurrency(expenseToDelete.amount)}`
     });
-  }, [expenses, applyCommand, toast, markLocalChanges]);
+  }, [expenses, applyCommand, toast]);
 
   // Handler for starting the edit process
   const handleStartEdit = useCallback((expense: PropertyExpense) => {
