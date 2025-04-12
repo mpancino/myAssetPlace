@@ -77,6 +77,45 @@ export interface InvestmentExpense {
   notes?: string;
 }
 
+// Component-specific expense type from investment-expenses.tsx
+interface ComponentInvestmentExpense {
+  id: string;
+  category: string;
+  description: string;
+  amount: number;
+  frequency: string;
+  annualTotal: number;
+}
+
+// Convert from page format to component format
+function convertPageToComponentExpense(expense: InvestmentExpense): ComponentInvestmentExpense {
+  // Calculate annualTotal based on frequency
+  const frequencyMultiplier = expense.frequency === 'monthly' ? 12 : 
+                              expense.frequency === 'quarterly' ? 4 : 1;
+  const annualTotal = expense.amount * frequencyMultiplier;
+  
+  return {
+    id: expense.id,
+    category: expense.categoryId,
+    description: expense.name || '',
+    amount: expense.amount,
+    frequency: expense.frequency,
+    annualTotal: annualTotal
+  };
+}
+
+// Convert from component format to page format
+function convertComponentToPageExpense(expense: ComponentInvestmentExpense): InvestmentExpense {
+  return {
+    id: expense.id,
+    categoryId: expense.category,
+    name: expense.description,
+    amount: expense.amount,
+    frequency: expense.frequency as 'monthly' | 'quarterly' | 'annually',
+    notes: ''
+  };
+}
+
 // Helper function to safely parse investment expenses data
 function parseInvestmentExpenses(data: any): Record<string, InvestmentExpense> {
   try {
