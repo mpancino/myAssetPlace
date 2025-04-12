@@ -687,11 +687,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Not authorized to update this asset" });
       }
       
-      // Enhanced logging for property expenses debug
+      // Enhanced logging for all expense types
       console.log("PATCH request for asset:", id);
+      
+      // Log property expenses in request
       console.log("Property expenses in request:", 
         req.body.propertyExpenses ? 
         `Found ${Object.keys(req.body.propertyExpenses).length} expenses` : 
+        "None");
+      
+      // Log investment expenses in request
+      console.log("Investment expenses in request:", 
+        req.body.investmentExpenses ? 
+        `Found ${Object.keys(req.body.investmentExpenses).length} expenses` : 
         "None");
       
       // For real estate assets, check for property expenses and implement deduplication
@@ -759,12 +767,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // For investment assets (class ID 4), check for investment expenses and handle deduplication
+      if (asset.assetClassId === 4 && req.body.investmentExpenses) {
+        console.log("Detailed investment expenses data:", JSON.stringify(req.body.investmentExpenses));
+        
+        // Handle investment expenses deduplication
+        try {
+          const expensesData = typeof req.body.investmentExpenses === 'string' 
+            ? JSON.parse(req.body.investmentExpenses) 
+            : req.body.investmentExpenses;
+          
+          // Create a deduplication tracker
+          const dedupeTracker: Record<string, boolean> = {};
+          const dedupedExpenses: Record<string, any> = {};
+          
+          // Sort expenses to prioritize well-known IDs over random UUIDs
+          const sortedEntries = Object.entries(expensesData).sort(([keyA], [keyB]) => {
+            const isOriginalA = keyA.startsWith('expense-');
+            const isOriginalB = keyB.startsWith('expense-');
+            if (isOriginalA && !isOriginalB) return -1;
+            if (!isOriginalA && isOriginalB) return 1;
+            return 0;
+          });
+          
+          // Process entries with deduplication
+          sortedEntries.forEach(([key, expense]) => {
+            // Make sure expense is an object and has required properties
+            if (expense && typeof expense === 'object' && 
+                'category' in expense && 
+                'amount' in expense) {
+              
+              // Safely extract properties with type checking
+              const category = String(expense.category || '');
+              const amount = Number(expense.amount || 0);
+              // Check if frequency property exists, defaulting to monthly
+              const frequency = typeof (expense as any).frequency === 'string' 
+                ? String((expense as any).frequency) 
+                : 'monthly';
+              
+              // Skip empty or invalid expenses
+              if (!category || amount <= 0) return;
+              
+              // Create a unique key for this expense signature
+              const dedupeKey = `${category}-${amount}-${frequency}`;
+              
+              // Skip if we've already seen this signature
+              if (dedupeTracker[dedupeKey]) {
+                console.log(`Deduplicating investment expense: ${dedupeKey}`);
+                return;
+              }
+              
+              // Mark this signature as seen
+              dedupeTracker[dedupeKey] = true;
+              
+              // Keep this expense
+              dedupedExpenses[key] = expense;
+            }
+          });
+          
+          console.log(`Deduplicated investment expenses from ${Object.keys(expensesData).length} to ${Object.keys(dedupedExpenses).length}`);
+          req.body.investmentExpenses = JSON.stringify(dedupedExpenses);
+        } catch (err) {
+          console.error("Error during investment expense deduplication:", err);
+        }
+      }
+      
       const validatedData = insertAssetSchema.partial().parse(req.body);
       
-      // Log the validated data to ensure property expenses survived validation
+      // Log the validated data to ensure expenses survived validation
       console.log("Property expenses after validation:", 
         validatedData.propertyExpenses ? 
         `Found ${Object.keys(validatedData.propertyExpenses).length} expenses` : 
+        "None");
+        
+      console.log("Investment expenses after validation:", 
+        validatedData.investmentExpenses ? 
+        `Found ${Object.keys(validatedData.investmentExpenses).length} expenses` : 
         "None");
       
       const updatedAsset = await storage.updateAsset(id, validatedData);
@@ -774,6 +852,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("VERIFICATION - Property expenses after save:", 
         verifiedAsset?.propertyExpenses ? 
         `Found ${Object.keys(verifiedAsset.propertyExpenses).length} expenses` : 
+        "None");
+        
+      console.log("VERIFICATION - Investment expenses after save:", 
+        verifiedAsset?.investmentExpenses ? 
+        `Found ${Object.keys(verifiedAsset.investmentExpenses).length} expenses` : 
         "None");
       
       res.json(updatedAsset);
