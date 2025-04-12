@@ -37,6 +37,122 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     next();
   };
+  
+  // User subscription routes
+  app.get("/api/user/subscription", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      // Get user's subscription
+      const subscription = await storage.getUserSubscription(req.user.id);
+      
+      if (!subscription) {
+        // If no subscription exists, assign the default plan
+        const defaultPlan = await storage.getDefaultSubscriptionPlan();
+        if (!defaultPlan) {
+          return res.status(500).send("No default subscription plan configured");
+        }
+        
+        // Create new subscription with default plan
+        const newSubscription = await storage.createUserSubscription({
+          userId: req.user.id,
+          subscriptionPlanId: defaultPlan.id,
+          status: "active",
+          startDate: new Date(),
+          endDate: new Date(Date.now() + (30 * 86400000)), // 30 days from now
+        });
+        
+        // Return the newly created subscription with plan details
+        const subscriptionWithPlan = await storage.getUserSubscription(req.user.id);
+        return res.json(subscriptionWithPlan);
+      }
+      
+      return res.json(subscription);
+    } catch (error) {
+      console.error("Error fetching user subscription:", error);
+      return res.status(500).send("Failed to fetch subscription");
+    }
+  });
+  
+  // Get asset count for the user (to check against limits)
+  app.get("/api/user/asset-count", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const assets = await storage.listAssets(req.user.id);
+      return res.json({ count: assets.length });
+    } catch (error) {
+      console.error("Error fetching asset count:", error);
+      return res.status(500).send("Failed to fetch asset count");
+    }
+  });
+  
+  // Update user preferred interface mode
+  app.post("/api/user/mode", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { mode } = req.body;
+      if (mode !== 'basic' && mode !== 'advanced') {
+        return res.status(400).send("Invalid mode");
+      }
+      
+      // Check if user is allowed to use this mode based on subscription
+      const subscription = await storage.getUserSubscription(req.user.id);
+      if (mode === 'advanced' && (!subscription || !subscription.plan.allowAdvancedMode)) {
+        return res.status(403).send("Subscription does not allow advanced mode");
+      }
+      
+      // Update user's preferred mode
+      const updated = await storage.updateUser(req.user.id, { 
+        preferredMode: mode 
+      });
+      
+      return res.json(updated);
+    } catch (error) {
+      console.error("Error updating user mode:", error);
+      return res.status(500).send("Failed to update mode");
+    }
+  });
+  
+  // Subscription plans routes
+  app.get("/api/subscription-plans", async (req, res) => {
+    try {
+      const plans = await storage.listSubscriptionPlans();
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching subscription plans:", error);
+      return res.status(500).send("Failed to fetch subscription plans");
+    }
+  });
+  
+  // Upgrade subscription
+  app.post("/api/user/subscription/upgrade", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { planId } = req.body;
+      if (!planId) {
+        return res.status(400).send("Plan ID is required");
+      }
+      
+      // Validate plan exists
+      const plan = await storage.getSubscriptionPlan(Number(planId));
+      if (!plan) {
+        return res.status(404).send("Subscription plan not found");
+      }
+      
+      // Update user's subscription
+      const subscription = await storage.updateUserSubscription(req.user.id, Number(planId));
+      
+      // Return updated subscription with plan details
+      const subscriptionWithPlan = await storage.getUserSubscription(req.user.id);
+      return res.json(subscriptionWithPlan);
+    } catch (error) {
+      console.error("Failed to upgrade subscription:", error);
+      return res.status(500).send("Failed to upgrade subscription");
+    }
+  });
 
   // Country routes
   app.get("/api/countries", async (req, res) => {
