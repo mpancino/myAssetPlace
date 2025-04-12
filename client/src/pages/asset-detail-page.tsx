@@ -351,17 +351,30 @@ export default function AssetDetailPage() {
       // First completely clear the cached data
       queryClient.removeQueries({ queryKey: [`/api/assets/${assetId}`] });
       
-      // Add a longer delay to ensure server has fully committed changes
-      // This is especially important for complex JSON data like property expenses
-      setTimeout(() => {
-        // Then refetch to get fresh data from the server
-        queryClient.fetchQuery({ 
-          queryKey: [`/api/assets/${assetId}`],
-          queryFn: getQueryFn({ on401: "throw" })
-        }).then(freshData => {
-          console.log(`[${new Date().toISOString()}] Forced refetch complete with delay. Fresh data received:`, freshData);
+      // Immediately make a new fetch request to get truly fresh data from the server
+      console.log('[REFRESH] Making direct fetch to get fresh data after update...');
+      
+      // Using a direct fetch request to bypass cache entirely
+      fetch(`/api/assets/${assetId}`)
+        .then(response => response.json())
+        .then(freshData => {
+          console.log('[REFRESH] Fresh data received via direct fetch:', freshData);
+          console.log('[REFRESH] Property expenses in fresh data:', freshData.propertyExpenses);
+          console.log('[REFRESH] Number of expenses:', 
+            Object.keys(parsePropertyExpenses(freshData.propertyExpenses)).length);
           
-          // ONLY exit edit mode AFTER we've received the fresh data
+          // Manually update the cache with this fresh data
+          console.log('[REFRESH] Setting query data with fresh data...');
+          queryClient.setQueryData([`/api/assets/${assetId}`], freshData);
+          
+          // Also immediately update the expenses in the local component state
+          if (freshData.propertyExpenses) {
+            const parsedExpenses = parsePropertyExpenses(freshData.propertyExpenses);
+            setCurrentPropertyExpenses(parsedExpenses);
+            console.log('[REFRESH] Updated local expenses state with', Object.keys(parsedExpenses).length, 'expenses');
+          }
+          
+          // ONLY exit edit mode AFTER we've received and set the fresh data
           setIsEditing(false);
           
           // Also invalidate other relevant queries for the list views
@@ -370,8 +383,18 @@ export default function AssetDetailPage() {
           if (updatedAsset.assetClassId) {
             queryClient.invalidateQueries({ queryKey: [`/api/asset-classes/${updatedAsset.assetClassId}`] });
           }
+        })
+        .catch(error => {
+          console.error('[REFRESH] Error fetching fresh data:', error);
+          // Fall back to using the original approach
+          setTimeout(() => {
+            queryClient.fetchQuery({ 
+              queryKey: [`/api/assets/${assetId}`],
+              queryFn: getQueryFn({ on401: "throw" })
+            });
+            setIsEditing(false);
+          }, 300);
         });
-      }, 300); // Increased delay to ensure server has time to process the update
     },
     onError: (error: Error) => {
       toast({
@@ -444,28 +467,63 @@ export default function AssetDetailPage() {
       
       console.log("[DIRECT SAVE] Success! Updated property expenses:", updatedAsset.propertyExpenses);
       
-      // Update our local state - ensure proper parsing of property expenses
-      if (updatedAsset.propertyExpenses) {
-        const parsedExpenses = parsePropertyExpenses(updatedAsset.propertyExpenses);
-        setCurrentPropertyExpenses(parsedExpenses);
-        
-        // Also update the form state to keep everything in sync
-        form.setValue('propertyExpenses', parsedExpenses);
-      }
+      // Immediately make a new fetch request to get truly fresh data from the server
+      console.log('[DIRECT SAVE] Making direct fetch to get fresh data after update...');
       
-      // Show brief success toast
-      toast({
-        title: "Expenses Saved",
-        description: `Successfully saved ${Object.keys(updatedAsset.propertyExpenses || {}).length} expenses`,
-        duration: 2000,
-      });
-      
-      // Immediately refresh the asset data from the database
-      queryClient.removeQueries({ queryKey: [`/api/assets/${assetId}`] });
-      queryClient.fetchQuery({ 
-        queryKey: [`/api/assets/${assetId}`],
-        queryFn: getQueryFn({ on401: "throw" })
-      });
+      // Using a direct fetch request to bypass cache entirely
+      fetch(`/api/assets/${assetId}`)
+        .then(response => response.json())
+        .then(freshData => {
+          console.log('[DIRECT SAVE] Fresh data received via direct fetch:', freshData);
+          console.log('[DIRECT SAVE] Property expenses in fresh data:', freshData.propertyExpenses);
+          
+          // Parse the data to ensure it's in the correct format
+          const parsedExpenses = parsePropertyExpenses(freshData.propertyExpenses);
+          console.log('[DIRECT SAVE] Number of expenses after parsing:', Object.keys(parsedExpenses).length);
+          
+          // Update our local state - both component state and form state
+          setCurrentPropertyExpenses(parsedExpenses);
+          form.setValue('propertyExpenses', parsedExpenses);
+          console.log('[DIRECT SAVE] Updated local and form state with parsed expenses');
+          
+          // Manually update the cache with this fresh data
+          console.log('[DIRECT SAVE] Setting query data with fresh data...');
+          queryClient.setQueryData([`/api/assets/${assetId}`], freshData);
+          
+          // Show brief success toast
+          toast({
+            title: "Expenses Saved",
+            description: `Successfully saved ${Object.keys(parsedExpenses).length} expenses`,
+            duration: 2000,
+          });
+        })
+        .catch(error => {
+          console.error('[DIRECT SAVE] Error fetching fresh data:', error);
+          
+          // Fall back to the original approach if direct fetch fails
+          console.log('[DIRECT SAVE] Falling back to query client fetching...');
+          
+          // Update our local state using the original updatedAsset
+          if (updatedAsset.propertyExpenses) {
+            const parsedExpenses = parsePropertyExpenses(updatedAsset.propertyExpenses);
+            setCurrentPropertyExpenses(parsedExpenses);
+            form.setValue('propertyExpenses', parsedExpenses);
+          }
+          
+          // Use the query client to refresh
+          queryClient.removeQueries({ queryKey: [`/api/assets/${assetId}`] });
+          queryClient.fetchQuery({ 
+            queryKey: [`/api/assets/${assetId}`],
+            queryFn: getQueryFn({ on401: "throw" })
+          });
+          
+          // Show brief success toast
+          toast({
+            title: "Expenses Saved",
+            description: `Successfully saved expenses`,
+            duration: 2000,
+          });
+        });
     },
     onError: (error: Error) => {
       toast({
