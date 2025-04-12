@@ -33,6 +33,7 @@ import {
   Link,
   Loader2,
   Map as MapIcon,
+  Plus,
   Percent, 
   Receipt,
   Save, 
@@ -370,24 +371,34 @@ export default function AssetDetailPage() {
     },
   });
   
-  // Form submission with expense preservation
+  // Form submission with enhanced expense preservation
   const onSubmit = (values: AssetDetailFormValues) => {
     // Get current form values 
     const formValues = form.getValues();
     
-    // Create a deep copy of property expenses from the form field to ensure we capture the latest state
-    // This is crucial because the PropertyExpenses component may have local state that's not 
-    // yet fully synced to the form when the save button is clicked
-    const currentPropertyExpenses = formValues.propertyExpenses ? 
-      JSON.parse(JSON.stringify(formValues.propertyExpenses)) : {};
+    // First try to use any tracked currentPropertyExpenses from our state
+    // This helps capture expenses that may have been added but not yet synced to the form
+    let expensesToSave = currentPropertyExpenses || {};
     
-    console.log("[FORM SUBMIT] Current property expenses state:", currentPropertyExpenses);
-    console.log("[FORM SUBMIT] Number of expenses:", Object.keys(currentPropertyExpenses).length);
+    // If we don't have current expenses in state, fallback to form values
+    if (!expensesToSave || Object.keys(expensesToSave).length === 0) {
+      // Create a deep copy of property expenses from the form field 
+      expensesToSave = formValues.propertyExpenses ? 
+        JSON.parse(JSON.stringify(formValues.propertyExpenses)) : {};
+    }
+    
+    console.log("[FORM SUBMIT] Expenses to save:", expensesToSave);
+    console.log("[FORM SUBMIT] Number of expenses:", Object.keys(expensesToSave).length);
+    
+    // Log expense IDs to help with debugging
+    if (Object.keys(expensesToSave).length > 0) {
+      console.log("[FORM SUBMIT] Expense IDs:", Object.keys(expensesToSave));
+    }
     
     // Ensure property expenses are properly passed to the mutation by explicitly setting them
     updateAssetMutation.mutate({
       ...values,
-      propertyExpenses: currentPropertyExpenses
+      propertyExpenses: expensesToSave
     });
   };
   
@@ -1608,7 +1619,11 @@ export default function AssetDetailPage() {
                                 <FormControl>
                                   <PropertyExpenses
                                     value={field.value as Record<string, PropertyExpense>}
-                                    onChange={field.onChange}
+                                    onChange={(newExpenses) => {
+                                      console.log("Expense component updated with", Object.keys(newExpenses).length, "expenses");
+                                      field.onChange(newExpenses);
+                                      setCurrentPropertyExpenses(newExpenses);
+                                    }}
                                   />
                                 </FormControl>
                                 <FormMessage />
