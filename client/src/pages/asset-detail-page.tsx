@@ -558,7 +558,10 @@ export default function AssetDetailPage() {
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="details">Details</TabsTrigger>
                 {selectedClass?.name?.toLowerCase() === "real estate" && (
-                  <TabsTrigger value="property">Property Info</TabsTrigger>
+                  <>
+                    <TabsTrigger value="property">Property Info</TabsTrigger>
+                    <TabsTrigger value="expenses">Expenses</TabsTrigger>
+                  </>
                 )}
                 {(selectedClass?.name?.toLowerCase() === "loans & liabilities" || 
                   asset?.assetClassId === 5) && (
