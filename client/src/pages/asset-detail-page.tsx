@@ -262,25 +262,32 @@ export default function AssetDetailPage() {
     onSuccess: (updatedAsset) => {
       if (!updatedAsset) return;
       
+      // Important: Store the updated asset before we exit edit mode
+      // to ensure we have the fresh data including property expenses
+      const freshAsset = { ...updatedAsset };
+      
+      // Exit edit mode first (this ensures we render in view mode)
+      setIsEditing(false);
+      
+      // Show success toast
       toast({
         title: "Asset Updated",
-        description: `${updatedAsset.name} has been updated successfully`,
+        description: `${freshAsset.name} has been updated successfully`,
       });
       
-      // Immediately update the local asset data with the response from the server
-      // This ensures property expenses are displayed without requiring a separate fetch
-      queryClient.setQueryData([`/api/assets/${assetId}`], updatedAsset);
-      
-      // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/assets/by-class"] });
-      // Also invalidate the specific asset class query to refresh the asset class page
-      if (updatedAsset.assetClassId) {
-        queryClient.invalidateQueries({ queryKey: [`/api/asset-classes/${updatedAsset.assetClassId}`] });
-      }
-      
-      // Exit edit mode
-      setIsEditing(false);
+      // Force immediate UI update with the updated asset data
+      // This happens AFTER we've switched to non-editing mode to ensure proper render
+      setTimeout(() => {
+        // Immediately update the local asset data with the response from the server
+        queryClient.setQueryData([`/api/assets/${assetId}`], freshAsset);
+        
+        // Also invalidate other relevant queries
+        queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/assets/by-class"] });
+        if (freshAsset.assetClassId) {
+          queryClient.invalidateQueries({ queryKey: [`/api/asset-classes/${freshAsset.assetClassId}`] });
+        }
+      }, 0);
     },
     onError: (error: Error) => {
       toast({
