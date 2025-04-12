@@ -28,19 +28,38 @@ export default function AssetClassPage() {
   const { 
     data: assetClass, 
     isLoading: assetClassLoading,
-    error: assetClassError
+    error: assetClassError,
+    refetch: refetchAssetClass
   } = useQuery<AssetClass>({ 
     queryKey: [`/api/asset-classes/${classId}`],
-    enabled: !!classId 
+    enabled: !!classId,
+    // Refresh data when component mounts - ensures up-to-date data when navigating back
+    refetchOnMount: true,
+    // Less stale time so data refreshes more frequently
+    staleTime: 5 * 1000 // 5 seconds
   });
+  
   // Fetch all assets
   const { 
     data: allAssets = [], 
-    isLoading: assetsLoading 
+    isLoading: assetsLoading,
+    refetch: refetchAssets
   } = useQuery<Asset[]>({ 
     queryKey: ['/api/assets'],
-    enabled: !!classId
+    enabled: !!classId,
+    // Refresh data when component mounts - ensures up-to-date data when navigating back
+    refetchOnMount: true,
+    // Less stale time so data refreshes more frequently
+    staleTime: 5 * 1000 // 5 seconds
   });
+  
+  // Force refetch on mount
+  useEffect(() => {
+    if (classId) {
+      refetchAssetClass();
+      refetchAssets();
+    }
+  }, [classId, refetchAssetClass, refetchAssets]);
   
   // Filter assets by class ID and make additional adjustments for misclassified assets
   const assets = allAssets.filter(asset => {

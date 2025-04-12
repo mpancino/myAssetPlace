@@ -23,11 +23,6 @@ export function PropertyCard({
 }: PropertyCardProps) {
   const [, setLocation] = useLocation();
   
-  // Debug: Log property data
-  console.log("Property data:", property);
-  console.log("hasMortgage (camelCase):", property.hasMortgage);
-  console.log("has_mortgage (snake_case):", (property as any).has_mortgage);
-  
   // Determine if property is a rental
   const isRental = !!property.isRental;
   

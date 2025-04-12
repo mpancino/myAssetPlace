@@ -344,9 +344,16 @@ export default function AssetDetailPage() {
   
   // Handle back navigation
   const handleBack = () => {
+    // First invalidate all the relevant queries to ensure they refetch when we navigate
+    queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
+    
     if (asset?.assetClassId) {
+      // Invalidate the specific asset class query
+      queryClient.invalidateQueries({ queryKey: [`/api/asset-classes/${asset.assetClassId}`] });
+      // Navigate back to the asset class page
       setLocation(`/asset-classes/${asset.assetClassId}`);
     } else {
+      // Navigate to dashboard
       setLocation("/dashboard");
     }
   };
