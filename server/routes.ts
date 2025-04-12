@@ -214,6 +214,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });
     }
+    
     try {
       const assetsByClass = await storage.getUserAssetsByClass(req.user.id);
       res.json(assetsByClass);
