@@ -87,7 +87,9 @@ export default function AssetClasses() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  // Core asset classes are protected and cannot be deleted
+  // Core asset classes are protected and cannot be deleted:
+  // 1=Cash, 2=Loans, 3=Real Estate, 4=Investments, 5=Retirement, 
+  // 6=Vehicles, 8=Employment Income, 9=Employee Stock Options
   const protectedAssetClassIds = [1, 2, 3, 4, 5, 6, 8, 9];
   
   // Query to fetch asset classes
