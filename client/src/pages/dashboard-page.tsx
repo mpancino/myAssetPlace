@@ -1,7 +1,10 @@
+import { useState } from "react";
 import MainLayout from "@/components/layout/main-layout";
 import StatsCard from "@/components/dashboard/stats-card";
 import AssetAllocation from "@/components/dashboard/asset-allocation";
 import RecentAssets from "@/components/dashboard/recent-assets";
+import { AssetAllocationChart } from "@/components/dashboard/asset-allocation-chart";
+import { ViewToggle } from "@/components/dashboard/view-toggle";
 import FloatingActionButton from "@/components/ui/floating-action-button";
 import ModeToggle from "@/components/ui/mode-toggle";
 import { useQuery } from "@tanstack/react-query";
@@ -10,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Download, MoreHorizontal, Filter } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Asset, AssetClass, AssetHoldingType } from "@shared/schema";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +24,7 @@ import {
 export default function DashboardPage() {
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const [viewBy, setViewBy] = useState<"assetClass" | "holdingType">("assetClass");
 
   // Fetch user subscription details
   const { data: subscription } = useQuery({
@@ -28,14 +33,26 @@ export default function DashboardPage() {
   });
 
   // Fetch all assets
-  const { data: assets } = useQuery({
+  const { data: assets = [] } = useQuery<Asset[]>({
     queryKey: ["/api/assets"],
     enabled: !!user,
   });
 
   // Fetch assets grouped by class for allocation
-  const { data: assetsByClass } = useQuery({
+  const { data: assetsByClass = [] } = useQuery<{ assetClass: AssetClass, totalValue: number }[]>({
     queryKey: ["/api/assets/by-class"],
+    enabled: !!user,
+  });
+  
+  // Fetch asset classes for allocation chart
+  const { data: assetClasses = [] } = useQuery<AssetClass[]>({
+    queryKey: ["/api/asset-classes"],
+    enabled: !!user,
+  });
+  
+  // Fetch asset holding types for allocation chart
+  const { data: holdingTypes = [] } = useQuery<AssetHoldingType[]>({
+    queryKey: ["/api/asset-holding-types"],
     enabled: !!user,
   });
 
@@ -46,20 +63,20 @@ export default function DashboardPage() {
   };
 
   // Calculate net worth from all assets
-  const netWorth = assets?.reduce((sum, asset) => sum + asset.value, 0) || 0;
+  const netWorth = assets.reduce((sum: number, asset: Asset) => sum + asset.value, 0);
 
   // Calculate monthly income
-  const monthlyIncome = assets?.reduce((sum, asset) => {
+  const monthlyIncome = assets.reduce((sum: number, asset: Asset) => {
     // Simple calculation based on income yield
     if (asset.incomeYield) {
       return sum + (asset.value * asset.incomeYield / 12);
     }
     return sum;
-  }, 0) || 0;
+  }, 0);
 
   // Calculate average growth rate
-  const avgGrowthRate = assets?.length ? 
-    assets.reduce((sum, asset) => sum + (asset.growthRate || 0), 0) / assets.length :
+  const avgGrowthRate = assets.length ? 
+    assets.reduce((sum: number, asset: Asset) => sum + (asset.growthRate || 0), 0) / assets.length :
     0;
 
   return (
