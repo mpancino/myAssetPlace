@@ -1711,14 +1711,23 @@ export default function AssetDetailPage() {
                                     onChange={(newExpenses) => {
                                       console.log("Expense component updated with", Object.keys(newExpenses).length, "expenses");
                                       
-                                      // Update form field
+                                      // IMPORTANT: First update form field
                                       field.onChange(newExpenses);
                                       
-                                      // Update state tracker
+                                      // Update state tracker before saving
                                       setCurrentPropertyExpenses(newExpenses);
                                       
-                                      // Immediately save to database
-                                      savePropertyExpensesMutation.mutate(newExpenses);
+                                      // Delay saving to database to ensure state updates are complete
+                                      setTimeout(() => {
+                                        console.log("[DELAYED SAVE] Saving after state update, expenses count:", Object.keys(newExpenses).length);
+                                        // Get the latest form values
+                                        const currentFormValues = form.getValues();
+                                        // Explicitly get latest expenses 
+                                        const latestExpenses = currentFormValues.propertyExpenses || newExpenses;
+                                        
+                                        // Use the new expenses for saving to database
+                                        savePropertyExpensesMutation.mutate(latestExpenses);
+                                      }, 100);
                                     }}
                                     isSaving={savePropertyExpensesMutation.isPending}
                                     isSaved={savePropertyExpensesMutation.isSuccess}
