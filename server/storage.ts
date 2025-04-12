@@ -263,50 +263,46 @@ export class DatabaseStorage implements IStorage {
     // This is a simplified implementation. In a real application, you would use 
     // SQL aggregate functions to calculate totals directly in the database.
     try {
-      const userAssets = await db
-        .select()
-        .from(assets)
-        .where(and(eq(assets.userId, userId), eq(assets.isHidden, false)));
+      // First, get all asset classes to ensure we have data even if user has no assets
+      const allAssetClasses = await db.select().from(assetClasses);
       
-      // Return empty array when no assets found
-      if (!userAssets.length) {
-        return [];
+      // Try to get user's assets
+      let userAssets: Asset[] = [];
+      try {
+        userAssets = await db
+          .select()
+          .from(assets)
+          .where(eq(assets.userId, userId));
+      } catch (error) {
+        console.error("Error fetching user assets:", error);
+        // Continue with empty assets array
       }
       
-      // Get unique asset class IDs 
+      // If user has no assets, return all asset classes with zero values
+      if (!userAssets.length) {
+        return allAssetClasses.map(ac => ({
+          assetClass: ac,
+          totalValue: 0
+        }));
+      }
+      
+      // Get unique asset class IDs from user assets
       const assetClassIds = userAssets.map(a => a.assetClassId)
         .filter((id, index, self) => self.indexOf(id) === index);
       
-      // Handle case where no asset class IDs exist
-      if (!assetClassIds.length) {
-        return [];
-      }
+      // Create a map of asset classes for quick lookup
+      const assetClassMap = new Map(allAssetClasses.map(ac => [ac.id, ac]));
       
-      // Get all asset classes and filter in memory
-      const allAssetClasses = await db.select().from(assetClasses);
-      const assetClassesData = allAssetClasses.filter(ac => 
-        assetClassIds.includes(ac.id)
-      );
+      // Initialize results with all asset classes at zero value
+      const results: { assetClass: AssetClass, totalValue: number }[] = 
+        allAssetClasses.map(ac => ({ assetClass: ac, totalValue: 0 }));
       
-      const assetClassMap = new Map(assetClassesData.map(ac => [ac.id, ac]));
-      
-      const results: { assetClass: AssetClass, totalValue: number }[] = [];
-      const totalsByClass: Record<number, number> = {};
-      
+      // Add up asset values by class
       for (const asset of userAssets) {
-        if (!totalsByClass[asset.assetClassId]) {
-          totalsByClass[asset.assetClassId] = 0;
-        }
-        totalsByClass[asset.assetClassId] += asset.value;
-      }
-      
-      for (const [classId, total] of Object.entries(totalsByClass)) {
-        const assetClass = assetClassMap.get(Number(classId));
-        if (assetClass) {
-          results.push({
-            assetClass,
-            totalValue: total,
-          });
+        // Find the matching result and update the value
+        const resultIndex = results.findIndex(r => r.assetClass.id === asset.assetClassId);
+        if (resultIndex >= 0) {
+          results[resultIndex].totalValue += asset.value;
         }
       }
       
