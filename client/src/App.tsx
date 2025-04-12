@@ -23,6 +23,8 @@ import { ExpenseCategoryEditModal } from "@/components/admin/expense-category-ed
 // Import expense management components
 import { ExpenseEditProvider } from "@/contexts/expense-edit-context";
 import { ExpenseEditModal } from "@/components/expense/expense-edit-modal";
+// Import the global expense context
+import { ExpenseProvider } from "@/contexts/ExpenseContext";
 
 function Router() {
   return (
@@ -49,16 +51,18 @@ function App() {
   return (
     <AuthProvider>
       <SubscriptionProvider>
-        <ExpenseCategoryEditorProvider>
-          <ExpenseEditProvider>
-            <Router />
-            <DemoOnboardingDialog />
-            <UpgradePromptManager />
-            <ExpenseCategoryEditModal />
-            <ExpenseEditModal />
-            <Toaster />
-          </ExpenseEditProvider>
-        </ExpenseCategoryEditorProvider>
+        <ExpenseProvider>
+          <ExpenseCategoryEditorProvider>
+            <ExpenseEditProvider>
+              <Router />
+              <DemoOnboardingDialog />
+              <UpgradePromptManager />
+              <ExpenseCategoryEditModal />
+              <ExpenseEditModal />
+              <Toaster />
+            </ExpenseEditProvider>
+          </ExpenseCategoryEditorProvider>
+        </ExpenseProvider>
       </SubscriptionProvider>
     </AuthProvider>
   );
