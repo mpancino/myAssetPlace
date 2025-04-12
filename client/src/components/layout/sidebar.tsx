@@ -1,7 +1,7 @@
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { NavLink } from "./nav-link";
-import { ModeToggle } from "@/components/mode-toggle";
+import ModeToggle from "@/components/ui/mode-toggle";
 import {
   Home,
   User,
@@ -222,10 +222,10 @@ export default function Sidebar({ className }: SidebarProps) {
       
       <div className="border-t border-slate-200 dark:border-slate-700 p-4">
         <div className="mt-3 space-y-3">
-          {/* Interface Mode Toggle - temporarily comment out until fixed
+          {/* Interface Mode Toggle */}
           <div className="px-2 py-1">
             <ModeToggle />
-          </div> */}
+          </div>
           
           <NavLink href="/settings" icon={<Settings className="h-5 w-5 mr-3" />}>
             Settings

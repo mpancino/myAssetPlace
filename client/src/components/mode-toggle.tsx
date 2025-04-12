@@ -8,55 +8,64 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { User } from "@shared/schema";
 import { Loader2 } from "lucide-react";
 
-export function ModeToggle() {
+interface ModeToggleProps {
+  className?: string;
+}
+
+export default function ModeToggle({ className }: ModeToggleProps) {
   const { toast } = useToast();
-  const { user, isLoading: isAuthLoading } = useAuth();
-  const { 
-    isAllowedMode, 
-    showUpgradePrompt, 
-    isLoading: isSubscriptionLoading 
-  } = useSubscription();
-  
-  const [isAdvanced, setIsAdvanced] = useState<boolean>(false);
+  const { user } = useAuth();
+  const { isAllowedMode } = useSubscription();
+  const [isAdvanced, setIsAdvanced] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   
-  // Update the state when user data is loaded
+  // Set initial state based on user preference
   useEffect(() => {
     if (user) {
       setIsAdvanced(user.preferredMode === "advanced");
     }
   }, [user]);
   
-  if (isAuthLoading || isSubscriptionLoading) {
-    return (
-      <div className="flex items-center justify-center h-10">
-        <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-  
-  const handleModeChange = async (checked: boolean) => {
-    const newMode = checked ? "advanced" : "basic";
+  // Handle mode toggle
+  const handleToggleMode = async () => {
+    if (!user) return;
     
-    if (newMode === "advanced" && !isAllowedMode("advanced")) {
-      // Show upgrade prompt if advanced mode not allowed
-      showUpgradePrompt("Advanced Mode");
+    const nextMode = isAdvanced ? "basic" : "advanced";
+    
+    // Check if the mode switch is allowed by the subscription
+    if (!isAllowedMode(nextMode)) {
+      toast({
+        title: "Subscription Required",
+        description: `Your current plan doesn't include access to ${nextMode} mode.`,
+        variant: "destructive",
+      });
       return;
     }
     
+    setIsUpdating(true);
+    
     try {
-      setIsUpdating(true);
-      const response = await apiRequest("POST", "/api/user/mode", { mode: newMode });
-      const updatedUser = await response.json() as User;
-      
-      // Update the UI and invalidate the user query
-      setIsAdvanced(updatedUser.preferredMode === "advanced");
-      queryClient.setQueryData(["/api/user"], updatedUser);
-      
-      toast({
-        title: "Mode Updated",
-        description: `You are now using ${newMode === "advanced" ? "Advanced" : "Basic"} mode.`,
+      // Update user preferences in the API
+      const result = await apiRequest("PUT", "/api/user/profile", { 
+        preferredMode: nextMode 
       });
+      
+      if (result.ok) {
+        const updatedUser = await result.json() as User;
+        
+        // Update local state
+        setIsAdvanced(updatedUser.preferredMode === "advanced");
+        
+        // Invalidate user data in the query cache
+        queryClient.invalidateQueries({ queryKey: ["/api/user"] });
+        
+        toast({
+          title: "Mode Updated",
+          description: `You are now using ${nextMode.charAt(0).toUpperCase() + nextMode.slice(1)} Mode.`,
+        });
+      } else {
+        throw new Error("Failed to update mode");
+      }
     } catch (error) {
       toast({
         title: "Error",
@@ -69,21 +78,19 @@ export function ModeToggle() {
   };
   
   return (
-    <div className="flex items-center space-x-2 py-2">
+    <div className={`flex items-center space-x-2 ${className || ""}`}>
       <Switch
         id="mode-toggle"
         checked={isAdvanced}
-        onCheckedChange={handleModeChange}
+        onCheckedChange={handleToggleMode}
         disabled={isUpdating || !isAllowedMode("advanced")}
       />
-      <Label htmlFor="mode-toggle" className="cursor-pointer select-none">
+      <Label htmlFor="mode-toggle" className="flex items-center gap-2">
+        {isUpdating ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : null}
         {isAdvanced ? "Advanced Mode" : "Basic Mode"}
       </Label>
-      {!isAllowedMode("advanced") && (
-        <span className="text-xs text-muted-foreground ml-2">
-          Upgrade to access Advanced Mode
-        </span>
-      )}
     </div>
   );
 }
