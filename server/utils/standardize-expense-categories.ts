@@ -98,8 +98,7 @@ export async function standardizeExpenseCategories() {
           await db
             .update(assetClasses)
             .set({ 
-              expenseCategories: JSON.stringify(standardizedCategories),
-              updatedAt: new Date()
+              expenseCategories: JSON.stringify(standardizedCategories)
             })
             .where(eq(assetClasses.id, assetClass.id));
           

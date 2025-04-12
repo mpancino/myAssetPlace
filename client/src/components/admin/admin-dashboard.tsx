@@ -3,6 +3,8 @@ import { User, Country, AssetHoldingType, AssetClass, SubscriptionPlan } from "@
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/use-auth";
+import { Separator } from "@/components/ui/separator";
+import StandardizeCategoriesButton from "./standardize-categories-button";
 import { 
   LayoutDashboard, 
   Users, 
@@ -11,7 +13,8 @@ import {
   BarChart3, 
   CreditCard, 
   Settings,
-  Palette
+  Palette,
+  Wrench
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -209,6 +212,26 @@ export default function AdminDashboard() {
           <CardFooter className="text-xs text-muted-foreground pt-0">
             Global configuration
           </CardFooter>
+        </Card>
+      </div>
+
+      {/* Maintenance Tools */}
+      <div className="mt-10">
+        <h3 className="text-lg font-semibold mb-4">Maintenance Tools</h3>
+        <Card className="hover:shadow-md transition-shadow">
+          <CardHeader>
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-primary/10 rounded-full">
+                <Wrench className="h-5 w-5 text-primary" />
+              </div>
+              <CardTitle className="text-base">System Maintenance</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              <StandardizeCategoriesButton />
+            </div>
+          </CardContent>
         </Card>
       </div>
     </div>

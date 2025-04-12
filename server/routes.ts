@@ -125,9 +125,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         logMessages.push(`Processing asset ${asset.id} (${asset.name}) with ${categories.length} expense categories`);
         
         // Create expenses for the asset
-        const expenses = {};
+        const expenses: Record<string, { category: string; amount: number; frequency: string }> = {};
         
-        categories.forEach((category, index) => {
+        categories.forEach((category: any, index: number) => {
           // Get the category name based on object structure (old format or new format)
           const categoryName = typeof category === 'string' ? category : category.name;
           
@@ -144,8 +144,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ? category.defaultFrequency 
             : 'monthly';
           
-          // Create expense
-          expenses[`expense-${index + 1}`] = {
+          // Create expense with proper key
+          const expenseKey = `expense-${index + 1}`;
+          expenses[expenseKey] = {
             category: categoryName,
             amount,
             frequency
