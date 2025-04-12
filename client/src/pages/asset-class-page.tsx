@@ -274,14 +274,14 @@ export default function AssetClassPage() {
                       </div>
                       
                       {/* Mortgage badge and information */}
-                      {assetClass?.name?.toLowerCase() === 'real estate' && asset.hasMortgage && (
+                      {assetClass?.name?.toLowerCase() === 'real estate' && (asset.hasMortgage || (asset as any).has_mortgage) && (
                         <>
                           <div className="flex justify-between items-center mt-1">
                             <Badge variant="outline" className="bg-primary/10 text-primary">
-                              <CreditCard className="h-3 w-3 mr-1" /> Mortgaged
+                              <CreditCard className="h-3 w-3 mr-1" /> Has Mortgage
                             </Badge>
                             <span className="text-sm text-destructive font-medium">
-                              {formatCurrency(asset.mortgageAmount || 0, userCountry?.currencySymbol || '$')}
+                              {formatCurrency(asset.mortgageAmount || (asset as any).mortgage_amount || 0, userCountry?.currencySymbol || '$')}
                             </span>
                           </div>
                           
@@ -289,10 +289,13 @@ export default function AssetClassPage() {
                             <div className="flex justify-between text-xs mb-1">
                               <span className="text-muted-foreground">Equity:</span>
                               <span className="text-green-600 font-medium">
-                                {formatCurrency((asset.value || 0) - (asset.mortgageAmount || 0), userCountry?.currencySymbol || '$')}
+                                {formatCurrency(
+                                  (asset.value || 0) - (asset.mortgageAmount || (asset as any).mortgage_amount || 0), 
+                                  userCountry?.currencySymbol || '$'
+                                )}
                                 {asset.value > 0 && (
                                   <span className="ml-1 text-muted-foreground">
-                                    ({Math.round(((asset.value - (asset.mortgageAmount || 0)) / asset.value) * 100)}%)
+                                    ({Math.round(((asset.value - (asset.mortgageAmount || (asset as any).mortgage_amount || 0)) / asset.value) * 100)}%)
                                   </span>
                                 )}
                               </span>
@@ -302,7 +305,7 @@ export default function AssetClassPage() {
                                 className="bg-green-600 h-1.5 rounded-full"
                                 style={{ 
                                   width: `${asset.value ? 
-                                    Math.min(100, 100 - (((asset.mortgageAmount || 0) / asset.value) * 100)) : 0}%` 
+                                    Math.min(100, 100 - (((asset.mortgageAmount || (asset as any).mortgage_amount || 0) / asset.value) * 100)) : 0}%` 
                                 }}
                               ></div>
                             </div>
