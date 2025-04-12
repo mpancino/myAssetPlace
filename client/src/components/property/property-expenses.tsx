@@ -480,24 +480,28 @@ export function PropertyExpenses({
                     </TableCell>
                     <TableCell>{formatCurrency(expense.annualTotal)}</TableCell>
                     <TableCell>
-                      <div className="flex space-x-1">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleStartEdit(expense)}
-                          disabled={!isEditMode || isProcessing || editingExpenseId !== null}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleDeleteExpense(expense.id)}
-                          disabled={!isEditMode || isProcessing || editingExpenseId !== null}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      {isEditMode ? (
+                        <div className="flex space-x-1">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleStartEdit(expense)}
+                            disabled={isProcessing || editingExpenseId !== null}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleDeleteExpense(expense.id)}
+                            disabled={isProcessing || editingExpenseId !== null}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="w-16"></div>
+                      )}
                     </TableCell>
                   </>
                 )}
