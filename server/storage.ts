@@ -340,7 +340,7 @@ export class DatabaseStorage implements IStorage {
     // SQL aggregate functions to calculate totals directly in the database.
     try {
       // First, get all asset classes to ensure we have data even if user has no assets
-      const allAssetClasses = await db.select().from(assetClasses).orderBy(assetClasses.sortOrder);
+      const allAssetClasses = await db.select().from(assetClasses);
       
       if (!allAssetClasses || allAssetClasses.length === 0) {
         console.warn("No asset classes found");
@@ -377,7 +377,9 @@ export class DatabaseStorage implements IStorage {
           // Find the matching result and update the value
           const resultIndex = results.findIndex(r => r.assetClass.id === asset.assetClassId);
           if (resultIndex >= 0) {
-            results[resultIndex].totalValue += asset.value || 0;
+            // Handle null or undefined values
+            const assetValue = typeof asset.value === 'number' ? asset.value : 0;
+            results[resultIndex].totalValue += assetValue;
           }
         }
       }
