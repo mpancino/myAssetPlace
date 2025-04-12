@@ -219,21 +219,21 @@ The development is divided into 11 logical phases:
 
 ### Phase 4: Core Asset Management (Vertical Slice 2 - Real Estate & Mortgages)
 
-- [x] `[REQ-108]` Property management features
-- [x] `[REQ-109]` Property details tracking
-- [ ] `[REQ-110]` Manual and API-based property valuation
-- [ ] `[REQ-111]` Mortgage integration
-- [ ] `[REQ-112]` Property expenses tracking
-- [x] `[REQ-113]` Rental income tracking
-- [x] `[REQ-114]` Property holding type classification
-- [x] `[REQ-115]` Property growth rate settings
-- [ ] `[REQ-145]` Mortgage management
-- [ ] `[REQ-146]` Mortgage details tracking
-- [ ] `[REQ-147]` Mortgage balance calculation
-- [ ] `[REQ-148]` Offset account integration
-- [ ] `[REQ-149]` Property linkage
-- [ ] `[REQ-150]` Mortgage holding type classification
-- [ ] `[REQ-331]` Domain Property API integration (basic structure)
+- [x] `[REQ-108]` Property management features (add, edit, delete property assets)
+- [x] `[REQ-109]` Property valuation tracking (manual entry)
+- [x] `[REQ-111]` Mortgage management (track lender, amount, rate, term, frequency)
+- [x] `[REQ-112]` Calculate principal and interest components of repayments
+- [x] `[REQ-114]` Rental income tracking (frequency, amount, vacancy rate)
+- [x] `[REQ-116]` Support for properties owned outright (no mortgage)
+- [x] `[REQ-117]` Property holding type classification
+- [x] `[REQ-118]` Individual property growth rate settings
+- [ ] `[REQ-113]` Property expense tracking with categories
+- [x] `[REQ-115]` Offset account integration (structure in place)
+- [ ] `[REQ-119]` Address validation integration (stubbed)
+- [ ] `[REQ-120]` Map thumbnail on real estate assets (basic display)
+- [ ] `[REQ-331]` HERE API integration for mapping (stubbed)
+- [ ] `[REQ-332]` API key management for property services
+- [ ] `[REQ-333]` Stubbed responses for unavailable API services
 
 ### Phase 5: Expand Core Features & Tax Foundation
 
