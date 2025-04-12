@@ -215,22 +215,20 @@ export function PropertyExpenses({
     return amount * (FREQUENCY_MULTIPLIERS[frequency as keyof FrequencyMultiplier] || 12);
   };
 
-  // Reset form state
+  // Reset form state - important for cancelling edits
   const resetForm = useCallback(() => {
+    console.log('[PROPERTY EXPENSES] Resetting form state');
     setNewExpense(defaultNewExpense);
     setIsAddingExpense(false);
     setEditingExpenseId(null);
   }, []);
 
-  // Initialize expenses from props with enhanced error handling and debugging
+  // Initialize expenses from props - critical for data persistence
   useEffect(() => {
     let parsedExpenses: Record<string, PropertyExpense> = {};
     
-    // Parse expense data (handle all possible formats)
     try {
-      console.log('[PROPERTY EXPENSES] Received value type:', typeof value);
-      console.log('[PROPERTY EXPENSES] Value preview:', 
-        value ? (typeof value === 'object' ? `Object with ${Object.keys(value).length} keys` : String(value).substring(0, 50)) : 'null');
+      console.log('[PROPERTY EXPENSES] Initializing with value type:', typeof value);
       
       // Handle string format (needs parsing)
       if (typeof value === 'string') {
@@ -241,7 +239,7 @@ export function PropertyExpenses({
             parsedExpenses = {};
           } else {
             parsedExpenses = JSON.parse(stringValue);
-            console.log('[PROPERTY EXPENSES] Successfully parsed string to object with', Object.keys(parsedExpenses).length, 'expenses');
+            console.log('[PROPERTY EXPENSES] Successfully parsed string to object');
           }
         } catch (parseError) {
           console.error('[PROPERTY EXPENSES] JSON parse error:', parseError);
@@ -252,18 +250,20 @@ export function PropertyExpenses({
       else if (value && typeof value === 'object') {
         // Create a deep clone to avoid reference issues
         parsedExpenses = JSON.parse(JSON.stringify(value));
-        console.log('[PROPERTY EXPENSES] Received object with', Object.keys(parsedExpenses).length, 'expenses');
-        // Log expense IDs for debugging
+      }
+      
+      console.log('[PROPERTY EXPENSES] Setting initial expense data:', 
+        Object.keys(parsedExpenses).length, 'expenses');
+        
+      if (Object.keys(parsedExpenses).length > 0) {
         console.log('[PROPERTY EXPENSES] Expense IDs:', Object.keys(parsedExpenses));
       }
       
-      // Always update the local state, even if empty
-      console.log('[PROPERTY EXPENSES] Setting expense data:', Object.keys(parsedExpenses).length, 'expenses');
+      // Update local state with parsed expenses
       setExpenses(parsedExpenses);
       
     } catch (err) {
       console.error('[PROPERTY EXPENSES] Initialization error:', err);
-      // Fallback to empty object on any error
       setExpenses({});
     }
   }, [value]);
@@ -279,36 +279,59 @@ export function PropertyExpenses({
       return;
     }
     
-    // Create new expense with ID and annual total
-    const id = uuidv4();
-    const annualTotal = calculateAnnualTotal(newExpense.amount, newExpense.frequency);
+    // Set processing state to prevent multiple clicks
+    setIsProcessing(true);
     
-    const newExpenseWithId: PropertyExpense = {
-      id,
-      ...newExpense,
-      annualTotal,
-    };
-    
-    // Update local state
-    const updatedExpenses = {
-      ...expenses,
-      [id]: newExpenseWithId
-    };
-    
-    // Update parent state
-    setExpenses(updatedExpenses);
-    onChange(updatedExpenses);
-    
-    // Reset form and show success message
-    resetForm();
-    toast({
-      title: "Expense added",
-      description: `Added ${newExpense.category} expense with annual total of ${formatCurrency(annualTotal)}`
-    });
-  }, [newExpense, expenses, onChange, resetForm, toast]);
+    try {
+      // Create new expense with ID and annual total
+      const id = uuidv4();
+      const annualTotal = calculateAnnualTotal(newExpense.amount, newExpense.frequency);
+      
+      const newExpenseWithId: PropertyExpense = {
+        id,
+        ...newExpense,
+        annualTotal,
+      };
+      
+      console.log('[PROPERTY EXPENSES] Adding new expense:', newExpenseWithId);
+      
+      // Update expense state
+      const updatedExpenses = {
+        ...expenses,
+        [id]: newExpenseWithId
+      };
+      
+      // Update both local and parent state
+      setExpenses(updatedExpenses);
+      onChange(updatedExpenses);
+      
+      // Show success message
+      toast({
+        title: "Expense added",
+        description: `Added ${newExpense.category} expense with annual total of ${formatCurrency(annualTotal)}`
+      });
+      
+      // Reset form
+      resetForm();
+    } catch (error) {
+      console.error('[PROPERTY EXPENSES] Error adding expense:', error);
+      toast({
+        title: "Error adding expense",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [newExpense, expenses, onChange, resetForm, toast, calculateAnnualTotal]);
 
   // Handler for updating an existing expense
   const handleUpdateExpense = useCallback((expenseId: string) => {
+    if (!expenseId || !expenses[expenseId]) {
+      console.error('[PROPERTY EXPENSES] Cannot update expense - invalid ID:', expenseId);
+      return;
+    }
+    
     if (!newExpense.category || newExpense.amount <= 0) {
       toast({
         title: "Invalid expense",
@@ -318,66 +341,114 @@ export function PropertyExpenses({
       return;
     }
     
-    // Calculate annual total for updated expense
-    const annualTotal = calculateAnnualTotal(newExpense.amount, newExpense.frequency);
+    // Set processing state
+    setIsProcessing(true);
     
-    // Update expense in state
-    const updatedExpenses = {
-      ...expenses,
-      [expenseId]: {
-        ...expenses[expenseId],
+    try {
+      // Calculate annual total for updated expense
+      const annualTotal = calculateAnnualTotal(newExpense.amount, newExpense.frequency);
+      
+      // Create updated expense object
+      const updatedExpense = {
+        id: expenseId,
         ...newExpense,
         annualTotal
-      }
-    };
-    
-    // Update parent state
-    setExpenses(updatedExpenses);
-    onChange(updatedExpenses);
-    
-    // Reset form and show success message
-    resetForm();
-    toast({
-      title: "Expense updated",
-      description: `Updated ${newExpense.category} expense successfully`
-    });
-  }, [newExpense, expenses, onChange, resetForm, toast]);
+      };
+      
+      console.log('[PROPERTY EXPENSES] Updating expense ID:', expenseId);
+      console.log('[PROPERTY EXPENSES] Updated expense data:', updatedExpense);
+      
+      // Create new expenses object with updated expense
+      const updatedExpenses = {
+        ...expenses,
+        [expenseId]: updatedExpense
+      };
+      
+      // Update both local and parent state
+      setExpenses(updatedExpenses);
+      onChange(updatedExpenses);
+      
+      // Show success message
+      toast({
+        title: "Expense updated",
+        description: `Updated ${newExpense.category} expense successfully`
+      });
+      
+      // Reset edit form
+      resetForm();
+    } catch (error) {
+      console.error('[PROPERTY EXPENSES] Error updating expense:', error);
+      toast({
+        title: "Error updating expense",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [newExpense, expenses, onChange, resetForm, toast, calculateAnnualTotal]);
 
   // Handler for deleting an expense
   const handleDeleteExpense = useCallback((expenseId: string) => {
     const expenseToDelete = expenses[expenseId];
-    if (!expenseToDelete) return;
+    if (!expenseToDelete) {
+      console.error('[PROPERTY EXPENSES] Cannot delete expense - not found:', expenseId);
+      return;
+    }
     
-    // Create new expenses object without the deleted expense
-    const { [expenseId]: _, ...remainingExpenses } = expenses;
+    // Set processing state
+    setIsProcessing(true);
     
-    // Update parent state
-    setExpenses(remainingExpenses);
-    onChange(remainingExpenses);
-    
-    // Show success message
-    toast({
-      title: "Expense deleted",
-      description: `Removed ${expenseToDelete.category} expense of ${formatCurrency(expenseToDelete.amount)}`
-    });
+    try {
+      console.log('[PROPERTY EXPENSES] Deleting expense ID:', expenseId);
+      
+      // Create new expenses object without the deleted expense
+      const { [expenseId]: _, ...remainingExpenses } = expenses;
+      
+      // Update both local and parent state
+      setExpenses(remainingExpenses);
+      onChange(remainingExpenses);
+      
+      // Show success message
+      toast({
+        title: "Expense deleted",
+        description: `Removed ${expenseToDelete.category} expense of ${formatCurrency(expenseToDelete.amount)}`
+      });
+    } catch (error) {
+      console.error('[PROPERTY EXPENSES] Error deleting expense:', error);
+      toast({
+        title: "Error deleting expense",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   }, [expenses, onChange, toast]);
 
   // Handler for starting the edit process
   const handleStartEdit = useCallback((expense: PropertyExpense) => {
+    console.log('[PROPERTY EXPENSES] Starting edit for expense ID:', expense.id);
+    
+    // Set form data to the expense being edited
     setNewExpense({
       category: expense.category,
       description: expense.description,
       amount: expense.amount,
       frequency: expense.frequency,
     });
+    
+    // Set editing ID to track which expense is being edited
     setEditingExpenseId(expense.id);
   }, []);
 
   // Calculate total annual expenses
-  const totalAnnualExpenses = Object.values(expenses).reduce(
-    (total, expense) => total + expense.annualTotal,
-    0
-  );
+  const totalAnnualExpenses = useMemo(() => {
+    return Object.values(expenses).reduce(
+      (total, expense) => total + expense.annualTotal,
+      0
+    );
+  }, [expenses]);
 
   return (
     <div className="space-y-4">
@@ -479,6 +550,7 @@ export function PropertyExpenses({
                           size="icon"
                           onClick={() => handleUpdateExpense(expense.id)}
                           disabled={isProcessing}
+                          title="Save changes"
                         >
                           <Check className="h-4 w-4" />
                         </Button>
@@ -487,6 +559,7 @@ export function PropertyExpenses({
                           size="icon"
                           onClick={resetForm}
                           disabled={isProcessing}
+                          title="Cancel editing"
                         >
                           <X className="h-4 w-4" />
                         </Button>
@@ -507,18 +580,26 @@ export function PropertyExpenses({
                       {isEditMode ? (
                         <div className="flex space-x-1">
                           <Button
-                            variant="outline"
+                            variant="ghost"
                             size="icon"
                             onClick={() => handleStartEdit(expense)}
                             disabled={isProcessing || (editingExpenseId !== null && editingExpenseId !== expense.id)}
+                            title="Edit expense"
+                            className="hover:bg-primary/10 hover:text-primary"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button
-                            variant="outline"
+                            variant="ghost"
                             size="icon"
-                            onClick={() => handleDeleteExpense(expense.id)}
+                            onClick={() => {
+                              if (window.confirm(`Are you sure you want to delete the ${expense.category} expense?`)) {
+                                handleDeleteExpense(expense.id);
+                              }
+                            }}
                             disabled={isProcessing || (editingExpenseId !== null && editingExpenseId !== expense.id)}
+                            title="Delete expense"
+                            className="hover:bg-destructive/10 hover:text-destructive"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -548,11 +629,15 @@ export function PropertyExpenses({
 
       {/* Add expense form */}
       {isAddingExpense ? (
-        <Card>
-          <CardContent className="pt-6">
+        <Card className="border border-primary/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-medium">Add New Expense</CardTitle>
+            <CardDescription>Add a recurring expense for this property</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-4">
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
-                <Label htmlFor="category">Category</Label>
+                <Label htmlFor="category">Category <span className="text-red-500">*</span></Label>
                 <Select
                   value={newExpense.category}
                   onValueChange={(value) => setNewExpense({ ...newExpense, category: value })}
@@ -581,17 +666,19 @@ export function PropertyExpenses({
             </div>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
-                <Label htmlFor="amount">Amount ({currencySymbol})</Label>
+                <Label htmlFor="amount">Amount ({currencySymbol}) <span className="text-red-500">*</span></Label>
                 <Input
                   id="amount"
                   type="number"
+                  step="0.01"
+                  min="0"
                   value={newExpense.amount || ""}
                   onChange={(e) => setNewExpense({ ...newExpense, amount: parseFloat(e.target.value) || 0 })}
                   placeholder="0.00"
                 />
               </div>
               <div>
-                <Label htmlFor="frequency">Frequency</Label>
+                <Label htmlFor="frequency">Frequency <span className="text-red-500">*</span></Label>
                 <Select
                   value={newExpense.frequency}
                   onValueChange={(value) => setNewExpense({ ...newExpense, frequency: value })}
@@ -611,14 +698,25 @@ export function PropertyExpenses({
               <Button
                 variant="outline"
                 onClick={resetForm}
+                disabled={isProcessing}
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleAddExpense}
-                disabled={!newExpense.category || newExpense.amount <= 0}
+                disabled={isProcessing || !newExpense.category || newExpense.amount <= 0}
               >
-                Add Expense
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Expense
+                  </>
+                )}
               </Button>
             </div>
           </CardContent>
@@ -629,9 +727,10 @@ export function PropertyExpenses({
             <div className="flex justify-end">
               <Button 
                 onClick={() => setIsAddingExpense(true)}
-                disabled={editingExpenseId !== null || isSaving}
+                disabled={editingExpenseId !== null || isSaving || isProcessing}
+                variant="outline"
               >
-                <Plus className="mr-2 h-4 w-4" /> Add Expense
+                <Plus className="mr-2 h-4 w-4" /> Add New Expense
               </Button>
             </div>
           )}
