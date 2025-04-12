@@ -12,6 +12,7 @@ import AddLoanPage from "@/pages/add-loan-page";
 import AddPropertyPage from "@/pages/add-property-page";
 import AssetDetailPage from "@/pages/asset-detail-page";
 import BalanceSheetPage from "@/pages/balance-sheet-page";
+import ExpenseGeneratorPage from "@/pages/expense-generator-page";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { AuthProvider } from "@/hooks/use-auth";
 import { SubscriptionProvider } from "@/hooks/use-subscription";
@@ -34,6 +35,7 @@ function Router() {
       <ProtectedRoute path="/add-property/:classId" component={AddPropertyPage} />
       <ProtectedRoute path="/assets/:assetId" component={AssetDetailPage} />
       <ProtectedRoute path="/balance-sheet" component={BalanceSheetPage} />
+      <ProtectedRoute path="/expense-generator" component={ExpenseGeneratorPage} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>

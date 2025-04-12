@@ -29,6 +29,128 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Serve scripts directory
   app.use('/scripts', express.static(path.join(process.cwd(), 'scripts')));
+  
+  // Run update expenses script
+  app.post('/api/run-update-expenses', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      // Get all asset classes and extract expense categories
+      const assetClasses = await storage.listAssetClasses();
+      const expenseCategoriesByClassId = {};
+      
+      assetClasses.forEach(assetClass => {
+        try {
+          if (assetClass.expenseCategories) {
+            const categories = JSON.parse(assetClass.expenseCategories);
+            expenseCategoriesByClassId[assetClass.id] = categories;
+            console.log(`Asset class ${assetClass.id} (${assetClass.name}) has ${categories.length} expense categories`);
+          }
+        } catch (error) {
+          console.error(`Error parsing expense categories for asset class ${assetClass.id}:`, error);
+          expenseCategoriesByClassId[assetClass.id] = [];
+        }
+      });
+      
+      // Get all user assets
+      const assets = await storage.listAssets(req.user.id);
+      
+      if (assets.length === 0) {
+        return res.json({ 
+          success: false, 
+          message: "No assets found for this user" 
+        });
+      }
+      
+      console.log(`Found ${assets.length} assets to process for user ${req.user.id}`);
+      
+      // Process each asset and update it with expenses
+      let updatedCount = 0;
+      let skippedCount = 0;
+      const logMessages = [];
+      
+      for (const asset of assets) {
+        const assetClassId = asset.assetClassId;
+        const categories = expenseCategoriesByClassId[assetClassId] || [];
+        
+        if (!categories.length) {
+          logMessages.push(`Skipping asset ${asset.id} (${asset.name}) - no expense categories defined for class ${assetClassId}`);
+          skippedCount++;
+          continue;
+        }
+        
+        logMessages.push(`Processing asset ${asset.id} (${asset.name}) with ${categories.length} expense categories`);
+        
+        // Create expenses for the asset
+        const expenses = {};
+        
+        categories.forEach((category, index) => {
+          // Get the category name based on object structure (old format or new format)
+          const categoryName = typeof category === 'string' ? category : category.name;
+          
+          // Generate reasonable expense amount based on asset value
+          let baseAmount = asset.value * 0.01; // 1% of asset value as base
+          if (baseAmount < 50) baseAmount = 50; // Minimum expense amount
+          if (baseAmount > 1000) baseAmount = 1000; // Maximum expense amount
+          
+          // Add some randomness
+          const amount = Math.round(baseAmount * (0.5 + Math.random()));
+          
+          // Use the category's default frequency if available, otherwise default to 'monthly'
+          const frequency = (typeof category === 'object' && category.defaultFrequency) 
+            ? category.defaultFrequency 
+            : 'monthly';
+          
+          // Create expense
+          expenses[`expense-${index + 1}`] = {
+            category: categoryName,
+            amount,
+            frequency
+          };
+        });
+        
+        // If property, update propertyExpenses field, otherwise update generic expenses field
+        const isProperty = assetClassId === 3; // Based on your schema, Real Estate is ID 3
+        const updateField = isProperty ? 'propertyExpenses' : 'expenses';
+        
+        // Prepare update payload
+        const updatePayload = {
+          [updateField]: JSON.stringify(expenses)
+        };
+        
+        logMessages.push(`Updating asset ${asset.id} with ${Object.keys(expenses).length} expenses in field ${updateField}`);
+        
+        try {
+          // Update the asset
+          const updatedAsset = await storage.updateAsset(asset.id, updatePayload);
+          
+          if (updatedAsset) {
+            logMessages.push(`Successfully updated asset ${asset.id} (${asset.name})`);
+            updatedCount++;
+          } else {
+            logMessages.push(`Failed to update asset ${asset.id}`);
+          }
+        } catch (err) {
+          logMessages.push(`Error updating asset ${asset.id}: ${err.message}`);
+        }
+      }
+      
+      return res.json({
+        success: true,
+        message: `Updated ${updatedCount} assets with expenses (${skippedCount} skipped)`,
+        logs: logMessages
+      });
+      
+    } catch (error) {
+      console.error('Error updating assets with expenses:', error);
+      return res.status(500).json({ 
+        success: false, 
+        message: error.message || 'Unknown error'
+      });
+    }
+  });
 
   // Custom middleware to check if user is admin
   const isAdmin = (req: any, res: any, next: any) => {
