@@ -104,6 +104,18 @@ export function PropertyCard({
             </div>
           )}
           
+          {/* Display total property expenses if they exist */}
+          {property.propertyExpenses && Object.keys(property.propertyExpenses).length > 0 && (
+            <div className="flex justify-between">
+              <div className="text-sm text-muted-foreground">Annual Expenses</div>
+              <div className="font-medium">
+                {formatCurrency(Object.values(property.propertyExpenses as Record<string, any>)
+                  .reduce((sum, expense) => sum + (expense.annualTotal || 0), 0)
+                )}
+              </div>
+            </div>
+          )}
+          
           <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-2">
             {property.bedrooms && property.bedrooms > 0 && (
               <div className="flex items-center">

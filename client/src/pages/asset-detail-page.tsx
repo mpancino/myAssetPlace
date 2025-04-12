@@ -24,7 +24,12 @@ import {
   Building, 
   CreditCard, 
   AlertTriangle,
-  Link
+  Link,
+  Receipt,
+  BedDouble,
+  Bath,
+  Car,
+  Map
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -760,15 +765,129 @@ export default function AssetDetailPage() {
                   </CardHeader>
                   <CardContent>
                     {selectedClass?.name === "Property" && (
-                      <div className="space-y-4">
+                      <div className="space-y-6">
                         <div className="flex items-center">
                           <Building className="mr-2 h-5 w-5 text-muted-foreground" />
                           <div>
                             <p className="text-sm text-muted-foreground">Property Type</p>
-                            <p className="font-medium">Residential</p>
+                            <p className="font-medium">{asset?.propertyType ? asset.propertyType.charAt(0).toUpperCase() + asset.propertyType.slice(1) : "Residential"}</p>
                           </div>
                         </div>
-                        {/* Additional property fields would go here */}
+                        
+                        {/* Property Details */}
+                        <div className="grid grid-cols-2 gap-4">
+                          {asset?.bedrooms > 0 && (
+                            <div className="flex items-center">
+                              <BedDouble className="mr-2 h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="text-sm text-muted-foreground">Bedrooms</p>
+                                <p className="font-medium">{asset.bedrooms}</p>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {asset?.bathrooms > 0 && (
+                            <div className="flex items-center">
+                              <Bath className="mr-2 h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="text-sm text-muted-foreground">Bathrooms</p>
+                                <p className="font-medium">{asset.bathrooms}</p>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {asset?.parkingSpaces > 0 && (
+                            <div className="flex items-center">
+                              <Car className="mr-2 h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="text-sm text-muted-foreground">Parking Spaces</p>
+                                <p className="font-medium">{asset.parkingSpaces}</p>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {asset?.landSize > 0 && (
+                            <div className="flex items-center">
+                              <Map className="mr-2 h-4 w-4 text-muted-foreground" />
+                              <div>
+                                <p className="text-sm text-muted-foreground">Land Size</p>
+                                <p className="font-medium">{asset.landSize} m²</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Property Expenses */}
+                        {asset?.propertyExpenses && Object.keys(asset.propertyExpenses).length > 0 && (
+                          <div className="mt-4">
+                            <h3 className="font-medium mb-2 flex items-center">
+                              <Receipt className="mr-2 h-4 w-4" /> Property Expenses
+                            </h3>
+                            <div className="bg-muted p-4 rounded-md">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead>Category</TableHead>
+                                    <TableHead>Description</TableHead>
+                                    <TableHead>Amount</TableHead>
+                                    <TableHead>Frequency</TableHead>
+                                    <TableHead>Annual Total</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {Object.values(asset.propertyExpenses).map((expense: any) => (
+                                    <TableRow key={expense.id}>
+                                      <TableCell>{expense.category}</TableCell>
+                                      <TableCell>{expense.description}</TableCell>
+                                      <TableCell>{formatCurrency(expense.amount)}</TableCell>
+                                      <TableCell>
+                                        {expense.frequency.charAt(0).toUpperCase() + expense.frequency.slice(1)}
+                                      </TableCell>
+                                      <TableCell>{formatCurrency(expense.annualTotal)}</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                                <TableFooter>
+                                  <TableRow>
+                                    <TableCell colSpan={4}>Total Annual Expenses</TableCell>
+                                    <TableCell className="font-medium">
+                                      {formatCurrency(
+                                        Object.values(asset.propertyExpenses).reduce(
+                                          (sum: number, expense: any) => sum + expense.annualTotal, 
+                                          0
+                                        )
+                                      )}
+                                    </TableCell>
+                                  </TableRow>
+                                </TableFooter>
+                              </Table>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Rental Information */}
+                        {asset?.isRental && (
+                          <div className="mt-4">
+                            <h3 className="font-medium mb-2 flex items-center">
+                              <DollarSign className="mr-2 h-4 w-4" /> Rental Information
+                            </h3>
+                            <div className="bg-muted p-4 rounded-md space-y-2">
+                              <div className="flex justify-between">
+                                <span className="text-sm text-muted-foreground">Rental Income</span>
+                                <span className="font-medium">
+                                  {formatCurrency(asset.rentalIncome || 0)} 
+                                  /{asset.rentalFrequency || 'month'}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-sm text-muted-foreground">Vacancy Rate</span>
+                                <span className="font-medium">
+                                  {asset.vacancyRate || 0}%
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                     
