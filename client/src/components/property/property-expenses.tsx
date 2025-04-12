@@ -323,15 +323,18 @@ export function PropertyExpenses({
       
       console.log('[PROPERTY EXPENSES] Adding new expense:', newExpenseWithId);
       
-      // Update expense state
+      // Create updated expenses object
       const updatedExpenses = {
         ...expenses,
         [id]: newExpenseWithId
       };
       
+      // Apply the same normalization to ensure consistent data
+      const normalizedExpenses = parseExpenseData(updatedExpenses);
+      
       // Update both local and parent state
-      setExpenses(updatedExpenses);
-      onChange(updatedExpenses);
+      setExpenses(normalizedExpenses);
+      onChange(normalizedExpenses);
       
       // Show success message
       toast({
@@ -351,7 +354,7 @@ export function PropertyExpenses({
     } finally {
       setIsProcessing(false);
     }
-  }, [newExpense, expenses, onChange, resetForm, toast, calculateAnnualTotal]);
+  }, [newExpense, expenses, onChange, resetForm, toast, calculateAnnualTotal, parseExpenseData]);
 
   // Handler for updating an existing expense
   const handleUpdateExpense = useCallback((expenseId: string) => {
@@ -392,9 +395,12 @@ export function PropertyExpenses({
         [expenseId]: updatedExpense
       };
       
+      // Apply the same normalization to ensure consistent data
+      const normalizedExpenses = parseExpenseData(updatedExpenses);
+      
       // Update both local and parent state
-      setExpenses(updatedExpenses);
-      onChange(updatedExpenses);
+      setExpenses(normalizedExpenses);
+      onChange(normalizedExpenses);
       
       // Show success message
       toast({
@@ -414,7 +420,7 @@ export function PropertyExpenses({
     } finally {
       setIsProcessing(false);
     }
-  }, [newExpense, expenses, onChange, resetForm, toast, calculateAnnualTotal]);
+  }, [newExpense, expenses, onChange, resetForm, toast, calculateAnnualTotal, parseExpenseData]);
 
   // Handler for deleting an expense
   const handleDeleteExpense = useCallback((expenseId: string) => {
@@ -433,9 +439,12 @@ export function PropertyExpenses({
       // Create new expenses object without the deleted expense
       const { [expenseId]: _, ...remainingExpenses } = expenses;
       
+      // Apply the same normalization to ensure consistent data
+      const normalizedExpenses = parseExpenseData(remainingExpenses);
+      
       // Update both local and parent state
-      setExpenses(remainingExpenses);
-      onChange(remainingExpenses);
+      setExpenses(normalizedExpenses);
+      onChange(normalizedExpenses);
       
       // Show success message
       toast({
@@ -452,7 +461,7 @@ export function PropertyExpenses({
     } finally {
       setIsProcessing(false);
     }
-  }, [expenses, onChange, toast]);
+  }, [expenses, onChange, toast, parseExpenseData]);
 
   // Handler for starting the edit process
   const handleStartEdit = useCallback((expense: PropertyExpense) => {
