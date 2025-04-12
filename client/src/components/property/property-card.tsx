@@ -68,9 +68,16 @@ export function PropertyCard({
             <Home className="h-4 w-4 mr-2 text-muted-foreground" />
             {property.name}
           </CardTitle>
-          {holdingType && (
-            <Badge variant="outline">{holdingType.name}</Badge>
-          )}
+          <div className="flex flex-col items-end gap-1">
+            {holdingType && (
+              <Badge variant="outline">{holdingType.name}</Badge>
+            )}
+            {property.hasMortgage && (
+              <Badge variant="outline" className="bg-primary/10 text-primary">
+                <CreditCard className="h-3 w-3 mr-1" /> Mortgaged
+              </Badge>
+            )}
+          </div>
         </div>
         {property.address && (
           <div className="text-sm text-muted-foreground flex items-center">
