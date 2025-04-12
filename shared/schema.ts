@@ -230,11 +230,15 @@ export const loginUserSchema = z.object({
   password: z.string().min(6),
 });
 
-export const insertAssetSchema = createInsertSchema(assets).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
+export const insertAssetSchema = createInsertSchema(assets)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    value: z.number().min(-1000000000, "Asset value must be greater than -1 billion").max(1000000000, "Asset value cannot exceed 1 billion"),
+  });
 
 export const insertCashAccountSchema = insertAssetSchema.extend({
   accountNumber: z.string().optional(),
@@ -251,11 +255,11 @@ export const insertLoanSchema = insertAssetSchema.extend({
   loanProvider: z.string().min(1, "Loan provider is required"),
   interestRate: z.number().min(0).max(100),
   interestRateType: z.enum(["fixed", "variable"]),
-  loanTerm: z.number().min(1, "Loan term must be at least 1 month"),
+  loanTerm: z.number().min(1, "Loan term must be at least 1 month").max(1200, "Loan term cannot exceed 1200 months (100 years)"),
   paymentFrequency: z.enum(["weekly", "fortnightly", "monthly", "quarterly", "annually"]),
-  paymentAmount: z.number().min(0, "Payment amount must be greater than 0"),
+  paymentAmount: z.number().min(0, "Payment amount must be greater than 0").max(1000000000, "Payment amount cannot exceed 1 billion"),
   startDate: z.date(),
-  originalLoanAmount: z.number().min(0, "Original loan amount must be greater than 0"),
+  originalLoanAmount: z.number().min(0, "Original loan amount must be greater than 0").max(1000000000, "Loan amount cannot exceed 1 billion"),
 });
 
 export const insertCountrySchema = createInsertSchema(countries).omit({
