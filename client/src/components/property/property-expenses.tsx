@@ -278,19 +278,16 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
     // Log the state before notifying parent
     console.log(`[EXPENSE COMMAND] ${command.type} completed, notifying parent with ${Object.keys(updatedExpenses).length} expenses`);
     
-    // Notify parent with a short delay to ensure our state update is processed
-    // This is crucial for ensuring database persistence captures the complete changes
-    setTimeout(() => {
-      // Notify parent with the updated expenses
-      onChange(updatedExpenses);
-      
-      // Only log detailed info for non-SYNC operations
-      if (command.type !== 'SYNC') {
-        console.log(`After ${command.type.toLowerCase()} operation, total expenses: ${Object.keys(updatedExpenses).length}`);
-      }
-      
-      setIsProcessing(false);
-    }, 50); // small delay to ensure state updates are processed first
+    // Notify parent of changes - parent will handle form state updates
+    // No longer trying to directly save to database from here
+    onChange(updatedExpenses);
+    
+    // Only log detailed info for non-SYNC operations
+    if (command.type !== 'SYNC') {
+      console.log(`After ${command.type.toLowerCase()} operation, total expenses: ${Object.keys(updatedExpenses).length}`);
+    }
+    
+    setIsProcessing(false);
     
     return updatedExpenses;
   }, [processExpenseCommand, onChange]);
@@ -406,21 +403,10 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
       annualTotal,
     };
     
-    // Direct save with better state management
-    console.log("[DIRECT SAVE] Adding new expense", newExpenseWithId.id);
+    console.log("Adding new expense", newExpenseWithId.id);
     
-    // Apply the command to our local state first, ensuring state is updated
-    const updatedExpenses = processExpenseCommand({ type: 'ADD', expense: newExpenseWithId });
-    
-    // First update our internal state
-    setExpenses(updatedExpenses);
-    
-    // Then make sure to delay the parent notification to allow React state to update
-    setTimeout(() => {
-      // Use the local state from our command to notify parent
-      console.log("[DIRECT SAVE] Notifying parent with updated expenses after ADD:", Object.keys(updatedExpenses).length);
-      onChange(updatedExpenses);
-    }, 50);
+    // Add the expense via the command pattern
+    applyCommand({ type: 'ADD', expense: newExpenseWithId });
     
     resetForm();
     
@@ -428,7 +414,7 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
       title: "Expense added",
       description: `Added ${newExpense.category} expense with annual total of ${formatCurrency(annualTotal)}`
     });
-  }, [newExpense, processExpenseCommand, calculateAnnualTotal, resetForm, toast, onChange]);
+  }, [newExpense, applyCommand, calculateAnnualTotal, resetForm, toast]);
 
   // Handler for updating an existing expense
   const handleUpdateExpense = useCallback((expenseId: string) => {
@@ -441,25 +427,14 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
       return;
     }
     
-    // Direct save with better state management
-    console.log("[DIRECT SAVE] Updating expense", expenseId);
+    console.log("Updating expense", expenseId);
     
-    // Apply the command to our local state first, ensuring state is updated
-    const updatedExpenses = processExpenseCommand({ 
+    // Update the expense via the command pattern
+    applyCommand({ 
       type: 'UPDATE', 
       id: expenseId, 
       data: newExpense 
     });
-    
-    // First update our internal state
-    setExpenses(updatedExpenses);
-    
-    // Then make sure to delay the parent notification to allow React state to update
-    setTimeout(() => {
-      // Use the local state from our command to notify parent
-      console.log("[DIRECT SAVE] Notifying parent with updated expenses after UPDATE:", Object.keys(updatedExpenses).length);
-      onChange(updatedExpenses);
-    }, 50);
     
     resetForm();
     
@@ -467,34 +442,23 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
       title: "Expense updated",
       description: `Updated ${newExpense.category} expense successfully`
     });
-  }, [newExpense, processExpenseCommand, resetForm, toast, onChange]);
+  }, [newExpense, applyCommand, resetForm, toast]);
 
   // Handler for deleting an expense
   const handleDeleteExpense = useCallback((expenseId: string) => {
     const expenseToDelete = expenses[expenseId];
     if (!expenseToDelete) return;
     
-    // Direct save with better state management
-    console.log("[DIRECT SAVE] Deleting expense", expenseId);
+    console.log("Deleting expense", expenseId);
     
-    // Apply the command to our local state first, ensuring state is updated
-    const updatedExpenses = processExpenseCommand({ type: 'DELETE', id: expenseId });
-    
-    // First update our internal state
-    setExpenses(updatedExpenses);
-    
-    // Then make sure to delay the parent notification to allow React state to update
-    setTimeout(() => {
-      // Use the local state from our command to notify parent
-      console.log("[DIRECT SAVE] Notifying parent with updated expenses after DELETE:", Object.keys(updatedExpenses).length);
-      onChange(updatedExpenses);
-    }, 50);
+    // Delete the expense via the command pattern
+    applyCommand({ type: 'DELETE', id: expenseId });
     
     toast({
       title: "Expense deleted",
       description: `Removed ${expenseToDelete.category} expense of ${formatCurrency(expenseToDelete.amount)}`
     });
-  }, [expenses, processExpenseCommand, toast, onChange, formatCurrency]);
+  }, [expenses, applyCommand, toast, formatCurrency]);
 
   // Handler for starting the edit process
   const handleStartEdit = useCallback((expense: PropertyExpense) => {

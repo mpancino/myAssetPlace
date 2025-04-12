@@ -1711,23 +1711,15 @@ export default function AssetDetailPage() {
                                     onChange={(newExpenses) => {
                                       console.log("Expense component updated with", Object.keys(newExpenses).length, "expenses");
                                       
-                                      // IMPORTANT: First update form field
+                                      // IMPORTANT: Only update the form field without immediate database save
                                       field.onChange(newExpenses);
                                       
-                                      // Update state tracker before saving
+                                      // Update state tracker to monitor changes
                                       setCurrentPropertyExpenses(newExpenses);
                                       
-                                      // Delay saving to database to ensure state updates are complete
-                                      setTimeout(() => {
-                                        console.log("[DELAYED SAVE] Saving after state update, expenses count:", Object.keys(newExpenses).length);
-                                        // Get the latest form values
-                                        const currentFormValues = form.getValues();
-                                        // Explicitly get latest expenses 
-                                        const latestExpenses = currentFormValues.propertyExpenses || newExpenses;
-                                        
-                                        // Use the new expenses for saving to database
-                                        savePropertyExpensesMutation.mutate(latestExpenses);
-                                      }, 100);
+                                      // No longer saving to database immediately
+                                      // Database updates will occur when "Save Changes" is clicked
+                                      // This ensures all changes are committed together
                                     }}
                                     isSaving={savePropertyExpensesMutation.isPending}
                                     isSaved={savePropertyExpensesMutation.isSuccess}
@@ -1899,7 +1891,7 @@ export default function AssetDetailPage() {
                                 {savePropertyExpensesMutation.isPending && "Saving expense data to database..."}
                                 {savePropertyExpensesMutation.isSuccess && "✓ Expense data successfully saved to database."}
                                 {!savePropertyExpensesMutation.isPending && !savePropertyExpensesMutation.isSuccess && 
-                                  "Expenses will be saved to database immediately when added or modified."}
+                                  "Expense changes will be saved to database when you click 'Save Changes'."}
                               </p>
                               <div className="mt-2 text-xs">
                                 <code className="bg-background rounded px-1 py-0.5 text-xs">
