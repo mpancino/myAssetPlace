@@ -380,6 +380,9 @@ export default function AssetDetailPage() {
               <TabsList>
                 <TabsTrigger value="overview">Overview</TabsTrigger>
                 <TabsTrigger value="details">Details</TabsTrigger>
+                {selectedClass?.name?.toLowerCase() === "real estate" && (
+                  <TabsTrigger value="property">Property Info</TabsTrigger>
+                )}
                 <TabsTrigger value="performance">Performance</TabsTrigger>
               </TabsList>
               
