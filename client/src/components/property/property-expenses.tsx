@@ -36,6 +36,8 @@ interface PropertyExpensesProps {
   value: Record<string, PropertyExpense>;
   onChange: (value: Record<string, PropertyExpense>) => void;
   currencySymbol?: string;
+  isSaving?: boolean;
+  isSaved?: boolean;
 }
 
 // Categories for expense types
@@ -182,7 +184,7 @@ export function PropertyExpenseAnalysis({
   );
 }
 
-export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: PropertyExpensesProps) {
+export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSaving = false, isSaved = false }: PropertyExpensesProps) {
   const { toast } = useToast();
   const [isAddingExpense, setIsAddingExpense] = useState(false);
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);

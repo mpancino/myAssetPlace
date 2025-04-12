@@ -371,6 +371,59 @@ export default function AssetDetailPage() {
     },
   });
   
+  // Direct property expense save mutation - immediately saves expenses to DB
+  const savePropertyExpensesMutation = useMutation({
+    mutationFn: async (expenses: Record<string, PropertyExpense>) => {
+      if (!assetId) return null;
+      
+      // Create a minimal update payload with just the expenses
+      const dataToSend = {
+        propertyExpenses: expenses
+      };
+      
+      console.log("[DIRECT SAVE] Saving expenses to database:", Object.keys(expenses).length);
+      console.log("[DIRECT SAVE] Expense data:", JSON.stringify(expenses));
+      
+      const res = await apiRequest("PATCH", `/api/assets/${assetId}`, dataToSend);
+      const data = await res.json();
+      return data as Asset;
+    },
+    onSuccess: (updatedAsset) => {
+      if (!updatedAsset) return;
+      
+      console.log("[DIRECT SAVE] Success! Updated property expenses:", updatedAsset.propertyExpenses);
+      
+      // Update our local state
+      if (updatedAsset.propertyExpenses) {
+        setCurrentPropertyExpenses(updatedAsset.propertyExpenses as Record<string, PropertyExpense>);
+        
+        // Also update the form state to keep everything in sync
+        form.setValue('propertyExpenses', updatedAsset.propertyExpenses);
+      }
+      
+      // Show brief success toast
+      toast({
+        title: "Expenses Saved",
+        description: `Successfully saved ${Object.keys(updatedAsset.propertyExpenses || {}).length} expenses`,
+        duration: 2000,
+      });
+      
+      // Immediately refresh the asset data from the database
+      queryClient.removeQueries({ queryKey: [`/api/assets/${assetId}`] });
+      queryClient.fetchQuery({ 
+        queryKey: [`/api/assets/${assetId}`],
+        queryFn: getQueryFn({ on401: "throw" })
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error saving expenses",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
   // Form submission with enhanced expense preservation
   const onSubmit = (values: AssetDetailFormValues) => {
     // Get current form values 
@@ -1621,9 +1674,18 @@ export default function AssetDetailPage() {
                                     value={field.value as Record<string, PropertyExpense>}
                                     onChange={(newExpenses) => {
                                       console.log("Expense component updated with", Object.keys(newExpenses).length, "expenses");
+                                      
+                                      // Update form field
                                       field.onChange(newExpenses);
+                                      
+                                      // Update state tracker
                                       setCurrentPropertyExpenses(newExpenses);
+                                      
+                                      // Immediately save to database
+                                      savePropertyExpensesMutation.mutate(newExpenses);
                                     }}
+                                    isSaving={savePropertyExpensesMutation.isPending}
+                                    isSaved={savePropertyExpensesMutation.isSuccess}
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -1772,19 +1834,19 @@ export default function AssetDetailPage() {
                           <div className="flex items-start">
                             <Database className="h-5 w-5 mt-0.5 mr-2 text-muted-foreground" />
                             <div>
-                              <h4 className="text-sm font-medium">Data Persistence Status</h4>
+                              <h4 className="text-sm font-medium">Database Persistence Status</h4>
                               <p className="text-xs text-muted-foreground mt-1">
-                                {updateAssetMutation.isPending && "Saving expense data to database..."}
-                                {updateAssetMutation.isSuccess && "Expense data successfully saved to database."}
-                                {!updateAssetMutation.isPending && !updateAssetMutation.isSuccess && 
-                                  "Changes will be saved to database when you click 'Save Changes'."}
+                                {savePropertyExpensesMutation.isPending && "Saving expense data to database..."}
+                                {savePropertyExpensesMutation.isSuccess && "✓ Expense data successfully saved to database."}
+                                {!savePropertyExpensesMutation.isPending && !savePropertyExpensesMutation.isSuccess && 
+                                  "Expenses will be saved to database immediately when added or modified."}
                               </p>
                               <div className="mt-2 text-xs">
                                 <code className="bg-background rounded px-1 py-0.5 text-xs">
                                   {Object.keys(currentPropertyExpenses || {}).length || 
                                    Object.keys(asset.propertyExpenses || {}).length || 0} expenses tracked
                                 </code>
-                                {updateAssetMutation.isSuccess && (
+                                {savePropertyExpensesMutation.isSuccess && (
                                   <span className="ml-2 text-green-600 font-medium">✓ Verified in database</span>
                                 )}
                               </div>
