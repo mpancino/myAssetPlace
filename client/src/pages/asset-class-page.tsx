@@ -265,9 +265,9 @@ export default function AssetClassPage() {
         ) : (
           <Card className="text-center py-12">
             <CardContent>
-              <p className="text-lg mb-4">You don't have any {assetClass.name.toLowerCase()} assets yet.</p>
+              <p className="text-lg mb-4">You don't have any {assetClass?.name?.toLowerCase() || 'such'} assets yet.</p>
               <Button onClick={handleAddAsset}>
-                <PlusCircle className="mr-2 h-5 w-5" /> Add Your First {assetClass.name} Asset
+                <PlusCircle className="mr-2 h-5 w-5" /> Add Your First {assetClass?.name || 'Asset'}
               </Button>
             </CardContent>
           </Card>
