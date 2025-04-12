@@ -241,10 +241,43 @@ Status indicators:
   - ❌ Asset data lazy loading [REQ-196]
   - ❌ Performance monitoring [REQ-197]
 
-## Current Development Focus
-- Fix property expenses deduplication issue in Phase 4
-- Complete partially implemented features in Phases 2-4
-- Properly implement subscription plan enforcement
+## Next Steps (Prioritized)
+
+### High Priority
+1. ⚠️ **Fix Critical Defects**
+   - Fix PropertyExpenses component category display issue (DEF-001)
+   - Fix property expense deduplication issues in Phase 4 [REQ-121, REQ-122, REQ-124]
+
+2. ⚠️ **Stabilize Core Features**
+   - Complete expense categories for asset classes [REQ-065]
+   - Improve security implementation (CSRF, cookies) [REQ-371, REQ-372]
+   - Fix TypeScript errors in asset-detail-page.tsx
+
+### Medium Priority
+1. ⚠️ **Admin Configuration Enhancements**
+   - Complete tax rules configuration for holding types [REQ-056, REQ-059, REQ-060]
+   - Enhance admin configuration screens [REQ-251]
+   - Implement holding type expense configuration [REQ-061]
+
+2. ⚠️ **Subscription Management**
+   - Implement subscription enforcement [REQ-077]
+   - Complete interface mode access control [REQ-074]
+   - Implement projection year limits by subscription [REQ-075]
+
+### Lower Priority
+1. ❌ **API Integration Setup**
+   - Add API key management for admin [REQ-068]
+   - Configure available external APIs by country [REQ-053]
+   - Implement API integration access control [REQ-073]
+
+2. ❌ **Tax Framework Foundation**
+   - Start implementing the tax calculation framework [REQ-135 to REQ-140]
+   - Build on existing tax configuration schema
+
+## Defects
+| ID | Description | Component | Priority | Status |
+|---|---|---|---|---|
+| DEF-001 | PropertyExpenses component displays "[object Object]" in category dropdown menu instead of category names | PropertyExpenses | High | 🔄 In Progress |
 
 ## Implementation Notes
 1. We should NOT implement cryptocurrency or any asset classes not explicitly mentioned in the PDD
