@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
-import { Plus, Trash2, Edit, Check, X, AlertTriangle, PieChart, Calculator } from "lucide-react";
+import { Plus, Trash2, Edit, Check, X, AlertTriangle, PieChart, Calculator, CheckCircle, Loader2 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { formatCurrency, cn } from "@/lib/utils";
 import { PropertyExpense } from "@shared/schema";
@@ -346,99 +346,15 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
     return false;
   }, []);
   
-  // External data sync - with significantly improved logic for handling local vs server state
+  // COMPLETELY DISABLED the sync logic as it was interfering with our direct database writes
+  // Now we simply initialize our local state from props on first mount
   useEffect(() => {
-    // Always skip sync during active processing
-    if (isProcessing) {
-      console.log('[SYNC SKIPPED] Skipping sync while processing local operation');
-      return;
+    // Only initialize expenses on first mount or after a reset
+    if (Object.keys(expenses).length === 0 && Object.keys(value || {}).length > 0) {
+      console.log('[INITIALIZATION] Setting initial expense data from props');
+      setExpenses(value || {});
     }
-    
-    // Skip sync if we have recent local changes that should take precedence
-    if (hasRecentLocalChanges.current && !shouldAcceptExternalUpdates()) {
-      console.log('[SYNC SKIPPED] Recent local changes detected, preserving local state');
-      return;
-    }
-    
-    // Compare current expenses with incoming value
-    const currentKeys = Object.keys(expenses);
-    const incomingKeys = Object.keys(value || {});
-    const incomingExpenses = value || {};
-    
-    // If we have expenses locally but incoming is empty, preserve our local state
-    if (currentKeys.length > 0 && incomingKeys.length === 0) {
-      console.log('[SYNC PREVENTED] Incoming data has no expenses but local state has expenses. Preserving local state.');
-      // Notify parent of our current state to keep it in sync
-      onChange(expenses);
-      return;
-    }
-    
-    // Only sync if there's an actual difference
-    if (JSON.stringify(currentKeys.sort()) !== JSON.stringify(incomingKeys.sort()) ||
-        JSON.stringify(expenses) !== JSON.stringify(incomingExpenses)) {
-      
-      console.log('[SYNC] External data change detected');
-      console.log('Current expense count:', currentKeys.length);
-      console.log('Incoming expense count:', incomingKeys.length);
-      
-      // We need to check if we're in a save operation or a server refresh
-      // If the server has fewer expenses but we know we just saved, that means
-      // there might be a race condition where the server response hasn't yet
-      // included our latest changes
-      
-      if (currentKeys.length > incomingKeys.length && hasRecentLocalChanges.current) {
-        console.log('[SYNC DEFERRED] Deferring sync while server processes changes.');
-        
-        // We'll proactively log all expenses for debugging
-        console.log('Current expenses:', JSON.stringify(expenses));
-        console.log('Incoming expenses:', JSON.stringify(incomingExpenses));
-        
-        // Set a timeout to check back later - giving the server time to process
-        setTimeout(() => {
-          // This will automatically be handled on the next render cycle
-          console.log('[SYNC RECHECK] Re-checking after timeout');
-          hasRecentLocalChanges.current = false;
-        }, 2000);
-        
-        return;
-      }
-      
-      // Special case: if incoming has the same number but different expenses,
-      // merge rather than replace when we have recent changes
-      if (currentKeys.length > 0 && 
-          currentKeys.length === incomingKeys.length && 
-          hasRecentLocalChanges.current) {
-          
-        // Check if the sets are actually different
-        // Using Array methods instead of Set iteration to avoid TypeScript downlevel iteration issues
-        const isDifferent = currentKeys.some(id => !incomingKeys.includes(id)) || 
-                           incomingKeys.some(id => !currentKeys.includes(id));
-                           
-        if (isDifferent) {
-          console.log('[SYNC MERGE] Merging local expenses with incoming expenses');
-          // Keep our expenses but also add any new ones from incoming
-          const mergedExpenses = { ...incomingExpenses, ...expenses };
-          
-          isExternalUpdate.current = true;
-          applyCommand({ type: 'SYNC', expenses: mergedExpenses });
-          
-          setTimeout(() => {
-            isExternalUpdate.current = false;
-          }, 200);
-          
-          return;
-        }
-      }
-      
-      // Default case: accept the incoming changes
-      isExternalUpdate.current = true;
-      applyCommand({ type: 'SYNC', expenses: incomingExpenses });
-      
-      setTimeout(() => {
-        isExternalUpdate.current = false;
-      }, 200);
-    }
-  }, [value, expenses, applyCommand, isProcessing, shouldAcceptExternalUpdates, onChange]);
+  }, [expenses, value]);
 
   // Handler for adding a new expense
   const handleAddExpense = useCallback(() => {
@@ -460,8 +376,8 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
       annualTotal,
     };
     
-    // Mark that we have a local change that should take precedence
-    markLocalChanges();
+    // Direct save - no need to mark local changes anymore
+    console.log("[DIRECT SAVE] Adding new expense", newExpenseWithId.id);
     
     applyCommand({ type: 'ADD', expense: newExpenseWithId });
     resetForm();
@@ -470,7 +386,7 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
       title: "Expense added",
       description: `Added ${newExpense.category} expense with annual total of ${formatCurrency(annualTotal)}`
     });
-  }, [newExpense, applyCommand, calculateAnnualTotal, resetForm, toast, markLocalChanges]);
+  }, [newExpense, applyCommand, calculateAnnualTotal, resetForm, toast]);
 
   // Handler for updating an existing expense
   const handleUpdateExpense = useCallback((expenseId: string) => {
@@ -483,8 +399,8 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
       return;
     }
     
-    // Mark that we have a local change that should take precedence
-    markLocalChanges();
+    // Direct save - no need to mark local changes anymore
+    console.log("[DIRECT SAVE] Updating expense", expenseId);
     
     applyCommand({ 
       type: 'UPDATE', 
@@ -498,15 +414,15 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
       title: "Expense updated",
       description: `Updated ${newExpense.category} expense successfully`
     });
-  }, [newExpense, applyCommand, resetForm, toast, markLocalChanges]);
+  }, [newExpense, applyCommand, resetForm, toast]);
 
   // Handler for deleting an expense
   const handleDeleteExpense = useCallback((expenseId: string) => {
     const expenseToDelete = expenses[expenseId];
     if (!expenseToDelete) return;
     
-    // Mark that we have a local change that should take precedence
-    markLocalChanges();
+    // Direct save - no need to mark local changes anymore
+    console.log("[DIRECT SAVE] Deleting expense", expenseId);
     
     applyCommand({ type: 'DELETE', id: expenseId });
     
@@ -539,6 +455,21 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$", isSavi
         <div className="bg-amber-50 border border-amber-200 p-2 rounded mb-2 flex items-center text-amber-700">
           <AlertTriangle className="h-4 w-4 mr-2" />
           <span className="text-sm">Syncing expense data...</span>
+        </div>
+      )}
+      
+      {/* Database save status indicators */}
+      {isSaving && (
+        <div className="bg-blue-50 border border-blue-200 p-2 rounded mb-2 flex items-center text-blue-700">
+          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          <span className="text-sm">Saving expenses to database...</span>
+        </div>
+      )}
+      
+      {isSaved && !isSaving && (
+        <div className="bg-green-50 border border-green-200 p-2 rounded mb-2 flex items-center text-green-700">
+          <CheckCircle className="h-4 w-4 mr-2" />
+          <span className="text-sm">Expenses saved to database successfully!</span>
         </div>
       )}
     
