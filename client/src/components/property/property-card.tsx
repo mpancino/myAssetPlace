@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Pencil, Trash2, MapPin, Home, Building, DollarSign, BedDouble, Bath, Car } from "lucide-react";
 import { useLocation } from "wouter";
 import { formatCurrency } from "@/lib/utils";
+import { type PropertyExpense } from "./property-expenses";
 
 interface PropertyCardProps {
   property: Asset;
@@ -109,7 +110,7 @@ export function PropertyCard({
             <div className="flex justify-between">
               <div className="text-sm text-muted-foreground">Annual Expenses</div>
               <div className="font-medium">
-                {formatCurrency(Object.values(property.propertyExpenses as Record<string, any>)
+                {formatCurrency(Object.values(property.propertyExpenses as Record<string, PropertyExpense>)
                   .reduce((sum, expense) => sum + (expense.annualTotal || 0), 0)
                 )}
               </div>
