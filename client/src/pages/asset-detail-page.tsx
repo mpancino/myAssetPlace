@@ -165,6 +165,36 @@ export default function AssetDetailPage() {
       growthRate: asset?.growthRate || null,
       incomeYield: asset?.incomeYield || null,
       isHidden: asset?.isHidden || false,
+      
+      // Property-specific fields
+      propertyType: asset?.propertyType || null,
+      address: asset?.address || null,
+      suburb: asset?.suburb || null,
+      state: asset?.state || null,
+      postcode: asset?.postcode || null,
+      country: asset?.country || null,
+      bedrooms: asset?.bedrooms || null,
+      bathrooms: asset?.bathrooms || null,
+      landSize: asset?.landSize || null,
+      floorArea: asset?.floorArea || null,
+      parkingSpaces: asset?.parkingSpaces || null,
+      isRental: asset?.isRental || false,
+      rentalIncome: asset?.rentalIncome || null,
+      rentalFrequency: asset?.rentalFrequency || null,
+      vacancyRate: asset?.vacancyRate || null,
+      
+      // Property expenses
+      propertyExpenses: asset?.propertyExpenses || {},
+      
+      // Mortgage fields
+      hasMortgage: asset?.hasMortgage || false,
+      mortgageLender: asset?.mortgageLender || null,
+      mortgageAmount: asset?.mortgageAmount || null,
+      mortgageInterestRate: asset?.mortgageInterestRate || null,
+      mortgageType: asset?.mortgageType || null,
+      mortgageTerm: asset?.mortgageTerm || null,
+      mortgageStartDate: asset?.mortgageStartDate ? new Date(asset.mortgageStartDate) : null,
+      mortgagePaymentFrequency: asset?.mortgagePaymentFrequency || null,
     },
   });
   
