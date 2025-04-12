@@ -8,15 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { Plus, Trash2, Edit, Check, X } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { formatCurrency } from "@/lib/utils";
-
-export type PropertyExpense = {
-  id: string;
-  category: string;
-  description: string;
-  amount: number;
-  frequency: string; // "monthly" | "quarterly" | "annually"
-  annualTotal: number;
-};
+import { PropertyExpense } from "@shared/schema";
 
 type FrequencyMultiplier = {
   [key: string]: number;
