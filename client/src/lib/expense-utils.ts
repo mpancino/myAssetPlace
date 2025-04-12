@@ -16,6 +16,11 @@ export function calculateAnnualExpenses(expenses: Record<string, any> | null | u
   if (!expenses) return 0;
   
   return Object.values(expenses).reduce((total, expense) => {
+    // Handle both direct amount or using annualTotal from component format
+    if ('annualTotal' in expense && typeof expense.annualTotal === 'number') {
+      return total + expense.annualTotal;
+    }
+    
     const { amount, frequency } = expense;
     if (!amount) return total;
     
@@ -38,14 +43,24 @@ export function groupExpensesByCategory(expenses: Record<string, any> | null | u
   if (!expenses) return {};
   
   return Object.values(expenses).reduce((grouped: Record<string, number>, expense: any) => {
-    const { category, amount, frequency } = expense;
-    if (!category || !amount) return grouped;
+    const { category, categoryId, amount, frequency, annualTotal } = expense;
+    // Support both formats (category from component, categoryId from page)
+    const categoryKey = category || categoryId;
+    if (!categoryKey) return grouped;
     
-    const multiplier = FREQUENCY_MULTIPLIERS[frequency] || 12;
-    const annualAmount = amount * multiplier;
+    // Use annualTotal if available, otherwise calculate it
+    let yearlyAmount: number;
+    if (typeof annualTotal === 'number') {
+      yearlyAmount = annualTotal;
+    } else if (typeof amount === 'number') {
+      const multiplier = FREQUENCY_MULTIPLIERS[frequency] || 12;
+      yearlyAmount = amount * multiplier;
+    } else {
+      return grouped; // Skip if we can't determine an amount
+    }
     
-    if (!grouped[category]) grouped[category] = 0;
-    grouped[category] += annualAmount;
+    if (!grouped[categoryKey]) grouped[categoryKey] = 0;
+    grouped[categoryKey] += yearlyAmount;
     return grouped;
   }, {});
 }
@@ -124,4 +139,82 @@ export function parseExpenses(expensesData: string | Record<string, any> | null 
 export function getExpenseCount(expenses: Record<string, any> | null | undefined): number {
   if (!expenses) return 0;
   return Object.keys(expenses).length;
+}
+
+/**
+ * Convert from component format (category, description) to page format (categoryId, name)
+ * This adapter is used when sending data from InvestmentExpenses component to the asset detail page
+ */
+export function convertToPageFormat(expenses: Record<string, any>): Record<string, any> {
+  const traceId = Math.floor(Math.random() * 10000);
+  console.log(`\n[CONVERT:${traceId}] ===== CONVERT TO PAGE FORMAT =====`);
+  console.log(`[CONVERT:${traceId}] Converting ${Object.keys(expenses).length} expenses to page format`);
+  
+  const result: Record<string, any> = {};
+  
+  Object.entries(expenses).forEach(([key, expense]) => {
+    if (!expense || typeof expense !== 'object') {
+      console.log(`[CONVERT:${traceId}] Skipping invalid expense at key ${key}`);
+      return;
+    }
+    
+    // Create a new object with the page format properties
+    result[key] = {
+      ...expense,
+      categoryId: expense.category || expense.categoryId || '',
+      name: expense.description || expense.name || '',
+    };
+    
+    // Remove component format properties to avoid duplication
+    if ('category' in result[key]) delete result[key].category;
+    if ('description' in result[key]) delete result[key].description;
+    
+    console.log(`[CONVERT:${traceId}] Converted expense ${key}: ${JSON.stringify(result[key])}`);
+  });
+  
+  console.log(`[CONVERT:${traceId}] Converted ${Object.keys(result).length} expenses to page format`);
+  console.log(`[CONVERT:${traceId}] ===== END CONVERT =====\n`);
+  return result;
+}
+
+/**
+ * Convert from page format (categoryId, name) to component format (category, description)
+ * This adapter is used when sending data from the asset detail page to InvestmentExpenses component
+ */
+export function convertToComponentFormat(expenses: Record<string, any>): Record<string, any> {
+  const traceId = Math.floor(Math.random() * 10000);
+  console.log(`\n[CONVERT:${traceId}] ===== CONVERT TO COMPONENT FORMAT =====`);
+  console.log(`[CONVERT:${traceId}] Converting ${Object.keys(expenses).length} expenses to component format`);
+  
+  const result: Record<string, any> = {};
+  
+  Object.entries(expenses).forEach(([key, expense]) => {
+    if (!expense || typeof expense !== 'object') {
+      console.log(`[CONVERT:${traceId}] Skipping invalid expense at key ${key}`);
+      return;
+    }
+    
+    // Create a new object with the component format properties
+    result[key] = {
+      ...expense,
+      category: expense.categoryId || expense.category || '',
+      description: expense.name || expense.description || '',
+    };
+    
+    // Calculate annual total if it doesn't exist
+    if (!('annualTotal' in result[key]) && 'amount' in result[key] && 'frequency' in result[key]) {
+      const multiplier = FREQUENCY_MULTIPLIERS[result[key].frequency] || 12;
+      result[key].annualTotal = result[key].amount * multiplier;
+    }
+    
+    // Remove page format properties to avoid duplication
+    if ('categoryId' in result[key]) delete result[key].categoryId;
+    if ('name' in result[key]) delete result[key].name;
+    
+    console.log(`[CONVERT:${traceId}] Converted expense ${key}: ${JSON.stringify(result[key])}`);
+  });
+  
+  console.log(`[CONVERT:${traceId}] Converted ${Object.keys(result).length} expenses to component format`);
+  console.log(`[CONVERT:${traceId}] ===== END CONVERT =====\n`);
+  return result;
 }

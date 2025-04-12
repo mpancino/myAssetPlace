@@ -729,11 +729,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sortedEntries.forEach(([key, expense]) => {
             // Make sure expense is an object and has required properties
             if (expense && typeof expense === 'object' && 
-                'category' in expense && 
+                ('category' in expense || 'categoryId' in expense) && 
                 'amount' in expense) {
               
-              // Safely extract properties with type checking
-              const category = String(expense.category || '');
+              // Safely extract properties with type checking - support both formats
+              const category = String(((expense as any).category || (expense as any).categoryId) || '');
               const amount = Number(expense.amount || 0);
               // Check if frequency property exists, defaulting to monthly
               const frequency = typeof (expense as any).frequency === 'string' 
@@ -795,7 +795,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sortedEntries.forEach(([key, expense]) => {
             // Make sure expense is an object and has required properties
             if (expense && typeof expense === 'object' && 
-                ('category' || 'categoryId') in expense && 
+                ('category' in expense || 'categoryId' in expense) && 
                 'amount' in expense) {
               
               // Safely extract properties with type checking
