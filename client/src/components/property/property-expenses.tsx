@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
-import { Plus, Trash2, Edit, Check, X, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Edit, Check, X, AlertTriangle, PieChart, Calculator } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, cn } from "@/lib/utils";
 import { PropertyExpense } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
@@ -375,13 +375,25 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
       console.log('Current expense count:', currentKeys.length);
       console.log('Incoming expense count:', incomingKeys.length);
       
-      // CRITICAL FIX: If we have more expenses locally than what's coming in,
-      // and we have recent changes, ALWAYS preserve our local state
-      if (currentKeys.length > incomingKeys.length) {
-        console.log('[SYNC PREVENTED] Local state has more expenses than incoming data. Preserving local state.');
+      // We need to check if we're in a save operation or a server refresh
+      // If the server has fewer expenses but we know we just saved, that means
+      // there might be a race condition where the server response hasn't yet
+      // included our latest changes
+      
+      if (currentKeys.length > incomingKeys.length && hasRecentLocalChanges.current) {
+        console.log('[SYNC DEFERRED] Deferring sync while server processes changes.');
         
-        // Proactively notify the parent of our current state to keep it in sync
-        onChange(expenses);
+        // We'll proactively log all expenses for debugging
+        console.log('Current expenses:', JSON.stringify(expenses));
+        console.log('Incoming expenses:', JSON.stringify(incomingExpenses));
+        
+        // Set a timeout to check back later - giving the server time to process
+        setTimeout(() => {
+          // This will automatically be handled on the next render cycle
+          console.log('[SYNC RECHECK] Re-checking after timeout');
+          hasRecentLocalChanges.current = false;
+        }, 2000);
+        
         return;
       }
       
