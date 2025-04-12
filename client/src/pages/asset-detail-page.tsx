@@ -228,6 +228,10 @@ export default function AssetDetailPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
       queryClient.invalidateQueries({ queryKey: ["/api/assets/by-class"] });
       queryClient.invalidateQueries({ queryKey: [`/api/assets/${assetId}`] });
+      // Also invalidate the specific asset class query to refresh the asset class page
+      if (updatedAsset.assetClassId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/asset-classes/${updatedAsset.assetClassId}`] });
+      }
       
       // Exit edit mode
       setIsEditing(false);
@@ -260,6 +264,10 @@ export default function AssetDetailPage() {
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
       queryClient.invalidateQueries({ queryKey: ["/api/assets/by-class"] });
+      // Also invalidate the specific asset class query to refresh the asset class page
+      if (asset?.assetClassId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/asset-classes/${asset.assetClassId}`] });
+      }
       
       // Navigate back to the asset class page or dashboard
       if (asset?.assetClassId) {
