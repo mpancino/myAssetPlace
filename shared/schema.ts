@@ -299,7 +299,7 @@ export const insertPropertySchema = insertAssetSchema.extend({
   postcode: z.string().min(1, "Postcode is required"),
   country: z.string().default("Australia"),
   bedrooms: z.number().int().min(0).optional(),
-  bathrooms: z.number().int().min(0).optional(),
+  bathrooms: z.number().min(0).optional(), // Use number instead of int to support 0.5 baths
   landSize: z.number().min(0).optional(),
   floorArea: z.number().min(0).optional(),
   parkingSpaces: z.number().int().min(0).optional(),
@@ -311,6 +311,8 @@ export const insertPropertySchema = insertAssetSchema.extend({
   mortgageId: z.number().optional(),
   longitude: z.number().optional(),
   latitude: z.number().optional(),
+  // Override the purchaseDate from insertAssetSchema to accept Date objects
+  purchaseDate: z.date().optional(),
 });
 
 export const insertCountrySchema = createInsertSchema(countries).omit({

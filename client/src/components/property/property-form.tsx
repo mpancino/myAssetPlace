@@ -67,7 +67,7 @@ export function PropertyForm({
       assetClassId: assetClassId || defaultValues?.assetClassId || realEstateClass?.id,
       assetHoldingTypeId: defaultValues?.assetHoldingTypeId || holdingTypes[0]?.id,
       value: defaultValues?.value || 0,
-      purchaseDate: defaultValues?.purchaseDate ? new Date(defaultValues.purchaseDate) : undefined,
+      purchaseDate: defaultValues?.purchaseDate instanceof Date ? defaultValues.purchaseDate : undefined,
       purchasePrice: defaultValues?.purchasePrice || 0,
       propertyType: defaultValues?.propertyType || "residential",
       address: defaultValues?.address || "",
@@ -77,8 +77,8 @@ export function PropertyForm({
       country: defaultValues?.country || "Australia",
       bedrooms: defaultValues?.bedrooms || 0,
       bathrooms: defaultValues?.bathrooms || 0,
-      landSize: defaultValues?.landSize || undefined,
-      floorArea: defaultValues?.floorArea || undefined,
+      landSize: defaultValues?.landSize,
+      floorArea: defaultValues?.floorArea,
       parkingSpaces: defaultValues?.parkingSpaces || 0,
       isRental: defaultValues?.isRental || false,
       rentalIncome: defaultValues?.rentalIncome || 0,
@@ -101,7 +101,11 @@ export function PropertyForm({
       form.reset({
         ...defaultValues,
         assetClassId: assetClassId || defaultValues.assetClassId || realEstateClass?.id,
-        purchaseDate: defaultValues.purchaseDate ? new Date(defaultValues.purchaseDate) : undefined,
+        purchaseDate: defaultValues.purchaseDate instanceof Date 
+          ? defaultValues.purchaseDate 
+          : defaultValues.purchaseDate 
+            ? new Date(defaultValues.purchaseDate) 
+            : undefined,
       });
     }
   }, [defaultValues, form, assetClassId, realEstateClass?.id]);
@@ -260,8 +264,8 @@ export function PropertyForm({
                   <FormItem className="flex flex-col">
                     <FormLabel>Purchase Date</FormLabel>
                     <DatePicker
-                      date={field.value}
-                      onChange={field.onChange}
+                      date={field.value ? new Date(field.value) : null}
+                      setDate={field.onChange}
                     />
                     <FormMessage />
                   </FormItem>
