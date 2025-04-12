@@ -1,10 +1,22 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertCashAccountSchema, InsertCashAccount, AssetClass, AssetHoldingType, Asset } from "@shared/schema";
+import { 
+  insertCashAccountSchema, 
+  InsertCashAccount, 
+  AssetClass, 
+  AssetHoldingType, 
+  Asset, 
+  BalanceHistoryEntry,
+  TransactionCategory
+} from "@shared/schema";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
+import { useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BalanceHistory } from "./balance-history";
+import { TransactionCategories } from "./transaction-categories";
 
 import {
   Form,
