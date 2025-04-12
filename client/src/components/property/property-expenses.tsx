@@ -222,25 +222,48 @@ export function PropertyExpenses({
     setEditingExpenseId(null);
   }, []);
 
-  // Initialize expenses from props
+  // Initialize expenses from props with enhanced error handling and debugging
   useEffect(() => {
     let parsedExpenses: Record<string, PropertyExpense> = {};
     
-    // Parse expense data (handle both string and object formats)
+    // Parse expense data (handle all possible formats)
     try {
+      console.log('[PROPERTY EXPENSES] Received value type:', typeof value);
+      console.log('[PROPERTY EXPENSES] Value preview:', 
+        value ? (typeof value === 'object' ? `Object with ${Object.keys(value).length} keys` : String(value).substring(0, 50)) : 'null');
+      
+      // Handle string format (needs parsing)
       if (typeof value === 'string') {
-        parsedExpenses = JSON.parse(value);
-      } else if (value && typeof value === 'object') {
-        parsedExpenses = value;
+        try {
+          if (value.trim() === '') {
+            console.log('[PROPERTY EXPENSES] Empty string received');
+            parsedExpenses = {};
+          } else {
+            parsedExpenses = JSON.parse(value);
+            console.log('[PROPERTY EXPENSES] Successfully parsed string to object with', Object.keys(parsedExpenses).length, 'expenses');
+          }
+        } catch (parseError) {
+          console.error('[PROPERTY EXPENSES] JSON parse error:', parseError);
+          parsedExpenses = {};
+        }
+      } 
+      // Handle object format (direct use with deep clone)
+      else if (value && typeof value === 'object') {
+        // Create a deep clone to avoid reference issues
+        parsedExpenses = JSON.parse(JSON.stringify(value));
+        console.log('[PROPERTY EXPENSES] Received object with', Object.keys(parsedExpenses).length, 'expenses');
+        // Log expense IDs for debugging
+        console.log('[PROPERTY EXPENSES] Expense IDs:', Object.keys(parsedExpenses));
       }
-    } catch (err) {
-      console.error('Failed to parse property expenses:', err);
-    }
-    
-    // Update local state
-    if (Object.keys(parsedExpenses).length > 0) {
-      console.log('[INITIALIZATION] Setting expense data:', Object.keys(parsedExpenses).length, 'expenses');
+      
+      // Always update the local state, even if empty
+      console.log('[PROPERTY EXPENSES] Setting expense data:', Object.keys(parsedExpenses).length, 'expenses');
       setExpenses(parsedExpenses);
+      
+    } catch (err) {
+      console.error('[PROPERTY EXPENSES] Initialization error:', err);
+      // Fallback to empty object on any error
+      setExpenses({});
     }
   }, [value]);
 
