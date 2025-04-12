@@ -1097,7 +1097,7 @@ export default function AssetDetailPage() {
                     )}
                     
                     {/* Mortgage Details */}
-                    {asset && <MortgageDetails property={asset} />}
+                    {asset && selectedClass?.name === "Real Estate" && <MortgageDetails property={asset} />}
                   </div>
                 )}
               </TabsContent>

@@ -37,10 +37,14 @@ import { calculateLoanPayment, calculatePrincipalAndInterest, generateAmortizati
 
 // Define property with mortgage fields
 interface PropertyWithMortgage extends Asset {
-  mortgageAmount?: number;
-  mortgageInterestRate?: number;
-  mortgageTerm?: number;
-  mortgageStartDate?: string;
+  hasMortgage: boolean;
+  mortgageAmount: number | null;
+  mortgageInterestRate: number | null;
+  mortgageTerm: number | null;
+  mortgageStartDate: string | null;
+  mortgageLender: string | null;
+  mortgageType: string | null;
+  mortgagePaymentFrequency: string | null;
 }
 
 interface MortgageDetailsProps {
