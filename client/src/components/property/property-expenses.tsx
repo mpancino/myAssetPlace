@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
-import { Plus, Trash2, Edit, Check, X } from "lucide-react";
+import { Plus, Trash2, Edit, Check, X, AlertTriangle } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { formatCurrency } from "@/lib/utils";
 import { PropertyExpense } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
 
+// Frequency multiplier constants
 type FrequencyMultiplier = {
   [key: string]: number;
   monthly: number;
@@ -23,145 +25,237 @@ const FREQUENCY_MULTIPLIERS: FrequencyMultiplier = {
   annually: 1,
 };
 
+// Command pattern for expense operations
+type ExpenseCommand = 
+  | { type: 'ADD', expense: PropertyExpense }
+  | { type: 'UPDATE', id: string, data: Partial<Omit<PropertyExpense, 'id'>> }
+  | { type: 'DELETE', id: string }
+  | { type: 'SYNC', expenses: Record<string, PropertyExpense> };
+
 interface PropertyExpensesProps {
   value: Record<string, PropertyExpense>;
   onChange: (value: Record<string, PropertyExpense>) => void;
   currencySymbol?: string;
 }
 
+// Categories for expense types
+const EXPENSE_CATEGORIES = [
+  "Insurance",
+  "Property Tax",
+  "Maintenance",
+  "Management Fee",
+  "Utilities",
+  "Strata/HOA",
+  "Council Rates",
+  "Land Tax",
+  "Gardening",
+  "Cleaning",
+  "Repairs",
+  "Other",
+];
+
 export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: PropertyExpensesProps) {
+  const { toast } = useToast();
   const [isAddingExpense, setIsAddingExpense] = useState(false);
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
-  const [expenses, setExpenses] = useState<Record<string, PropertyExpense>>(value || {});
+  const [expenses, setExpenses] = useState<Record<string, PropertyExpense>>({});
+  const [isProcessing, setIsProcessing] = useState(false);
   
-  // CRITICAL FIX: More robust handling of prop changes
-  useEffect(() => {
-    // Force update the expenses state when the value prop changes
-    // This is critical to ensure the table refreshes after a form submission
-    const now = new Date().toISOString();
-    console.log(`[${now}] Value prop changed in PropertyExpenses component`);
-    console.log("New expenses from prop:", value);
-    console.log("Current local expenses state:", expenses);
-    console.log(`Number of expenses in prop: ${Object.keys(value || {}).length}`);
-    console.log(`Number of expenses in state: ${Object.keys(expenses || {}).length}`);
-    
-    // Always update the local state to match the prop value
-    // This ensures we always display the latest data from the server
-    setExpenses(value || {});
-  }, [value]);
+  // Track if we're in an external update from parent
+  const isExternalUpdate = useRef(false);
   
-  const [newExpense, setNewExpense] = useState<Omit<PropertyExpense, "id" | "annualTotal">>({
+  // Default new expense form data
+  const defaultNewExpense = {
     category: "",
     description: "",
     amount: 0,
     frequency: "monthly",
-  });
-
-  const calculateAnnualTotal = (amount: number, frequency: string): number => {
-    return amount * (FREQUENCY_MULTIPLIERS[frequency] || 12);
   };
+  
+  const [newExpense, setNewExpense] = useState<Omit<PropertyExpense, "id" | "annualTotal">>(defaultNewExpense);
 
-  const handleAddExpense = () => {
+  // Calculate annual total based on amount and frequency
+  const calculateAnnualTotal = useCallback((amount: number, frequency: string): number => {
+    return amount * (FREQUENCY_MULTIPLIERS[frequency as keyof FrequencyMultiplier] || 12);
+  }, []);
+
+  // Reset form state
+  const resetForm = useCallback(() => {
+    setNewExpense(defaultNewExpense);
+    setIsAddingExpense(false);
+    setEditingExpenseId(null);
+  }, []);
+
+  // Handle expense operations with command pattern
+  const processExpenseCommand = useCallback((command: ExpenseCommand): Record<string, PropertyExpense> => {
+    let updatedExpenses: Record<string, PropertyExpense> = { ...expenses };
+    const timestamp = new Date().toISOString();
+    
+    switch (command.type) {
+      case 'ADD':
+        console.log(`[${timestamp}] Executing ADD command for expense ID: ${command.expense.id}`);
+        updatedExpenses = {
+          ...updatedExpenses,
+          [command.expense.id]: command.expense,
+        };
+        break;
+        
+      case 'UPDATE':
+        console.log(`[${timestamp}] Executing UPDATE command for expense ID: ${command.id}`);
+        if (updatedExpenses[command.id]) {
+          const currentExpense = updatedExpenses[command.id];
+          updatedExpenses = {
+            ...updatedExpenses,
+            [command.id]: {
+              ...currentExpense,
+              ...command.data,
+              annualTotal: calculateAnnualTotal(
+                command.data.amount !== undefined ? command.data.amount : currentExpense.amount,
+                command.data.frequency !== undefined ? command.data.frequency : currentExpense.frequency
+              ),
+            },
+          };
+        }
+        break;
+        
+      case 'DELETE':
+        console.log(`[${timestamp}] Executing DELETE command for expense ID: ${command.id}`);
+        const { [command.id]: _, ...remainingExpenses } = updatedExpenses;
+        updatedExpenses = remainingExpenses;
+        break;
+        
+      case 'SYNC':
+        console.log(`[${timestamp}] Executing SYNC command - replacing expenses with external data`);
+        console.log(`Previous state had ${Object.keys(expenses).length} expenses`);
+        console.log(`New state has ${Object.keys(command.expenses).length} expenses`);
+        updatedExpenses = { ...command.expenses };
+        break;
+    }
+    
+    return updatedExpenses;
+  }, [expenses, calculateAnnualTotal]);
+
+  // Apply a command, update state, and notify parent
+  const applyCommand = useCallback((command: ExpenseCommand) => {
+    setIsProcessing(true);
+    
+    // Process the command to get updated expenses
+    const updatedExpenses = processExpenseCommand(command);
+    
+    // Update local state
+    setExpenses(updatedExpenses);
+    
+    // Notify parent
+    onChange(updatedExpenses);
+    
+    // Only log detailed info for non-SYNC operations
+    if (command.type !== 'SYNC') {
+      console.log(`After ${command.type.toLowerCase()} operation, total expenses: ${Object.keys(updatedExpenses).length}`);
+    }
+    
+    setTimeout(() => {
+      setIsProcessing(false);
+    }, 100);
+    
+    return updatedExpenses;
+  }, [processExpenseCommand, onChange]);
+
+  // External data sync
+  useEffect(() => {
+    if (isProcessing) {
+      // Skip if we're currently processing an operation
+      console.log('[SYNC SKIPPED] Skipping sync while processing local operation');
+      return;
+    }
+    
+    // Compare current expenses with incoming value
+    const currentKeys = Object.keys(expenses);
+    const incomingKeys = Object.keys(value || {});
+    
+    // Only sync if there's an actual difference
+    if (JSON.stringify(currentKeys.sort()) !== JSON.stringify(incomingKeys.sort()) ||
+        JSON.stringify(expenses) !== JSON.stringify(value)) {
+      
+      console.log('[SYNC] External data change detected');
+      isExternalUpdate.current = true;
+      
+      applyCommand({ type: 'SYNC', expenses: value || {} });
+      
+      setTimeout(() => {
+        isExternalUpdate.current = false;
+      }, 100);
+    }
+  }, [value, expenses, applyCommand, isProcessing]);
+
+  // Handler for adding a new expense
+  const handleAddExpense = useCallback(() => {
+    if (!newExpense.category || newExpense.amount <= 0) {
+      toast({
+        title: "Invalid expense",
+        description: "Please provide a category and valid amount",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     const id = uuidv4();
     const annualTotal = calculateAnnualTotal(newExpense.amount, newExpense.frequency);
     
-    const updatedExpenses = {
-      ...expenses,
-      [id]: {
-        id,
-        ...newExpense,
-        annualTotal,
-      },
-    };
-    
-    // Update local state
-    setExpenses(updatedExpenses);
-    // Propagate change to parent
-    onChange(updatedExpenses);
-    
-    const now = new Date().toISOString();
-    console.log(`[${now}] Added new expense with ID: ${id}`);
-    console.log("New expense details:", {
-      category: newExpense.category,
-      description: newExpense.description,
-      amount: newExpense.amount,
-      frequency: newExpense.frequency,
-      annualTotal: annualTotal
-    });
-    console.log(`Total expenses after add: ${Object.keys(updatedExpenses).length}`);
-    
-    setNewExpense({
-      category: "",
-      description: "",
-      amount: 0, 
-      frequency: "monthly",
-    });
-    setIsAddingExpense(false);
-  };
-
-  const handleUpdateExpense = (expenseId: string) => {
-    const expense = expenses[expenseId];
-    if (!expense) return;
-    
-    const updatedExpense = {
-      ...expense,
+    const newExpenseWithId: PropertyExpense = {
+      id,
       ...newExpense,
-      annualTotal: calculateAnnualTotal(newExpense.amount, newExpense.frequency),
+      annualTotal,
     };
     
-    const updatedExpenses = {
-      ...expenses,
-      [expenseId]: updatedExpense,
-    };
+    applyCommand({ type: 'ADD', expense: newExpenseWithId });
+    resetForm();
     
-    // Update local state
-    setExpenses(updatedExpenses);
-    // Propagate change to parent
-    onChange(updatedExpenses);
-    
-    const now = new Date().toISOString();
-    console.log(`[${now}] Updated expense with ID: ${expenseId}`);
-    console.log("Updated expense details:", {
-      category: updatedExpense.category,
-      description: updatedExpense.description,
-      amount: updatedExpense.amount,
-      frequency: updatedExpense.frequency,
-      annualTotal: updatedExpense.annualTotal
+    toast({
+      title: "Expense added",
+      description: `Added ${newExpense.category} expense with annual total of ${formatCurrency(annualTotal)}`
     });
-    console.log(`Total expenses after update: ${Object.keys(updatedExpenses).length}`);
-    
-    setEditingExpenseId(null);
-    setNewExpense({
-      category: "",
-      description: "",
-      amount: 0,
-      frequency: "monthly",
-    });
-  };
+  }, [newExpense, applyCommand, calculateAnnualTotal, resetForm, toast]);
 
-  const handleDeleteExpense = (expenseId: string) => {
+  // Handler for updating an existing expense
+  const handleUpdateExpense = useCallback((expenseId: string) => {
+    if (!newExpense.category || newExpense.amount <= 0) {
+      toast({
+        title: "Invalid expense",
+        description: "Please provide a category and valid amount",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    applyCommand({ 
+      type: 'UPDATE', 
+      id: expenseId, 
+      data: newExpense 
+    });
+    
+    resetForm();
+    
+    toast({
+      title: "Expense updated",
+      description: `Updated ${newExpense.category} expense successfully`
+    });
+  }, [newExpense, applyCommand, resetForm, toast]);
+
+  // Handler for deleting an expense
+  const handleDeleteExpense = useCallback((expenseId: string) => {
     const expenseToDelete = expenses[expenseId];
     if (!expenseToDelete) return;
     
-    const updatedExpenses = { ...expenses };
-    delete updatedExpenses[expenseId];
+    applyCommand({ type: 'DELETE', id: expenseId });
     
-    // Update local state
-    setExpenses(updatedExpenses);
-    // Propagate change to parent
-    onChange(updatedExpenses);
-    
-    const now = new Date().toISOString();
-    console.log(`[${now}] Deleted expense with ID: ${expenseId}`);
-    console.log("Deleted expense details:", {
-      category: expenseToDelete.category,
-      description: expenseToDelete.description,
-      amount: expenseToDelete.amount
+    toast({
+      title: "Expense deleted",
+      description: `Removed ${expenseToDelete.category} expense of ${formatCurrency(expenseToDelete.amount)}`
     });
-    console.log(`Total expenses after delete: ${Object.keys(updatedExpenses).length}`);
-  };
+  }, [expenses, applyCommand, toast]);
 
-  const handleStartEdit = (expense: PropertyExpense) => {
+  // Handler for starting the edit process
+  const handleStartEdit = useCallback((expense: PropertyExpense) => {
     setNewExpense({
       category: expense.category,
       description: expense.description,
@@ -169,41 +263,24 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
       frequency: expense.frequency,
     });
     setEditingExpenseId(expense.id);
-  };
+  }, []);
 
-  const handleCancelEdit = () => {
-    setEditingExpenseId(null);
-    setNewExpense({
-      category: "",
-      description: "",
-      amount: 0,
-      frequency: "monthly",
-    });
-  };
-
+  // Calculate total annual expenses
   const totalAnnualExpenses = Object.values(expenses).reduce(
     (total, expense) => total + expense.annualTotal,
     0
   );
 
-  const EXPENSE_CATEGORIES = [
-    "Insurance",
-    "Property Tax",
-    "Maintenance",
-    "Management Fee",
-    "Utilities",
-    "Strata/HOA",
-    "Council Rates",
-    "Land Tax",
-    "Gardening",
-    "Cleaning",
-    "Repairs",
-    "Other",
-  ];
-
   return (
     <div className="space-y-4">
-      {Object.values(expenses).length > 0 && (
+      {isExternalUpdate.current && (
+        <div className="bg-amber-50 border border-amber-200 p-2 rounded mb-2 flex items-center text-amber-700">
+          <AlertTriangle className="h-4 w-4 mr-2" />
+          <span className="text-sm">Syncing expense data...</span>
+        </div>
+      )}
+    
+      {Object.values(expenses).length > 0 ? (
         <Table>
           <TableHeader>
             <TableRow>
@@ -217,7 +294,7 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
           </TableHeader>
           <TableBody>
             {Object.values(expenses).map((expense) => (
-              <TableRow key={expense.id}>
+              <TableRow key={expense.id} className="transition-opacity duration-300">
                 {editingExpenseId === expense.id ? (
                   <>
                     <TableCell>
@@ -276,13 +353,15 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
                           variant="outline"
                           size="icon"
                           onClick={() => handleUpdateExpense(expense.id)}
+                          disabled={isProcessing}
                         >
                           <Check className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="outline"
                           size="icon"
-                          onClick={handleCancelEdit}
+                          onClick={resetForm}
+                          disabled={isProcessing}
                         >
                           <X className="h-4 w-4" />
                         </Button>
@@ -304,6 +383,7 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
                           variant="outline"
                           size="icon"
                           onClick={() => handleStartEdit(expense)}
+                          disabled={isProcessing || editingExpenseId !== null}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -311,6 +391,7 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
                           variant="outline"
                           size="icon"
                           onClick={() => handleDeleteExpense(expense.id)}
+                          disabled={isProcessing || editingExpenseId !== null}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -329,6 +410,10 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
             </TableRow>
           </TableFooter>
         </Table>
+      ) : (
+        <div className="text-center p-4 border rounded border-dashed">
+          <p className="text-muted-foreground mb-2">No expenses added yet</p>
+        </div>
       )}
 
       {isAddingExpense ? (
@@ -394,21 +479,14 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
             <div className="flex justify-end space-x-2">
               <Button
                 variant="outline"
-                onClick={() => {
-                  setIsAddingExpense(false);
-                  setNewExpense({
-                    category: "",
-                    description: "",
-                    amount: 0,
-                    frequency: "monthly",
-                  });
-                }}
+                onClick={resetForm}
+                disabled={isProcessing}
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleAddExpense}
-                disabled={!newExpense.category || newExpense.amount <= 0}
+                disabled={isProcessing || !newExpense.category || newExpense.amount <= 0}
               >
                 Add Expense
               </Button>
@@ -417,7 +495,10 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
         </Card>
       ) : (
         <div className="flex justify-end">
-          <Button onClick={() => setIsAddingExpense(true)}>
+          <Button 
+            onClick={() => setIsAddingExpense(true)}
+            disabled={isProcessing || editingExpenseId !== null}
+          >
             <Plus className="mr-2 h-4 w-4" /> Add Expense
           </Button>
         </div>
