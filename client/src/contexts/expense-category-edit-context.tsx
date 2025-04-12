@@ -128,7 +128,7 @@ export function ExpenseCategoryEditorProvider({ children }: { children: ReactNod
     
     console.log("Global context: Updated categories:", newCategories);
     
-    // Notify parent
+    // Notify parent with JSON string (this is important as the parent component expects a string)
     parentOnChange(JSON.stringify(newCategories));
     
     // Close the editor

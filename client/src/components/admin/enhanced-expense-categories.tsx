@@ -162,10 +162,29 @@ export function EnhancedExpenseCategoriesInput({
   const handleStartEdit = (category: ExpenseCategory) => {
     console.log("Starting edit for category using global editor:", category);
     
-    // Use the global editor context to handle the editing
-    openEditor(category, categories, updateParent);
-    
-    console.log("Global editor opened with category:", category);
+    try {
+      // Use the global editor context to handle the editing
+      // We pass the original onChange function directly since it expects a string
+      // The context will handle passing the right string format to this function
+      openEditor(
+        category,
+        categories,
+        onChange // This is a function(value: string) => void which matches what context expects
+      );
+      
+      console.log("Global editor opened with category:", category);
+    } catch (error) {
+      console.error("Error opening global editor:", error);
+      
+      // Fallback to local editor if global fails
+      console.log("Falling back to local editor");
+      const categoryCopy = { ...category };
+      setEditingCategory(categoryCopy);
+      setCategoryName(categoryCopy.name);
+      setCategoryDescription(categoryCopy.description || "");
+      setCategoryFrequency(categoryCopy.defaultFrequency || "monthly");
+      setIsEditDialogOpen(true);
+    }
   };
   
   // Update an existing category when save is clicked
@@ -264,89 +283,8 @@ export function EnhancedExpenseCategoriesInput({
     return frequency.charAt(0).toUpperCase() + frequency.slice(1);
   };
   
-  // Create a standalone edit dialog that won't auto-close
-  const renderEditDialog = () => {
-    if (!isEditDialogOpen || !editingCategory) return null;
-    
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center">
-        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" />
-        <div className="relative bg-background border rounded-lg shadow-lg w-full max-w-md mx-4 p-6 overflow-auto max-h-[calc(100vh-2rem)]">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold">Edit Expense Category</h3>
-            <p className="text-sm text-muted-foreground">
-              Update the details of this expense category
-            </p>
-          </div>
-          
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label htmlFor="editCategoryName" className="text-sm font-medium">
-                Category Name
-              </label>
-              <Input
-                id="editCategoryName"
-                value={categoryName}
-                onChange={(e) => setCategoryName(e.target.value)}
-                placeholder="e.g., Property Tax, Insurance, Utilities"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <label htmlFor="editCategoryDescription" className="text-sm font-medium">
-                Description
-              </label>
-              <Textarea
-                id="editCategoryDescription"
-                value={categoryDescription}
-                onChange={(e) => setCategoryDescription(e.target.value)}
-                placeholder="Description of this expense category"
-                rows={3}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <label htmlFor="editCategoryFrequency" className="text-sm font-medium">
-                Default Frequency
-              </label>
-              <Select 
-                value={categoryFrequency} 
-                onValueChange={(value) => setCategoryFrequency(value as 'monthly' | 'quarterly' | 'annually')}
-              >
-                <SelectTrigger id="editCategoryFrequency">
-                  <SelectValue placeholder="Select frequency" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                  <SelectItem value="quarterly">Quarterly</SelectItem>
-                  <SelectItem value="annually">Annually</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          
-          <div className="flex justify-end gap-2 mt-6">
-            <Button
-              variant="outline" 
-              onClick={() => {
-                console.log("Cancel button clicked");
-                resetForm();
-                setIsEditDialogOpen(false);
-              }}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleUpdateCategory} 
-              disabled={!categoryName.trim()}
-            >
-              Save Changes
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  };
+  // We've removed the standalone edit dialog function since we're now using the global modal
+  // The modal is rendered at the App root level and won't be affected by parent component re-renders
   
   return (
     <div className="space-y-3">
@@ -530,9 +468,6 @@ export function EnhancedExpenseCategoriesInput({
           </div>
         ))}
       </div>
-      
-      {/* Render the custom edit dialog */}
-      {renderEditDialog()}
       
       <small className="text-muted-foreground block mt-4">
         Add relevant expense categories for this asset class. Each category can have a description
