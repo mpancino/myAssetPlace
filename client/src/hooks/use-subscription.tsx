@@ -41,7 +41,17 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       return true;
     } else {
       // Advanced mode depends on the plan
-      return userSubscription.plan.allowAdvancedMode === true;
+      try {
+        // Parse the allowed interface modes
+        const allowedModes = userSubscription.plan.allowedInterfaceModes 
+          ? JSON.parse(String(userSubscription.plan.allowedInterfaceModes))
+          : ["basic"];
+        
+        return allowedModes.includes("advanced");
+      } catch (error) {
+        console.error("Error parsing allowed interface modes:", error);
+        return false; // Default to restricting if parsing fails
+      }
     }
   };
 
@@ -49,17 +59,16 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const isAllowedAssetClass = (assetClassId: number): boolean => {
     if (!userSubscription) return false;
     
-    // If no limitations specified, allow all
-    if (!userSubscription.plan.assetClassLimits) return true;
+    // Check if there's a max asset classes limit
+    if (!userSubscription.plan.maxAssetClasses) return true; // No limit
     
     try {
-      // Parse the JSON limitations
-      const limits = JSON.parse(userSubscription.plan.assetClassLimits);
-      // If the asset class is listed in allowed IDs or if limitations is empty, allow
-      return !limits.length || limits.includes(assetClassId);
+      // For now, we'll simply check if the max is greater than 0
+      // In a more complete implementation, we would store allowed asset class IDs
+      return userSubscription.plan.maxAssetClasses > 0;
     } catch (error) {
-      console.error("Error parsing asset class limits:", error);
-      return true; // Default to allowing if parsing fails
+      console.error("Error checking asset class limits:", error);
+      return true; // Default to allowing if check fails
     }
   };
 
@@ -67,14 +76,16 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const isAllowedHoldingType = (holdingTypeId: number): boolean => {
     if (!userSubscription) return false;
     
-    if (!userSubscription.plan.holdingTypeLimits) return true;
+    // Check if there's a max holding types limit
+    if (!userSubscription.plan.maxAssetHoldingTypes) return true; // No limit
     
     try {
-      const limits = JSON.parse(userSubscription.plan.holdingTypeLimits);
-      return !limits.length || limits.includes(holdingTypeId);
+      // For now, we'll simply check if the max is greater than 0
+      // In a more complete implementation, we would store allowed holding type IDs
+      return userSubscription.plan.maxAssetHoldingTypes > 0;
     } catch (error) {
-      console.error("Error parsing holding type limits:", error);
-      return true; // Default to allowing if parsing fails
+      console.error("Error checking holding type limits:", error);
+      return true; // Default to allowing if check fails
     }
   };
 
@@ -82,8 +93,9 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const canAddMoreAssets = (): boolean => {
     if (!userSubscription) return false;
     
-    // This would usually query the current asset count and compare
-    // For now, return true; implementation will need an asset count query
+    // This will query the current asset count and compare against the plan limit
+    // in a future implementation
+    // For now, return true
     return true;
   };
 
@@ -91,18 +103,18 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const getMaxProjectionYears = (): number => {
     if (!userSubscription) return 1; // Most restrictive default
     
-    return userSubscription.plan.projectionYearLimit || 5; // Default if not specified
+    return userSubscription.plan.maxProjectionYears || 5; // Default if not specified
   };
 
   // Check if a specific API access is allowed
   const isAllowedApiAccess = (apiType: string): boolean => {
     if (!userSubscription) return false;
     
-    if (!userSubscription.plan.apiAccessLimits) return false;
+    if (!userSubscription.plan.allowedApis) return false;
     
     try {
-      const limits = JSON.parse(userSubscription.plan.apiAccessLimits);
-      return limits.includes(apiType);
+      const allowedApis = JSON.parse(String(userSubscription.plan.allowedApis));
+      return allowedApis.includes(apiType);
     } catch (error) {
       console.error("Error parsing API access limits:", error);
       return false; // Default to restricting if parsing fails

@@ -53,13 +53,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(500).send("No default subscription plan configured");
         }
         
+        // Convert dates to strings in ISO format to match the schema
+        const startDate = new Date().toISOString().split('T')[0]; // Format as YYYY-MM-DD
+        const endDate = new Date(Date.now() + (30 * 86400000)).toISOString().split('T')[0]; // 30 days from now
+        
         // Create new subscription with default plan
         const newSubscription = await storage.createUserSubscription({
           userId: req.user.id,
           subscriptionPlanId: defaultPlan.id,
           status: "active",
-          startDate: new Date(),
-          endDate: new Date(Date.now() + (30 * 86400000)), // 30 days from now
+          startDate: startDate,
+          endDate: endDate,
         });
         
         // Return the newly created subscription with plan details
@@ -99,7 +103,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if user is allowed to use this mode based on subscription
       const subscription = await storage.getUserSubscription(req.user.id);
-      if (mode === 'advanced' && (!subscription || !subscription.plan.allowAdvancedMode)) {
+      
+      // Parse the allowed interface modes to check if advanced mode is allowed
+      let isAdvancedAllowed = false;
+      if (subscription && subscription.plan.allowedInterfaceModes) {
+        try {
+          const allowedModes = JSON.parse(String(subscription.plan.allowedInterfaceModes));
+          isAdvancedAllowed = Array.isArray(allowedModes) && allowedModes.includes("advanced");
+        } catch (error) {
+          console.error("Error parsing allowed interface modes:", error);
+        }
+      }
+      
+      if (mode === 'advanced' && (!subscription || !isAdvancedAllowed)) {
         return res.status(403).send("Subscription does not allow advanced mode");
       }
       
