@@ -2,6 +2,16 @@ import { useQuery } from "@tanstack/react-query";
 import { AssetClass } from "@shared/schema";
 
 /**
+ * Standardized expense category type
+ */
+export interface StandardizedExpenseCategory {
+  id: string;
+  name: string;
+  description?: string;
+  defaultFrequency?: string;
+}
+
+/**
  * Hook to fetch and provide detailed information about an asset class
  * @param assetClassId The ID of the asset class to fetch details for
  * @returns Object containing the asset class details and loading/error states
@@ -32,36 +42,77 @@ export function useAssetClassDetails(assetClassId?: number) {
 /**
  * Parse expense categories from various formats
  */
-function parseExpenseCategories(expenseCategories: any): string[] {
+function parseExpenseCategories(expenseCategories: any): StandardizedExpenseCategory[] {
   try {
-    // If it's already a string array, return it
-    if (Array.isArray(expenseCategories) && 
-        expenseCategories.every(cat => typeof cat === 'string')) {
-      return expenseCategories;
-    }
+    // Handle empty cases
+    if (!expenseCategories) return [];
+    
+    let parsedCategories: any[] = [];
     
     // If it's a JSON string, parse it
     if (typeof expenseCategories === 'string') {
-      const parsed = JSON.parse(expenseCategories);
-      if (Array.isArray(parsed)) {
-        return parsed;
+      try {
+        parsedCategories = JSON.parse(expenseCategories);
+      } catch (e) {
+        // If JSON parsing fails, it might be a comma-separated string
+        if (expenseCategories.includes(',')) {
+          parsedCategories = expenseCategories.split(',').map(cat => cat.trim());
+        } else {
+          // Single string value
+          parsedCategories = [expenseCategories];
+        }
       }
+    } else if (Array.isArray(expenseCategories)) {
+      // Already an array
+      parsedCategories = expenseCategories;
     }
     
-    // If it's an object with category properties, extract them
-    if (typeof expenseCategories === 'object' && expenseCategories !== null) {
-      // Handle case where it's an array of objects with name/value properties
-      if (Array.isArray(expenseCategories) && 
-          expenseCategories.length > 0 && 
-          typeof expenseCategories[0] === 'object') {
-        return expenseCategories.map(cat => 
-          cat.name || cat.value || cat.category || cat.toString()
-        );
-      }
+    // Ensure we have an array
+    if (!Array.isArray(parsedCategories)) {
+      console.warn('Expense categories is not an array after parsing:', parsedCategories);
+      return [];
     }
     
-    // Fallback to empty array
-    return [];
+    // Normalize each item to the standardized format
+    return parsedCategories.map(cat => {
+      // If it's a string, create a simple category object
+      if (typeof cat === 'string') {
+        return {
+          id: crypto.randomUUID(), // Generate a random ID for string categories
+          name: cat,
+          description: '',
+          defaultFrequency: 'monthly'
+        };
+      }
+      
+      // If it's already a standardized object, use it as is
+      if (typeof cat === 'object' && cat !== null) {
+        // Ensure it has an ID
+        if (!cat.id) {
+          cat.id = crypto.randomUUID();
+        }
+        
+        // Ensure it has a name
+        if (!cat.name && (cat.value || cat.category)) {
+          cat.name = cat.value || cat.category;
+        }
+        
+        // Ensure it has a default frequency
+        if (!cat.defaultFrequency) {
+          cat.defaultFrequency = 'monthly';
+        }
+        
+        return cat;
+      }
+      
+      // Fallback for unexpected types
+      return {
+        id: crypto.randomUUID(),
+        name: String(cat),
+        description: '',
+        defaultFrequency: 'monthly'
+      };
+    });
   } catch (error) {
     console.error("Error parsing expense categories:", error);
     return [];
