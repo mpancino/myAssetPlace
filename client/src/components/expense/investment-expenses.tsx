@@ -150,11 +150,21 @@ export function InvestmentExpenses({
   
   // Process and normalize the input data
   useEffect(() => {
-    if (value === undefined || value === null) return;
+    console.log(`[INV_EXPENSES:${Date.now()}] useEffect triggered with value:`, value);
+    console.log(`[INV_EXPENSES:${Date.now()}] Type of value:`, typeof value);
+    console.log(`[INV_EXPENSES:${Date.now()}] isEditMode:`, isEditMode);
+    
+    if (value === undefined || value === null) {
+      console.log(`[INV_EXPENSES:${Date.now()}] Value is null/undefined, returning early`);
+      return;
+    }
     
     try {
       // Parse input if needed
+      console.log(`[INV_EXPENSES:${Date.now()}] Attempting to parse expenses`);
       const parsedExpenses = parseExpenses(value);
+      console.log(`[INV_EXPENSES:${Date.now()}] Parsed expenses:`, parsedExpenses);
+      console.log(`[INV_EXPENSES:${Date.now()}] Number of parsed expenses:`, Object.keys(parsedExpenses).length);
       
       // Normalize the expense objects to ensure they have all required fields
       const normalizedExpenses: Record<string, InvestmentExpense> = {};

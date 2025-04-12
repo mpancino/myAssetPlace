@@ -65,18 +65,55 @@ export function calculateExpenseToValueRatio(expenses: Record<string, any> | nul
  * Handles different storage formats
  */
 export function parseExpenses(expensesData: string | Record<string, any> | null | undefined): Record<string, any> {
-  if (!expensesData) return {};
+  const traceId = Math.floor(Math.random() * 10000);
+  console.log(`\n[PARSE:${traceId}] ===== PARSE EXPENSES =====`);
+  console.log(`[PARSE:${traceId}] Input type:`, typeof expensesData);
+  
+  if (!expensesData) {
+    console.log(`[PARSE:${traceId}] Input value:`, "null/undefined");
+    console.log(`[PARSE:${traceId}] Call stack:`, new Error().stack);
+    console.log(`[PARSE:${traceId}] Fallback: returning empty object`);
+    console.log(`[PARSE:${traceId}] ===== END PARSE =====\n`);
+    return {};
+  }
   
   try {
     // If it's a string, try to parse it as JSON
     if (typeof expensesData === 'string') {
-      return JSON.parse(expensesData);
+      console.log(`[PARSE:${traceId}] Input value is string of length:`, expensesData.length);
+      console.log(`[PARSE:${traceId}] String content preview:`, 
+        expensesData.length > 100 ? expensesData.substring(0, 100) + '...' : expensesData);
+      console.log(`[PARSE:${traceId}] Call stack:`, new Error().stack);
+      
+      const parsed = JSON.parse(expensesData);
+      console.log(`[PARSE:${traceId}] Successfully parsed string to object with keys:`, Object.keys(parsed));
+      console.log(`[PARSE:${traceId}] ===== END PARSE =====\n`);
+      return parsed;
     }
     
     // Otherwise, assume it's already an object
-    return expensesData;
+    console.log(`[PARSE:${traceId}] Input value:`, expensesData ? `Object with keys: ${Object.keys(expensesData).join(', ')}` : "Empty object");
+    console.log(`[PARSE:${traceId}] Call stack:`, new Error().stack);
+    
+    if (expensesData && typeof expensesData === 'object') {
+      console.log(`[PARSE:${traceId}] Received object with ${Object.keys(expensesData).length} items`);
+      console.log(`[PARSE:${traceId}] Keys:`, Object.keys(expensesData));
+      
+      // Create a deep clone to ensure we don't have any reference issues
+      const cloned = JSON.parse(JSON.stringify(expensesData));
+      console.log(`[PARSE:${traceId}] Created deep clone with ${Object.keys(cloned).length} items`);
+      console.log(`[PARSE:${traceId}] ===== END PARSE =====\n`);
+      return cloned;
+    }
+    
+    console.log(`[PARSE:${traceId}] Fallback: returning empty object`);
+    console.log(`[PARSE:${traceId}] ===== END PARSE =====\n`);
+    return {};
   } catch (err) {
-    console.error('[PARSE:EXPENSES] Error parsing expenses data:', err);
+    console.error(`[PARSE:${traceId}] Error parsing expenses data:`, err);
+    console.log(`[PARSE:${traceId}] Call stack:`, new Error().stack);
+    console.log(`[PARSE:${traceId}] Fallback: returning empty object due to error`);
+    console.log(`[PARSE:${traceId}] ===== END PARSE =====\n`);
     return {};
   }
 }

@@ -616,6 +616,10 @@ export default function AssetDetailPage() {
     mutationFn: async (expenses: Record<string, InvestmentExpense>) => {
       if (!assetId) return null;
       
+      console.log(`[SEQUENCE:${Date.now()}] 1. SAVE MUTATION STARTED - saveInvestmentExpensesMutation`);
+      console.log(`[SEQUENCE:${Date.now()}] Current state before save: currentInvestmentExpenses has ${
+        Object.keys(currentInvestmentExpenses || {}).length} items`);
+      
       // Create a minimal update payload with just the expenses
       const dataToSend = {
         investmentExpenses: expenses
@@ -626,34 +630,60 @@ export default function AssetDetailPage() {
       
       const res = await apiRequest("PATCH", `/api/assets/${assetId}`, dataToSend);
       const data = await res.json();
+      
+      console.log(`[SEQUENCE:${Date.now()}] 2. API REQUEST COMPLETED - received response`);
       return data as Asset;
     },
     onSuccess: (updatedAsset) => {
       if (!updatedAsset) return;
       
+      console.log(`[SEQUENCE:${Date.now()}] 3. MUTATION SUCCESS CALLBACK - onSuccess triggered`);
       console.log("[DIRECT SAVE INV] Success! Updated investment expenses:", updatedAsset.investmentExpenses);
+      console.log(`[SEQUENCE:${Date.now()}] Object keys in response:`, Object.keys(updatedAsset));
+      console.log(`[SEQUENCE:${Date.now()}] Investment expenses type:`, typeof updatedAsset.investmentExpenses);
+      
+      // Store a copy of what we received from the server
+      const serverReturnedExpenses = updatedAsset.investmentExpenses;
       
       // Immediately make a new fetch request to get truly fresh data from the server
-      console.log('[DIRECT SAVE INV] Making direct fetch to get fresh data after update...');
+      console.log(`[SEQUENCE:${Date.now()}] 4. MAKING DIRECT FETCH to get fresh data...`);
       
       // Using a direct fetch request to bypass cache entirely
-      fetch(`/api/assets/${assetId}`)
+      fetch(`/api/assets/${assetId}`, {
+        headers: { 
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      })
         .then(response => response.json())
         .then(freshData => {
+          console.log(`[SEQUENCE:${Date.now()}] 5. DIRECT FETCH SUCCESSFUL - received fresh data`);
           console.log('[DIRECT SAVE INV] Fresh data received via direct fetch:', freshData);
           console.log('[DIRECT SAVE INV] Investment expenses in fresh data:', freshData.investmentExpenses);
+          console.log(`[SEQUENCE:${Date.now()}] Fresh data expense type:`, typeof freshData.investmentExpenses);
+          
+          // Compare what we got in the original PATCH response vs what we get from fresh fetch
+          console.log(`[SEQUENCE:${Date.now()}] COMPARING: Original PATCH response vs Fresh fetch data`);
+          console.log(`Original PATCH response expenses:`, serverReturnedExpenses);
+          console.log(`Fresh fetch expenses:`, freshData.investmentExpenses);
           
           // Parse the data to ensure it's in the correct format
           const parsedExpenses = parseInvestmentExpenses(freshData.investmentExpenses);
           console.log('[DIRECT SAVE INV] Number of expenses after parsing:', Object.keys(parsedExpenses).length);
           
           // Update our local state - both component state and form state
+          console.log(`[SEQUENCE:${Date.now()}] 6. UPDATING LOCAL STATE with parsed expenses`);
+          console.log(`Before update: currentInvestmentExpenses has ${
+            Object.keys(currentInvestmentExpenses || {}).length} items`);
           setCurrentInvestmentExpenses(parsedExpenses);
           form.setValue('investmentExpenses', parsedExpenses);
+          console.log(`After update: form.getValues().investmentExpenses has ${
+            Object.keys(form.getValues().investmentExpenses || {}).length} items`);
           console.log('[DIRECT SAVE INV] Updated local and form state with parsed expenses');
           
           // Manually update the cache with this fresh data
-          console.log('[DIRECT SAVE INV] Setting query data with fresh data...');
+          console.log(`[SEQUENCE:${Date.now()}] 7. UPDATING CACHE with fresh data`);
           queryClient.setQueryData([`/api/assets/${assetId}`], freshData);
           
           // Show brief success toast
