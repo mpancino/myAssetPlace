@@ -59,11 +59,14 @@ export function EnhancedExpenseCategoriesInput({
   
   // Load categories from value
   useEffect(() => {
+    console.log("Loading categories from value:", value);
     try {
       const parsed = value ? JSON.parse(value) : [];
+      console.log("Parsed value:", parsed);
       
       // Check if the parsed value is an array of strings (old format)
       if (Array.isArray(parsed) && parsed.every(item => typeof item === 'string')) {
+        console.log("Converting string array to ExpenseCategory objects");
         // Convert to new format
         const converted = parsed.map(name => ({
           id: uuidv4(),
@@ -71,11 +74,14 @@ export function EnhancedExpenseCategoriesInput({
           description: '',
           defaultFrequency: 'monthly' as const
         }));
+        console.log("Converted categories:", converted);
         setCategories(converted);
       } else if (Array.isArray(parsed) && parsed.every(item => typeof item === 'object')) {
+        console.log("Using existing ExpenseCategory objects");
         // Already in new format
         setCategories(parsed);
       } else {
+        console.log("Invalid format, setting empty categories array");
         setCategories([]);
       }
     } catch (error) {
@@ -86,7 +92,11 @@ export function EnhancedExpenseCategoriesInput({
   
   // Update parent when categories change
   const updateParent = (newCategories: ExpenseCategory[]) => {
-    onChange(JSON.stringify(newCategories));
+    console.log("Updating parent with categories:", newCategories);
+    const jsonString = JSON.stringify(newCategories);
+    console.log("JSON string being sent to parent:", jsonString);
+    onChange(jsonString);
+    console.log("Parent update complete");
   };
   
   // Reset form fields
@@ -123,23 +133,45 @@ export function EnhancedExpenseCategoriesInput({
   
   // Start editing a category
   const handleStartEdit = (category: ExpenseCategory) => {
+    console.log("Starting edit for category:", category);
     setEditingCategory(category);
     setCategoryName(category.name);
     setCategoryDescription(category.description || "");
     setCategoryFrequency(category.defaultFrequency || "monthly");
     setIsEditDialogOpen(true);
+    console.log("Edit dialog opened with values:", {
+      name: category.name,
+      description: category.description || "",
+      frequency: category.defaultFrequency || "monthly"
+    });
   };
   
   // Update an existing category
   const handleUpdateCategory = () => {
-    if (!editingCategory || !categoryName.trim()) return;
+    console.log("Attempting to update category");
+    console.log("Current editing category:", editingCategory);
+    console.log("Form values:", {
+      name: categoryName,
+      description: categoryDescription,
+      frequency: categoryFrequency
+    });
+    
+    if (!editingCategory) {
+      console.error("No category being edited");
+      return;
+    }
+    
+    if (!categoryName.trim()) {
+      console.error("Category name is empty");
+      return;
+    }
     
     // Check if category name already exists and it's not the one being edited
     const existingIndex = categories.findIndex(
       cat => cat.name.toLowerCase() === categoryName.trim().toLowerCase() && cat.id !== editingCategory.id
     );
     if (existingIndex !== -1) {
-      // Maybe show toast or highlight the existing entry
+      console.error("A category with this name already exists:", categories[existingIndex]);
       return;
     }
     
@@ -150,14 +182,23 @@ export function EnhancedExpenseCategoriesInput({
       defaultFrequency: categoryFrequency
     };
     
-    const newCategories = categories.map(cat => 
-      cat.id === editingCategory.id ? updatedCategory : cat
-    );
+    console.log("Updated category object:", updatedCategory);
     
+    const newCategories = categories.map(cat => {
+      if (cat.id === editingCategory.id) {
+        console.log("Replacing category", cat, "with", updatedCategory);
+        return updatedCategory;
+      }
+      return cat;
+    });
+    
+    console.log("New categories array:", newCategories);
     setCategories(newCategories);
     updateParent(newCategories);
+    console.log("Parent updated with new categories");
     resetForm();
     setIsEditDialogOpen(false);
+    console.log("Edit dialog closed and form reset");
   };
   
   // Delete a category
