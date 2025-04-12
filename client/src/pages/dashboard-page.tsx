@@ -154,10 +154,24 @@ export default function DashboardPage() {
                 <Database className="mr-2 h-4 w-4" />
                 Add Sample Data
               </Button>
-              <Button variant="outline" size="sm" onClick={handleExport}>
-                <Download className="mr-2 h-4 w-4" />
-                Export
-              </Button>
+              <ProtectedFeature
+                protection={{ type: "apiAccess", apiType: "export" }}
+                fallback={
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => showUpgradePrompt("Data Export")}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Export
+                  </Button>
+                }
+              >
+                <Button variant="outline" size="sm" onClick={handleExport}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export
+                </Button>
+              </ProtectedFeature>
               <ModeToggle 
                 currentMode={user?.preferredMode || "basic"} 
                 allowedModes={subscription.plan.allowedInterfaceModes as string[]} 
@@ -181,7 +195,18 @@ export default function DashboardPage() {
                     <Database className="mr-2 h-4 w-4" />
                     Add Sample Data
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleExport}>
+                  <DropdownMenuItem 
+                    onClick={() => {
+                      const isAllowed = subscription.plan.allowedApis && 
+                        JSON.parse(String(subscription.plan.allowedApis)).includes("export");
+                      
+                      if (isAllowed) {
+                        handleExport();
+                      } else {
+                        showUpgradePrompt("Data Export");
+                      }
+                    }}
+                  >
                     <Download className="mr-2 h-4 w-4" />
                     Export Data
                   </DropdownMenuItem>
