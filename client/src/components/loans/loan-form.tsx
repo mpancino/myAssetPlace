@@ -100,7 +100,7 @@ export function LoanForm({
         title: `Loan ${isEditing ? "updated" : "created"} successfully`,
         description: `Your ${form.getValues("name")} loan has been ${isEditing ? "updated" : "created"}.`,
       });
-      navigate("/asset-classes/" + loansAssetClass?.id);
+      setLocation("/asset-classes/" + loansAssetClass?.id);
     },
     onError: (error: Error) => {
       toast({
@@ -383,7 +383,11 @@ export function LoanForm({
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Input placeholder="Optional notes about this loan" {...field} />
+                    <Input 
+                      placeholder="Optional notes about this loan" 
+                      {...field} 
+                      value={field.value || ''} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -394,7 +398,7 @@ export function LoanForm({
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={() => navigate(`/asset-classes/${loansAssetClass?.id}`)}
+                onClick={() => setLocation(`/asset-classes/${loansAssetClass?.id}`)}
               >
                 Cancel
               </Button>
