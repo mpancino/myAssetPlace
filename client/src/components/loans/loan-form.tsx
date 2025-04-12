@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertLoanSchema, InsertLoan, AssetClass, AssetHoldingType } from "@shared/schema";
+import { insertLoanSchema, InsertLoan, AssetClass, AssetHoldingType, Asset } from "@shared/schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -42,6 +42,7 @@ interface LoanFormProps {
   defaultValues?: Partial<InsertLoan>;
   isEditing?: boolean;
   assetId?: number;
+  onSuccess?: (loan: Asset) => void;
 }
 
 export function LoanForm({
@@ -50,6 +51,7 @@ export function LoanForm({
   defaultValues,
   isEditing = false,
   assetId,
+  onSuccess,
 }: LoanFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -97,18 +99,23 @@ export function LoanForm({
         return await res.json();
       }
     },
-    onSuccess: () => {
+    onSuccess: (loan: Asset) => {
       queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
       toast({
         title: `Loan ${isEditing ? "updated" : "created"} successfully`,
         description: `Your ${form.getValues("name")} loan has been ${isEditing ? "updated" : "created"}.`,
       });
       
-      // Set success state and redirect after a delay
-      setIsSuccess(true);
-      setTimeout(() => {
-        setLocation("/asset-classes/" + loansAssetClass?.id);
-      }, 1500); // Redirect after 1.5 seconds
+      // Call the onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess(loan);
+      } else {
+        // Set success state and redirect after a delay (fallback)
+        setIsSuccess(true);
+        setTimeout(() => {
+          setLocation("/asset-classes/" + loansAssetClass?.id);
+        }, 1500); // Redirect after 1.5 seconds
+      }
     },
     onError: (error: Error) => {
       toast({
