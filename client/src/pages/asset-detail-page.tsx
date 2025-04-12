@@ -69,8 +69,11 @@ import type { PropertyExpense } from "@shared/schema";
 // Helper function to safely parse property expenses data
 function parsePropertyExpenses(data: any): Record<string, PropertyExpense> {
   try {
-    // Create a unique ID for this parse operation to trace it through logs
-    const parseId = Date.now().toString().slice(-4);
+    // Create a hash from the data for a more stable identifier that won't change on every call
+    const valueStr = typeof data === 'string' ? data : JSON.stringify(data || {});
+    const hashCode = Array.from(valueStr).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString().slice(-4);
+    const parseId = `${hashCode}`;
+    
     console.log(`\n[PARSE:${parseId}] ===== PARSE PROPERTY EXPENSES =====`);
     console.log(`[PARSE:${parseId}] Input type:`, typeof data);
     console.log(`[PARSE:${parseId}] Input value:`, data ? (typeof data === 'object' ? 'Object with keys: ' + Object.keys(data).join(', ') : data.toString().substring(0, 100)) : 'null/undefined');
@@ -1814,7 +1817,7 @@ export default function AssetDetailPage() {
                               <FormItem>
                                 <FormControl>
                                   <PropertyExpenses
-                                    key={`expenses-edit-${asset.id}-${Date.now()}`}
+                                    key={`expenses-edit-${asset.id}`}
                                     value={field.value as Record<string, PropertyExpense> || {}}
                                     onChange={(newExpenses) => {
                                       console.log("Expense component updated with", Object.keys(newExpenses).length, "expenses");
@@ -1843,7 +1846,7 @@ export default function AssetDetailPage() {
                             {/* Read-only overlay when not in edit mode */}
                             <div className="absolute inset-0 bg-transparent z-10" onClick={() => setIsEditing(true)}></div>
                             <PropertyExpenses
-                              key={`expenses-view-${asset.id}-${Date.now()}`}
+                              key={`expenses-view-${asset.id}`}
                               value={parsePropertyExpenses(asset.propertyExpenses)}
                               onChange={(value) => {
                                 // Read-only when not editing - should trigger edit mode
@@ -1868,7 +1871,7 @@ export default function AssetDetailPage() {
                     {/* Property Expense Analysis */}
                     {asset.propertyExpenses && Object.keys(parsePropertyExpenses(asset.propertyExpenses)).length > 0 && (
                       <PropertyExpenseAnalysis 
-                        key={`expense-analysis-${asset.id}-${Date.now()}`}
+                        key={`expense-analysis-${asset.id}`}
                         expenses={parsePropertyExpenses(asset.propertyExpenses)}
                         rentalIncome={asset.isRental ? asset.rentalIncome || 0 : 0}
                         rentalFrequency={asset.rentalFrequency || "monthly"}

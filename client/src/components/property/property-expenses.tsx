@@ -305,20 +305,15 @@ export function PropertyExpenses({
     console.log('[EFFECT] Value type:', typeof value);
     console.log('[EFFECT] Raw value:', value);
     
-    // Force a clean slate by setting expenses to empty object first
-    setExpenses({});
+    // FIXED: Parse and set the expenses immediately - don't use setTimeout which can cause race conditions
+    const parsedExpenses = parseExpenseData(value);
+    console.log('[EFFECT] Parsed expenses count:', Object.keys(parsedExpenses).length);
+    console.log('[EFFECT] Parsed expense IDs:', Object.keys(parsedExpenses));
     
-    // Then parse and set the expenses after a short delay to ensure React renders the change
-    setTimeout(() => {
-      const parsedExpenses = parseExpenseData(value);
-      console.log('[EFFECT] Parsed expenses count:', Object.keys(parsedExpenses).length);
-      console.log('[EFFECT] Parsed expense IDs:', Object.keys(parsedExpenses));
-      
-      // Update local state with parsed expenses
-      setExpenses(parsedExpenses);
-      console.log('[EFFECT] Updated expenses state');
-      console.log('====== END VALUE CHANGE EFFECT ======');
-    }, 50);
+    // Update local state with parsed expenses directly
+    setExpenses(parsedExpenses);
+    console.log('[EFFECT] Updated expenses state');
+    console.log('====== END VALUE CHANGE EFFECT ======');
   }, [value, parseExpenseData]);
 
   // Handler for adding a new expense
