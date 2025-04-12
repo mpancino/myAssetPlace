@@ -13,6 +13,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { MortgageDetails } from "@/components/property/mortgage-details";
 import { 
   ArrowLeft, 
   Save, 
@@ -938,7 +939,7 @@ export default function AssetDetailPage() {
               
               {/* Property Info Tab */}
               <TabsContent value="property" className="space-y-4 pt-4">
-                {asset && selectedClass?.name?.toLowerCase() === "real estate" && (
+                {asset && selectedClass?.name?.toLowerCase() === "real estate" && asset && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Card>
                       <CardHeader>
