@@ -261,11 +261,20 @@ export default function AssetDetailPage() {
     mutationFn: async (values: AssetDetailFormValues) => {
       if (!assetId) return null;
       
-      // Log the values being sent in the request to debug property expenses
-      console.log("Sending PATCH request with data:", JSON.stringify(values));
-      console.log("Property expenses:", values.propertyExpenses);
+      // Create a copy of the values to ensure we're not affected by object references
+      const dataToSend = {
+        ...values,
+        // Ensure property expenses are properly handled by creating a deep copy
+        propertyExpenses: values.propertyExpenses ? 
+          JSON.parse(JSON.stringify(values.propertyExpenses)) : {}
+      };
       
-      const res = await apiRequest("PATCH", `/api/assets/${assetId}`, values);
+      // Log the values being sent in the request to debug property expenses
+      console.log("Sending PATCH request with data:", JSON.stringify(dataToSend));
+      console.log("Property expenses:", dataToSend.propertyExpenses);
+      console.log("[SAVE] Number of expenses:", Object.keys(dataToSend.propertyExpenses || {}).length);
+      
+      const res = await apiRequest("PATCH", `/api/assets/${assetId}`, dataToSend);
       const data = await res.json();
       return data as Asset;
     },
@@ -357,9 +366,25 @@ export default function AssetDetailPage() {
     },
   });
   
-  // Form submission
+  // Form submission with expense preservation
   const onSubmit = (values: AssetDetailFormValues) => {
-    updateAssetMutation.mutate(values);
+    // Get current form values 
+    const formValues = form.getValues();
+    
+    // Create a deep copy of property expenses from the form field to ensure we capture the latest state
+    // This is crucial because the PropertyExpenses component may have local state that's not 
+    // yet fully synced to the form when the save button is clicked
+    const currentPropertyExpenses = formValues.propertyExpenses ? 
+      JSON.parse(JSON.stringify(formValues.propertyExpenses)) : {};
+    
+    console.log("[FORM SUBMIT] Current property expenses state:", currentPropertyExpenses);
+    console.log("[FORM SUBMIT] Number of expenses:", Object.keys(currentPropertyExpenses).length);
+    
+    // Ensure property expenses are properly passed to the mutation by explicitly setting them
+    updateAssetMutation.mutate({
+      ...values,
+      propertyExpenses: currentPropertyExpenses
+    });
   };
   
   // Handle cancel edit
