@@ -5,14 +5,15 @@ import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { 
   AssetClass, 
-  insertAssetClassSchema
+  insertAssetClassSchema,
+  ExpenseCategory
 } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Plus, Trash, Pencil } from "lucide-react";
-import { ExpenseCategoriesInput } from "@/components/admin/expense-categories-input";
+import { EnhancedExpenseCategoriesInput } from "@/components/admin/enhanced-expense-categories";
 import {
   Form,
   FormControl,
@@ -72,8 +73,20 @@ const assetClassFormSchema = insertAssetClassSchema.extend({
   expenseCategories: z.string().optional()
     .transform(value => value ? JSON.parse(value) : null)
     .refine(
-      value => !value || (Array.isArray(value) && value.every(item => typeof item === "string")),
-      { message: "Expense categories must be a JSON array of strings" }
+      value => {
+        if (!value) return true;
+        if (!Array.isArray(value)) return false;
+        
+        // Allow both simple string arrays and enhanced expense category objects
+        return value.every(item => 
+          typeof item === "string" || 
+          (typeof item === "object" && 
+           item !== null && 
+           typeof item.name === "string" && 
+           typeof item.id === "string")
+        );
+      },
+      { message: "Expense categories must be an array of strings or valid expense category objects" }
     )
 });
 
@@ -401,7 +414,7 @@ export default function AssetClasses() {
                       <FormItem>
                         <FormLabel>Expense Categories</FormLabel>
                         <FormControl>
-                          <ExpenseCategoriesInput
+                          <EnhancedExpenseCategoriesInput
                             value={field.value || "[]"}
                             onChange={field.onChange}
                           />

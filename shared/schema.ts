@@ -382,7 +382,15 @@ export type InsertCashAccount = z.infer<typeof insertCashAccountSchema>;
 export type InsertLoan = z.infer<typeof insertLoanSchema>;
 export type InsertProperty = z.infer<typeof insertPropertySchema>;
 
-// Property expense type
+// Expense category definition for administrators
+export type ExpenseCategory = {
+  id: string;
+  name: string;
+  description: string;
+  defaultFrequency: 'monthly' | 'quarterly' | 'annually';
+};
+
+// Property expense type for user assets
 export type PropertyExpense = {
   id: string;
   category: string;
