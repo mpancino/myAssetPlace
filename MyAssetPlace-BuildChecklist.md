@@ -3,7 +3,7 @@
 This document outlines the development roadmap for the myAssetPlace financial management platform, organizing all 372 requirements from the Product Design Document (PDD v1.12) into a structured build order.
 
 **Document Information**
-* **Version:** 1.2
+* **Version:** 1.3
 * **Date:** April 11, 2025
 * **Last Updated:** April 12, 2025
 * **Status:** Active
@@ -194,14 +194,14 @@ The development is divided into 11 logical phases:
 - [x] `[REQ-134]` Bank account management (cash)
 - [x] `[REQ-135]` Balance tracking (cash)
 - [x] `[REQ-136]` Interest rate input (cash)
-- [ ] `[REQ-137]` Offset account functionality
+- [x] `[REQ-137]` Offset account functionality
 - [x] `[REQ-138]` Account purpose tagging (cash)
 - [x] `[REQ-139]` Cash account holding type classification
 - [x] `[REQ-140]` Interest rate setting for cash assets
 - [x] `[REQ-155]` Loan management implementation
 - [x] `[REQ-156]` Loan details tracking
 - [x] `[REQ-157]` Loan balance tracking
-- [ ] `[REQ-158]` Offset account integration with loans
+- [x] `[REQ-158]` Offset account integration with loans
 - [x] `[REQ-159]` Loan holding type classification
 - [x] `[REQ-174]` Balance sheet tab implementation (basic version)
 - [x] `[REQ-180]` Asset allocation visualization (basic version)
@@ -219,14 +219,14 @@ The development is divided into 11 logical phases:
 
 ### Phase 4: Core Asset Management (Vertical Slice 2 - Real Estate & Mortgages)
 
-- [ ] `[REQ-108]` Property management features
-- [ ] `[REQ-109]` Property details tracking
+- [x] `[REQ-108]` Property management features
+- [x] `[REQ-109]` Property details tracking
 - [ ] `[REQ-110]` Manual and API-based property valuation
 - [ ] `[REQ-111]` Mortgage integration
 - [ ] `[REQ-112]` Property expenses tracking
-- [ ] `[REQ-113]` Rental income tracking
-- [ ] `[REQ-114]` Property holding type classification
-- [ ] `[REQ-115]` Property growth rate settings
+- [x] `[REQ-113]` Rental income tracking
+- [x] `[REQ-114]` Property holding type classification
+- [x] `[REQ-115]` Property growth rate settings
 - [ ] `[REQ-145]` Mortgage management
 - [ ] `[REQ-146]` Mortgage details tracking
 - [ ] `[REQ-147]` Mortgage balance calculation
