@@ -267,10 +267,13 @@ export default function AssetDetailPage() {
         description: `${updatedAsset.name} has been updated successfully`,
       });
       
+      // Immediately update the local asset data with the response from the server
+      // This ensures property expenses are displayed without requiring a separate fetch
+      queryClient.setQueryData([`/api/assets/${assetId}`], updatedAsset);
+      
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
       queryClient.invalidateQueries({ queryKey: ["/api/assets/by-class"] });
-      queryClient.invalidateQueries({ queryKey: [`/api/assets/${assetId}`] });
       // Also invalidate the specific asset class query to refresh the asset class page
       if (updatedAsset.assetClassId) {
         queryClient.invalidateQueries({ queryKey: [`/api/asset-classes/${updatedAsset.assetClassId}`] });
