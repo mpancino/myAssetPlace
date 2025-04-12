@@ -30,7 +30,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Check } from "lucide-react";
+import { useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -62,6 +63,8 @@ export function LoanForm({
       assetClass.name.toLowerCase().includes("liability")
   );
 
+  const [isSuccess, setIsSuccess] = useState(false);
+  
   const form = useForm<InsertLoan>({
     resolver: zodResolver(insertLoanSchema),
     defaultValues: {
@@ -100,7 +103,12 @@ export function LoanForm({
         title: `Loan ${isEditing ? "updated" : "created"} successfully`,
         description: `Your ${form.getValues("name")} loan has been ${isEditing ? "updated" : "created"}.`,
       });
-      setLocation("/asset-classes/" + loansAssetClass?.id);
+      
+      // Set success state and redirect after a delay
+      setIsSuccess(true);
+      setTimeout(() => {
+        setLocation("/asset-classes/" + loansAssetClass?.id);
+      }, 1500); // Redirect after 1.5 seconds
     },
     onError: (error: Error) => {
       toast({
@@ -119,6 +127,24 @@ export function LoanForm({
     
     mutation.mutate(data);
   };
+
+  // Show success message after successful submission
+  if (isSuccess) {
+    return (
+      <Card className="max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle className="text-center">Success!</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center text-center space-y-4">
+          <div className="bg-green-100 dark:bg-green-900 rounded-full p-4 mb-4">
+            <Check className="h-12 w-12 text-green-600 dark:text-green-400" />
+          </div>
+          <p className="text-xl font-medium">Your loan has been {isEditing ? "updated" : "created"} successfully!</p>
+          <p>Redirecting you to the loans overview...</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="max-w-2xl mx-auto">
