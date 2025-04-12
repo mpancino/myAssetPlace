@@ -340,7 +340,12 @@ export class DatabaseStorage implements IStorage {
     // SQL aggregate functions to calculate totals directly in the database.
     try {
       // First, get all asset classes to ensure we have data even if user has no assets
-      const allAssetClasses = await db.select().from(assetClasses);
+      const allAssetClasses = await db.select().from(assetClasses).orderBy(assetClasses.sortOrder);
+      
+      if (!allAssetClasses || allAssetClasses.length === 0) {
+        console.warn("No asset classes found");
+        return [];
+      }
       
       // Try to get user's assets
       let userAssets: Asset[] = [];
@@ -362,23 +367,18 @@ export class DatabaseStorage implements IStorage {
         }));
       }
       
-      // Get unique asset class IDs from user assets
-      const assetClassIds = userAssets.map(a => a.assetClassId)
-        .filter((id, index, self) => self.indexOf(id) === index);
-      
-      // Create a map of asset classes for quick lookup
-      const assetClassMap = new Map(allAssetClasses.map(ac => [ac.id, ac]));
-      
       // Initialize results with all asset classes at zero value
       const results: { assetClass: AssetClass, totalValue: number }[] = 
         allAssetClasses.map(ac => ({ assetClass: ac, totalValue: 0 }));
       
       // Add up asset values by class
       for (const asset of userAssets) {
-        // Find the matching result and update the value
-        const resultIndex = results.findIndex(r => r.assetClass.id === asset.assetClassId);
-        if (resultIndex >= 0) {
-          results[resultIndex].totalValue += asset.value;
+        if (asset && asset.assetClassId) {
+          // Find the matching result and update the value
+          const resultIndex = results.findIndex(r => r.assetClass.id === asset.assetClassId);
+          if (resultIndex >= 0) {
+            results[resultIndex].totalValue += asset.value || 0;
+          }
         }
       }
       
