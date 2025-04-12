@@ -1019,19 +1019,19 @@ export default function AssetDetailPage() {
                           <>
                             <div>
                               <div className="text-sm text-muted-foreground mb-1">Weekly Rent</div>
-                              <div className="font-medium">{asset.weeklyRent ? formatCurrency(asset.weeklyRent) : "Not specified"}</div>
+                              <div className="font-medium">{(asset as any).weeklyRent ? formatCurrency((asset as any).weeklyRent) : "Not specified"}</div>
                             </div>
                             
                             <div>
                               <div className="text-sm text-muted-foreground mb-1">Annual Rental Income</div>
-                              <div className="font-medium">{asset.weeklyRent ? formatCurrency(asset.weeklyRent * 52) : "Not specified"}</div>
+                              <div className="font-medium">{(asset as any).weeklyRent ? formatCurrency((asset as any).weeklyRent * 52) : "Not specified"}</div>
                             </div>
                             
                             <div>
                               <div className="text-sm text-muted-foreground mb-1">Rental Yield</div>
                               <div className="font-medium">
-                                {asset.weeklyRent && asset.value
-                                  ? `${((asset.weeklyRent * 52 / asset.value) * 100).toFixed(2)}%`
+                                {(asset as any).weeklyRent && asset.value
+                                  ? `${(((asset as any).weeklyRent * 52 / asset.value) * 100).toFixed(2)}%`
                                   : "Not available"
                                 }
                               </div>
@@ -1042,7 +1042,7 @@ export default function AssetDetailPage() {
                     </Card>
                     
                     {/* Property Expenses Table */}
-                    {asset.propertyExpenses && Object.keys(asset.propertyExpenses).length > 0 && (
+                    {(asset as any).propertyExpenses && Object.keys((asset as any).propertyExpenses).length > 0 && (
                       <Card className="col-span-1 md:col-span-2">
                         <CardHeader>
                           <CardTitle className="flex items-center">
@@ -1061,7 +1061,7 @@ export default function AssetDetailPage() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {Object.values(asset.propertyExpenses).map((expense: PropertyExpense) => (
+                              {Object.values((asset as any).propertyExpenses).map((expense: PropertyExpense) => (
                                 <TableRow key={expense.id}>
                                   <TableCell>{expense.category}</TableCell>
                                   <TableCell>{expense.description}</TableCell>
@@ -1078,8 +1078,8 @@ export default function AssetDetailPage() {
                                 <TableCell colSpan={4}>Total Annual Expenses</TableCell>
                                 <TableCell>
                                   {formatCurrency(
-                                    Object.values(asset.propertyExpenses).reduce(
-                                      (total, expense) => total + expense.annualTotal,
+                                    Object.values((asset as any).propertyExpenses).reduce(
+                                      (total, expense: PropertyExpense) => total + expense.annualTotal,
                                       0
                                     )
                                   )}
