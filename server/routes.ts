@@ -1,6 +1,7 @@
 import express, { type Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import path from "path";
+import crypto from "crypto";
 import { storage } from "./storage";
 import { setupAuth, setupDirectAdminLogin } from "./auth";
 import { 
@@ -39,18 +40,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Get all asset classes and extract expense categories
       const assetClasses = await storage.listAssetClasses();
-      const expenseCategoriesByClassId = {};
+      const expenseCategoriesByClassId: Record<number, any[]> = {};
       
       assetClasses.forEach(assetClass => {
+        // Initialize with empty array
+        expenseCategoriesByClassId[assetClass.id] = [];
+        
         try {
           if (assetClass.expenseCategories) {
-            const categories = JSON.parse(assetClass.expenseCategories);
+            let categories: any[] = [];
+            const expenseCategoriesString = String(assetClass.expenseCategories);
+            
+            // Try to parse as JSON first
+            try {
+              categories = JSON.parse(expenseCategoriesString);
+              // If parsed successfully, check if it's an array
+              if (!Array.isArray(categories)) {
+                categories = [categories]; // Convert to array if it's a single object
+              }
+            } catch (parseError) {
+              // If JSON parse fails, check if it's a comma-separated list or single value
+              if (expenseCategoriesString.includes(',')) {
+                // Split by comma and trim each item
+                categories = expenseCategoriesString.split(',').map((item: string) => item.trim());
+              } else {
+                // Single value, create a category object
+                categories = [{ 
+                  id: crypto.randomUUID(), 
+                  name: expenseCategoriesString,
+                  description: "",
+                  defaultFrequency: "monthly"
+                }];
+              }
+            }
+            
+            // Transform any string values to proper category objects
+            categories = categories.map(category => {
+              if (typeof category === 'string') {
+                return {
+                  id: crypto.randomUUID(),
+                  name: category,
+                  description: "",
+                  defaultFrequency: "monthly"
+                };
+              }
+              return category;
+            });
+            
             expenseCategoriesByClassId[assetClass.id] = categories;
             console.log(`Asset class ${assetClass.id} (${assetClass.name}) has ${categories.length} expense categories`);
           }
         } catch (error) {
-          console.error(`Error parsing expense categories for asset class ${assetClass.id}:`, error);
-          expenseCategoriesByClassId[assetClass.id] = [];
+          console.error(`Error processing expense categories for asset class ${assetClass.id}:`, error);
         }
       });
       
@@ -148,6 +189,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ 
         success: false, 
         message: error.message || 'Unknown error'
+      });
+    }
+  });
+
+  // Add endpoint to standardize expense categories for all asset classes
+  app.post('/api/admin/standardize-expense-categories', async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: "Not authorized - admin access required" });
+    }
+    
+    try {
+      const { standardizeExpenseCategories } = await import('./utils/standardize-expense-categories');
+      const result = await standardizeExpenseCategories();
+      return res.json(result);
+    } catch (error) {
+      console.error('Error standardizing expense categories:', error);
+      return res.status(500).json({ 
+        success: false, 
+        message: error instanceof Error ? error.message : 'Unknown error' 
       });
     }
   });
