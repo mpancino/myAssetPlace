@@ -32,11 +32,12 @@ import {
   Loader2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAssetClassDetails } from "@/hooks/use-asset-class-details";
 import type { PropertyExpense } from '@shared/schema';
 import { formatCurrency } from "@/lib/utils";
 
-// Predefined expense categories
-const EXPENSE_CATEGORIES = [
+// Default expense categories as fallback
+const DEFAULT_EXPENSE_CATEGORIES = [
   "Insurance",
   "Utilities",
   "Property Tax",
@@ -118,6 +119,7 @@ export function PropertyExpenseAnalysis({
 interface PropertyExpensesProps {
   value: Record<string, PropertyExpense>;
   onChange: (value: Record<string, PropertyExpense>) => void;
+  assetClassId?: number;
   isEditMode?: boolean;
   isSaving?: boolean;
 }
@@ -125,10 +127,19 @@ interface PropertyExpensesProps {
 export function PropertyExpenses({
   value,
   onChange,
+  assetClassId,
   isEditMode = true,
   isSaving = false,
 }: PropertyExpensesProps) {
   const { toast } = useToast();
+  
+  // Fetch expense categories from the asset class
+  const { expenseCategories, isLoading: isLoadingCategories } = useAssetClassDetails(assetClassId);
+  
+  // Use the asset class expense categories if available, or fall back to defaults
+  const availableCategories = expenseCategories && expenseCategories.length > 0
+    ? expenseCategories
+    : DEFAULT_EXPENSE_CATEGORIES;
   
   // Core state
   const [expenses, setExpenses] = useState<Record<string, PropertyExpense>>({});
@@ -433,7 +444,7 @@ export function PropertyExpenses({
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {EXPENSE_CATEGORIES.map((category) => (
+                    {availableCategories.map((category: string) => (
                       <SelectItem key={category} value={category}>
                         {category}
                       </SelectItem>
