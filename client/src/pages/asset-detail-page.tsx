@@ -121,6 +121,15 @@ export default function AssetDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   
+  // Debug useEffect for property expenses
+  useEffect(() => {
+    if (asset && asset.propertyExpenses && typeof asset.propertyExpenses === 'object') {
+      console.log("DEBUG - Current asset in view:", asset.name);
+      console.log("DEBUG - Property expenses:", asset.propertyExpenses);
+      console.log("DEBUG - Number of expenses:", Object.keys(asset.propertyExpenses).length);
+    }
+  }, [asset]);
+  
   // Fetch the asset details
   const { data: asset, isLoading: isLoadingAsset } = useQuery<Asset>({
     queryKey: [`/api/assets/${assetId}`],
@@ -262,32 +271,35 @@ export default function AssetDetailPage() {
     onSuccess: (updatedAsset) => {
       if (!updatedAsset) return;
       
-      // Important: Store the updated asset before we exit edit mode
-      // to ensure we have the fresh data including property expenses
-      const freshAsset = { ...updatedAsset };
+      console.log("Asset update success! Received updated asset:", updatedAsset);
+      console.log("Updated property expenses:", updatedAsset.propertyExpenses);
       
-      // Exit edit mode first (this ensures we render in view mode)
-      setIsEditing(false);
+      // CRITICAL: Clone the updated asset data to prevent reference issues
+      // This is critical to ensure we capture property expenses correctly
+      const freshAsset = JSON.parse(JSON.stringify(updatedAsset));
       
       // Show success toast
       toast({
         title: "Asset Updated",
-        description: `${freshAsset.name} has been updated successfully`,
+        description: `${updatedAsset.name} has been updated successfully`,
       });
       
-      // Force immediate UI update with the updated asset data
-      // This happens AFTER we've switched to non-editing mode to ensure proper render
-      setTimeout(() => {
-        // Immediately update the local asset data with the response from the server
-        queryClient.setQueryData([`/api/assets/${assetId}`], freshAsset);
-        
-        // Also invalidate other relevant queries
-        queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/assets/by-class"] });
-        if (freshAsset.assetClassId) {
-          queryClient.invalidateQueries({ queryKey: [`/api/asset-classes/${freshAsset.assetClassId}`] });
-        }
-      }, 0);
+      // IMPORTANT: Force an immediate update of the cached data BEFORE exiting edit mode
+      // This ensures the expenses table has the new data when it re-renders
+      queryClient.setQueryData([`/api/assets/${assetId}`], freshAsset);
+      console.log("Set query data with asset ID:", assetId);
+      console.log("Query cache state after update:", 
+        queryClient.getQueryData([`/api/assets/${assetId}`]));
+      
+      // Exit edit mode to trigger re-render with the updated data
+      setIsEditing(false);
+      
+      // Also invalidate other relevant queries for the list views
+      queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/assets/by-class"] });
+      if (freshAsset.assetClassId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/asset-classes/${freshAsset.assetClassId}`] });
+      }
     },
     onError: (error: Error) => {
       toast({
@@ -1563,10 +1575,17 @@ export default function AssetDetailPage() {
                         <Card className="col-span-1 md:col-span-2">
                           <CardHeader>
                             <CardTitle className="flex items-center">
-                              <Receipt className="mr-2 h-4 w-4" /> Property Expenses
+                              <Receipt className="mr-2 h-4 w-4" /> 
+                              Property Expenses
+                              {/* Add debug info */}
+                              <span className="ml-2 text-xs text-muted-foreground">
+                                ({Object.keys(asset.propertyExpenses).length} items)
+                              </span>
                             </CardTitle>
                           </CardHeader>
                           <CardContent>
+                            {/* Debug info rendered via useEffect below */}
+                            
                             <Table>
                               <TableHeader>
                                 <TableRow>
