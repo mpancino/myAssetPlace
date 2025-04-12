@@ -7,6 +7,8 @@ import DashboardPage from "@/pages/dashboard-page";
 import AdminPage from "@/pages/admin-page";
 import AssetClassPage from "@/pages/asset-class-page";
 import AddAssetPage from "@/pages/add-asset-page";
+import AddCashAccountPage from "@/pages/add-cash-account-page";
+import AddLoanPage from "@/pages/add-loan-page";
 import AssetDetailPage from "@/pages/asset-detail-page";
 import BalanceSheetPage from "@/pages/balance-sheet-page";
 import { ProtectedRoute } from "@/lib/protected-route";
@@ -21,6 +23,8 @@ function Router() {
       <ProtectedRoute path="/admin" component={AdminPage} />
       <ProtectedRoute path="/asset-classes/:classId" component={AssetClassPage} />
       <ProtectedRoute path="/add-asset" component={AddAssetPage} />
+      <ProtectedRoute path="/add-cash-account" component={AddCashAccountPage} />
+      <ProtectedRoute path="/add-loan" component={AddLoanPage} />
       <ProtectedRoute path="/assets/:assetId" component={AssetDetailPage} />
       <ProtectedRoute path="/balance-sheet" component={BalanceSheetPage} />
       <Route path="/auth" component={AuthPage} />
