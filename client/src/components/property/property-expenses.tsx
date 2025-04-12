@@ -228,26 +228,31 @@ export function PropertyExpenses({
     let parsedExpenses: Record<string, PropertyExpense> = {};
     
     try {
-      console.log('[PROPERTY EXPENSES] Parsing expense data of type:', typeof inputValue);
+      console.log('====== PARSE EXPENSE DATA ======');
+      console.log('[PARSE] Called with data type:', typeof inputValue);
+      console.log('[PARSE] Stack trace:', new Error().stack);
       
       // Handle string format (needs parsing)
       if (typeof inputValue === 'string') {
         const stringValue = String(inputValue);
         try {
           if (!stringValue || stringValue === '') {
-            console.log('[PROPERTY EXPENSES] Empty string received');
+            console.log('[PARSE] Empty string received');
           } else {
             parsedExpenses = JSON.parse(stringValue);
-            console.log('[PROPERTY EXPENSES] Successfully parsed string to object');
+            console.log('[PARSE] Successfully parsed string to object with', Object.keys(parsedExpenses).length, 'expenses');
           }
         } catch (parseError) {
-          console.error('[PROPERTY EXPENSES] JSON parse error:', parseError);
+          console.error('[PARSE] JSON parse error:', parseError);
         }
       } 
       // Handle object format (direct use with deep clone)
       else if (inputValue && typeof inputValue === 'object') {
         // Create a deep clone to avoid reference issues
         parsedExpenses = JSON.parse(JSON.stringify(inputValue));
+        console.log('[PARSE] Cloned object with', Object.keys(parsedExpenses).length, 'expenses');
+      } else {
+        console.log('[PARSE] Invalid input type or empty value');
       }
       
       // Ensure each expense has all required properties with the correct types
@@ -255,36 +260,40 @@ export function PropertyExpenses({
       
       Object.entries(parsedExpenses).forEach(([id, expense]) => {
         if (expense && typeof expense === 'object' && 'id' in expense) {
+          const frequency = ['monthly', 'quarterly', 'annually'].includes(expense.frequency as string) 
+            ? expense.frequency as string 
+            : 'monthly';
+            
+          const amount = typeof expense.amount === 'number' ? expense.amount : 0;
+          
+          const annualTotal = typeof expense.annualTotal === 'number' 
+            ? expense.annualTotal 
+            : calculateAnnualTotal(amount, frequency);
+            
           normalizedExpenses[id] = {
             id: expense.id as string,
             category: expense.category as string || 'Other',
             description: expense.description as string || '',
-            amount: typeof expense.amount === 'number' ? expense.amount : 0,
-            frequency: ['monthly', 'quarterly', 'annually'].includes(expense.frequency as string) 
-              ? expense.frequency as string 
-              : 'monthly',
-            annualTotal: typeof expense.annualTotal === 'number' 
-              ? expense.annualTotal 
-              : calculateAnnualTotal(
-                  typeof expense.amount === 'number' ? expense.amount : 0,
-                  ['monthly', 'quarterly', 'annually'].includes(expense.frequency as string) 
-                    ? expense.frequency as string 
-                    : 'monthly'
-                )
+            amount,
+            frequency,
+            annualTotal
           };
+          
+          console.log(`[PARSE] Normalized expense ${id}: ${normalizedExpenses[id].category}, ${normalizedExpenses[id].amount}, ${normalizedExpenses[id].frequency}, ${normalizedExpenses[id].annualTotal}`);
+        } else {
+          console.log(`[PARSE] Skipping invalid expense with ID ${id}:`, expense);
         }
       });
       
-      console.log('[PROPERTY EXPENSES] Normalized expense data:', 
-        Object.keys(normalizedExpenses).length, 'expenses');
-        
+      console.log('[PARSE] Normalization complete. Returning', Object.keys(normalizedExpenses).length, 'expenses');
       if (Object.keys(normalizedExpenses).length > 0) {
-        console.log('[PROPERTY EXPENSES] Expense IDs:', Object.keys(normalizedExpenses));
+        console.log('[PARSE] Normalized expense IDs:', Object.keys(normalizedExpenses));
       }
+      console.log('====== END PARSE EXPENSE DATA ======');
       
       return normalizedExpenses;
     } catch (err) {
-      console.error('[PROPERTY EXPENSES] Parse error:', err);
+      console.error('[PARSE] Critical error during parsing:', err);
       return {};
     }
   }, [calculateAnnualTotal]);
@@ -298,12 +307,19 @@ export function PropertyExpenses({
 
   // Handler for adding a new expense
   const handleAddExpense = useCallback(() => {
+    console.log('====== ADD EXPENSE ======');
+    console.log('[ADD] Starting add expense operation');
+    console.log('[ADD] Current expense form data:', JSON.stringify(newExpense));
+    console.log('[ADD] Current expenses count:', Object.keys(expenses).length);
+    
     if (!newExpense.category || newExpense.amount <= 0) {
+      console.error('[ADD] Invalid form data:', JSON.stringify(newExpense));
       toast({
         title: "Invalid expense",
         description: "Please provide a category and valid amount",
         variant: "destructive",
       });
+      console.log('[ADD] Operation aborted due to validation error');
       return;
     }
     
@@ -313,7 +329,10 @@ export function PropertyExpenses({
     try {
       // Create new expense with ID and annual total
       const id = uuidv4();
+      console.log('[ADD] Generated new ID:', id);
+      
       const annualTotal = calculateAnnualTotal(newExpense.amount, newExpense.frequency);
+      console.log('[ADD] Calculated annual total:', annualTotal);
       
       const newExpenseWithId: PropertyExpense = {
         id,
@@ -321,7 +340,7 @@ export function PropertyExpenses({
         annualTotal,
       };
       
-      console.log('[PROPERTY EXPENSES] Adding new expense:', newExpenseWithId);
+      console.log('[ADD] Created new expense object:', JSON.stringify(newExpenseWithId));
       
       // Create updated expenses object
       const updatedExpenses = {
@@ -329,23 +348,30 @@ export function PropertyExpenses({
         [id]: newExpenseWithId
       };
       
+      console.log('[ADD] All expenses after addition (before normalization):', 
+        Object.keys(updatedExpenses).length, 'items');
+      
       // Apply the same normalization to ensure consistent data
+      console.log('[ADD] Calling parseExpenseData...');
       const normalizedExpenses = parseExpenseData(updatedExpenses);
+      console.log('[ADD] Normalization complete. Got back', 
+        Object.keys(normalizedExpenses).length, 'expenses');
       
       // Update both local and parent state
+      console.log('[ADD] Updating local state and calling onChange...');
       setExpenses(normalizedExpenses);
       onChange(normalizedExpenses);
       
-      // Show success message
-      toast({
-        title: "Expense added",
-        description: `Added ${newExpense.category} expense with annual total of ${formatCurrency(annualTotal)}`
-      });
+      // We no longer show toast messages to avoid the stuck banner
+      // Instead we log the success
+      console.log('[ADD] Successfully added expense:', newExpense.category, 'with annual total', annualTotal);
       
       // Reset form
+      console.log('[ADD] Resetting form...');
       resetForm();
+      console.log('====== END ADD EXPENSE ======');
     } catch (error) {
-      console.error('[PROPERTY EXPENSES] Error adding expense:', error);
+      console.error('[ADD] Error adding expense:', error);
       toast({
         title: "Error adding expense",
         description: "An unexpected error occurred",
@@ -358,12 +384,24 @@ export function PropertyExpenses({
 
   // Handler for updating an existing expense
   const handleUpdateExpense = useCallback((expenseId: string) => {
+    console.log('====== UPDATE EXPENSE ======');
+    console.log('[UPDATE] Start updating expense ID:', expenseId);
+    console.log('[UPDATE] Current expenses count:', Object.keys(expenses).length);
+    console.log('[UPDATE] Stack trace:', new Error().stack);
+    
     if (!expenseId || !expenses[expenseId]) {
-      console.error('[PROPERTY EXPENSES] Cannot update expense - invalid ID:', expenseId);
+      console.error('[UPDATE] Cannot update expense - invalid ID:', expenseId);
+      console.log('[UPDATE] Available expense IDs:', Object.keys(expenses));
+      toast({
+        title: "Error updating expense",
+        description: "Invalid expense ID. Please try again.",
+        variant: "destructive",
+      });
       return;
     }
     
     if (!newExpense.category || newExpense.amount <= 0) {
+      console.error('[UPDATE] Invalid form data:', JSON.stringify(newExpense));
       toast({
         title: "Invalid expense",
         description: "Please provide a category and valid amount",
@@ -386,8 +424,7 @@ export function PropertyExpenses({
         annualTotal
       };
       
-      console.log('[PROPERTY EXPENSES] Updating expense ID:', expenseId);
-      console.log('[PROPERTY EXPENSES] Updated expense data:', updatedExpense);
+      console.log('[UPDATE] Creating updated expense:', JSON.stringify(updatedExpense));
       
       // Create new expenses object with updated expense
       const updatedExpenses = {
@@ -395,23 +432,30 @@ export function PropertyExpenses({
         [expenseId]: updatedExpense
       };
       
+      console.log('[UPDATE] All expenses after update (before normalization):', 
+        Object.keys(updatedExpenses).length, 'items');
+      
       // Apply the same normalization to ensure consistent data
+      console.log('[UPDATE] Calling parseExpenseData...');
       const normalizedExpenses = parseExpenseData(updatedExpenses);
+      console.log('[UPDATE] Normalization complete. Got back', 
+        Object.keys(normalizedExpenses).length, 'expenses');
       
       // Update both local and parent state
+      console.log('[UPDATE] Updating local state and calling onChange...');
       setExpenses(normalizedExpenses);
       onChange(normalizedExpenses);
       
-      // Show success message
-      toast({
-        title: "Expense updated",
-        description: `Updated ${newExpense.category} expense successfully`
-      });
+      // We no longer show toast messages for expense updates to avoid the stuck banner
+      // Instead we log the success
+      console.log('[UPDATE] Successfully updated expense:', newExpense.category);
       
       // Reset edit form
+      console.log('[UPDATE] Resetting form...');
       resetForm();
+      console.log('====== END UPDATE EXPENSE ======');
     } catch (error) {
-      console.error('[PROPERTY EXPENSES] Error updating expense:', error);
+      console.error('[UPDATE] Error updating expense:', error);
       toast({
         title: "Error updating expense",
         description: "An unexpected error occurred",
@@ -424,9 +468,20 @@ export function PropertyExpenses({
 
   // Handler for deleting an expense
   const handleDeleteExpense = useCallback((expenseId: string) => {
+    console.log('====== DELETE EXPENSE ======');
+    console.log('[DELETE] Starting delete operation for expense ID:', expenseId);
+    console.log('[DELETE] Current expenses count:', Object.keys(expenses).length);
+    console.log('[DELETE] Stack trace:', new Error().stack);
+    
     const expenseToDelete = expenses[expenseId];
     if (!expenseToDelete) {
-      console.error('[PROPERTY EXPENSES] Cannot delete expense - not found:', expenseId);
+      console.error('[DELETE] Cannot delete expense - not found:', expenseId);
+      console.log('[DELETE] Available expense IDs:', Object.keys(expenses));
+      toast({
+        title: "Error deleting expense",
+        description: "Expense not found. Please try again.",
+        variant: "destructive",
+      });
       return;
     }
     
@@ -434,25 +489,33 @@ export function PropertyExpenses({
     setIsProcessing(true);
     
     try {
-      console.log('[PROPERTY EXPENSES] Deleting expense ID:', expenseId);
+      console.log('[DELETE] Deleting expense data:', JSON.stringify(expenseToDelete));
       
       // Create new expenses object without the deleted expense
       const { [expenseId]: _, ...remainingExpenses } = expenses;
       
+      console.log('[DELETE] Remaining expenses after deletion (before normalization):', 
+        Object.keys(remainingExpenses).length, 'items');
+      
       // Apply the same normalization to ensure consistent data
+      console.log('[DELETE] Calling parseExpenseData...');
       const normalizedExpenses = parseExpenseData(remainingExpenses);
+      console.log('[DELETE] Normalization complete. Got back', 
+        Object.keys(normalizedExpenses).length, 'expenses');
       
       // Update both local and parent state
+      console.log('[DELETE] Updating local state and calling onChange...');
       setExpenses(normalizedExpenses);
       onChange(normalizedExpenses);
       
-      // Show success message
-      toast({
-        title: "Expense deleted",
-        description: `Removed ${expenseToDelete.category} expense of ${formatCurrency(expenseToDelete.amount)}`
-      });
+      // We no longer show toast messages to avoid the stuck banner
+      // Instead we log the success
+      console.log('[DELETE] Successfully deleted expense:', expenseToDelete.category, 
+        'with amount', expenseToDelete.amount);
+      
+      console.log('====== END DELETE EXPENSE ======');
     } catch (error) {
-      console.error('[PROPERTY EXPENSES] Error deleting expense:', error);
+      console.error('[DELETE] Error deleting expense:', error);
       toast({
         title: "Error deleting expense",
         description: "An unexpected error occurred",
@@ -465,7 +528,10 @@ export function PropertyExpenses({
 
   // Handler for starting the edit process
   const handleStartEdit = useCallback((expense: PropertyExpense) => {
-    console.log('[PROPERTY EXPENSES] Starting edit for expense ID:', expense.id);
+    console.log('====== START EDIT ======');
+    console.log('[EDIT] Starting edit for expense ID:', expense.id);
+    console.log('[EDIT] Expense data to edit:', JSON.stringify(expense));
+    console.log('[EDIT] Stack trace:', new Error().stack);
     
     // Set form data to the expense being edited
     setNewExpense({
@@ -475,8 +541,13 @@ export function PropertyExpenses({
       frequency: expense.frequency,
     });
     
+    console.log('[EDIT] Set form data with:', 
+      expense.category, expense.amount, expense.frequency);
+    
     // Set editing ID to track which expense is being edited
     setEditingExpenseId(expense.id);
+    console.log('[EDIT] Updated editingExpenseId to:', expense.id);
+    console.log('====== END START EDIT ======');
   }, []);
 
   // Calculate total annual expenses
