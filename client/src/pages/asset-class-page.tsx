@@ -27,11 +27,24 @@ export default function AssetClassPage() {
   // Fetch the specific asset class
   const { 
     data: assetClass, 
-    isLoading: assetClassLoading 
+    isLoading: assetClassLoading,
+    error: assetClassError
   } = useQuery<AssetClass>({ 
-    queryKey: ['/api/asset-classes', parseInt(classId)],
-    enabled: !!classId
+    queryKey: [`/api/asset-classes/${classId}`],
+    enabled: !!classId 
   });
+
+  // Debug logs for asset class data
+  useEffect(() => {
+    if (assetClass) {
+      console.log("Asset class loaded successfully:", assetClass);
+      console.log("Asset class ID from URL:", classId);
+      console.log("Asset class ID from data:", assetClass.id);
+    }
+    if (assetClassError) {
+      console.error("Error loading asset class:", assetClassError);
+    }
+  }, [assetClass, assetClassError, classId]);
 
   // Fetch all assets
   const { 
