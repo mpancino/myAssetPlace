@@ -174,8 +174,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           } else {
             logMessages.push(`Failed to update asset ${asset.id}`);
           }
-        } catch (err) {
-          logMessages.push(`Error updating asset ${asset.id}: ${err.message}`);
+        } catch (err: unknown) {
+          const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+          logMessages.push(`Error updating asset ${asset.id}: ${errorMessage}`);
         }
       }
       
@@ -185,11 +186,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         logs: logMessages
       });
       
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error updating assets with expenses:', error);
       return res.status(500).json({ 
         success: false, 
-        message: error.message || 'Unknown error'
+        message: error instanceof Error ? error.message : 'Unknown error'
       });
     }
   });

@@ -1,112 +1,120 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { useToast } from "@/hooks/use-toast";
-import { Loader2, AlertCircle, Check } from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
+import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
+import { Loader2, AlertTriangle, Wrench, CheckCircle2 } from 'lucide-react';
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert";
 
 export default function StandardizeCategoriesButton() {
   const { toast } = useToast();
-  const [isRunning, setIsRunning] = useState(false);
+  const queryClient = useQueryClient();
   const [result, setResult] = useState<{
-    success: boolean;
-    message?: string;
+    success?: boolean;
     standardizedCount?: number;
     unchangedCount?: number;
     totalProcessed?: number;
     error?: string;
   } | null>(null);
 
-  const standardizeCategories = async () => {
-    try {
-      setIsRunning(true);
-      setResult(null);
-
-      const response = await apiRequest("POST", "/api/admin/standardize-expense-categories");
-      const data = await response.json();
-      
+  const standardizeMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/admin/standardize-expense-categories");
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      // Set the result state
       setResult(data);
       
-      if (data.success) {
-        toast({
-          title: "Categories Standardized",
-          description: `Successfully standardized ${data.standardizedCount} asset classes. ${data.unchangedCount} were already in the correct format.`,
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: data.message || "Failed to standardize expense categories",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Error standardizing categories:", error);
-      setResult({
-        success: false,
-        error: error instanceof Error ? error.message : "Unknown error occurred",
+      // Show success toast
+      toast({
+        title: "Expense Categories Standardized",
+        description: `Successfully standardized ${data.standardizedCount} asset classes.`,
+        variant: "default",
       });
       
+      // Invalidate asset classes to refresh the data
+      queryClient.invalidateQueries({ queryKey: ["/api/asset-classes"] });
+    },
+    onError: (error: Error) => {
+      setResult({ error: error.message, success: false });
       toast({
-        title: "Error",
-        description: "Failed to standardize expense categories. Check the console for details.",
+        title: "Standardization Failed",
+        description: error.message,
         variant: "destructive",
       });
-    } finally {
-      setIsRunning(false);
-    }
+    },
+  });
+
+  const handleStandardize = () => {
+    // Reset previous results
+    setResult(null);
+    // Run the standardization
+    standardizeMutation.mutate();
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col space-y-4">
-        <h3 className="text-lg font-medium">Expense Categories Format</h3>
+      <div className="flex flex-col space-y-2">
+        <h4 className="text-sm font-medium">Expense Category Standardization</h4>
         <p className="text-sm text-muted-foreground">
-          Standardize expense categories across all asset classes to ensure a consistent format.
-          This helps prevent errors when generating expenses and ensures proper display in the UI.
+          Standardize expense categories across all asset classes to ensure consistent format and structure.
         </p>
-        
-        <Button 
-          variant="outline"
-          onClick={standardizeCategories}
-          disabled={isRunning}
-          className="w-full md:w-auto"
-        >
-          {isRunning ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Standardizing...
-            </>
-          ) : (
-            "Standardize All Expense Categories"
-          )}
-        </Button>
-
-        {result && (
-          <Alert className={result.success ? "bg-green-50" : "bg-red-50"}>
-            <div className="flex items-center gap-2">
-              {result.success ? (
-                <Check className="h-4 w-4 text-green-500" />
-              ) : (
-                <AlertCircle className="h-4 w-4 text-red-500" />
-              )}
-              <AlertTitle>{result.success ? "Success" : "Error"}</AlertTitle>
-            </div>
-            <AlertDescription className="mt-2">
-              {result.success ? (
-                <>
-                  Successfully processed {result.totalProcessed} asset classes:
-                  <ul className="list-disc list-inside mt-2">
-                    <li>Standardized: {result.standardizedCount}</li>
-                    <li>Already correct format: {result.unchangedCount}</li>
-                  </ul>
-                </>
-              ) : (
-                result.message || result.error || "Failed to standardize expense categories"
-              )}
-            </AlertDescription>
-          </Alert>
-        )}
+        <div className="mt-2">
+          <Button
+            onClick={handleStandardize}
+            disabled={standardizeMutation.isPending}
+            className="gap-2"
+            variant="default"
+          >
+            {standardizeMutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Standardizing...
+              </>
+            ) : (
+              <>
+                <Wrench className="h-4 w-4" />
+                Standardize Expense Categories
+              </>
+            )}
+          </Button>
+        </div>
       </div>
+
+      {result && (
+        <Alert variant={result.success ? "default" : "destructive"}>
+          <div className="flex items-start gap-2">
+            {result.success ? (
+              <CheckCircle2 className="h-4 w-4 mt-0.5" />
+            ) : (
+              <AlertTriangle className="h-4 w-4 mt-0.5" />
+            )}
+            <div>
+              <AlertTitle>
+                {result.success
+                  ? "Standardization Complete"
+                  : "Standardization Failed"}
+              </AlertTitle>
+              <AlertDescription>
+                {result.success ? (
+                  <div className="space-y-1 mt-1 text-sm">
+                    <p>Total asset classes processed: {result.totalProcessed}</p>
+                    <p>Asset classes standardized: {result.standardizedCount}</p>
+                    <p>Asset classes already in standard format: {result.unchangedCount}</p>
+                  </div>
+                ) : (
+                  <p className="mt-1 text-sm">{result.error || "An unknown error occurred"}</p>
+                )}
+              </AlertDescription>
+            </div>
+          </div>
+        </Alert>
+      )}
     </div>
   );
 }
