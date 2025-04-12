@@ -183,14 +183,17 @@ export default function AssetDetailPage() {
   useEffect(() => {
     if (asset?.propertyExpenses && !isLoadingAsset) {
       try {
-        // Parse the property expenses to ensure we get the actual data structure
-        const parsedExpenses = typeof asset.propertyExpenses === 'string' 
-          ? JSON.parse(asset.propertyExpenses as string) 
-          : asset.propertyExpenses;
+        // Use our utility function to get a properly parsed version of the expenses
+        const parsedExpenses = parsePropertyExpenses(asset.propertyExpenses);
           
         console.log("ASSET DATA CHANGED: Property expenses updated:", parsedExpenses);
         console.log("Number of expenses:", Object.keys(parsedExpenses || {}).length);
         console.log("Raw property expenses type:", typeof asset.propertyExpenses);
+        
+        // Set the current expenses state when asset data changes
+        if (Object.keys(parsedExpenses).length > 0) {
+          setCurrentPropertyExpenses(parsedExpenses);
+        }
       } catch (err) {
         console.error("Error parsing property expenses in debug effect:", err);
       }
@@ -426,12 +429,13 @@ export default function AssetDetailPage() {
       
       console.log("[DIRECT SAVE] Success! Updated property expenses:", updatedAsset.propertyExpenses);
       
-      // Update our local state
+      // Update our local state - ensure proper parsing of property expenses
       if (updatedAsset.propertyExpenses) {
-        setCurrentPropertyExpenses(updatedAsset.propertyExpenses as Record<string, PropertyExpense>);
+        const parsedExpenses = parsePropertyExpenses(updatedAsset.propertyExpenses);
+        setCurrentPropertyExpenses(parsedExpenses);
         
         // Also update the form state to keep everything in sync
-        form.setValue('propertyExpenses', updatedAsset.propertyExpenses);
+        form.setValue('propertyExpenses', parsedExpenses);
       }
       
       // Show brief success toast
@@ -457,7 +461,7 @@ export default function AssetDetailPage() {
     },
   });
   
-  // Form submission with enhanced expense preservation
+  // Form submission with enhanced expense preservation and proper parsing
   const onSubmit = (values: AssetDetailFormValues) => {
     // Get current form values 
     const formValues = form.getValues();
@@ -468,9 +472,8 @@ export default function AssetDetailPage() {
     
     // If we don't have current expenses in state, fallback to form values
     if (!expensesToSave || Object.keys(expensesToSave).length === 0) {
-      // Create a deep copy of property expenses from the form field 
-      expensesToSave = formValues.propertyExpenses ? 
-        JSON.parse(JSON.stringify(formValues.propertyExpenses)) : {};
+      // Use our utility function to properly parse property expenses
+      expensesToSave = parsePropertyExpenses(formValues.propertyExpenses);
     }
     
     console.log("[FORM SUBMIT] Expenses to save:", expensesToSave);
@@ -521,8 +524,8 @@ export default function AssetDetailPage() {
         rentalFrequency: asset.rentalFrequency,
         vacancyRate: asset.vacancyRate,
         
-        // Property expenses
-        propertyExpenses: asset.propertyExpenses || {},
+        // Property expenses - use the parsing utility function
+        propertyExpenses: parsePropertyExpenses(asset.propertyExpenses),
         
         // Mortgage fields
         hasMortgage: asset.hasMortgage,
