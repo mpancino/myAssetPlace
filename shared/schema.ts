@@ -316,7 +316,14 @@ export const insertPropertySchema = insertAssetSchema.extend({
   rentalIncome: z.number().min(0).optional(),
   rentalFrequency: z.enum(["weekly", "fortnightly", "monthly"]).optional(),
   vacancyRate: z.number().min(0).max(100).default(0).optional(),
-  propertyExpenses: z.record(z.string(), z.any()).optional(),
+  propertyExpenses: z.record(z.string(), z.object({
+    id: z.string(),
+    category: z.string(),
+    description: z.string(),
+    amount: z.number(),
+    frequency: z.string(),
+    annualTotal: z.number()
+  })).optional(),
   
   // Mortgage fields
   hasMortgage: z.boolean().default(false),

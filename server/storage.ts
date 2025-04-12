@@ -225,11 +225,39 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateAsset(id: number, assetData: Partial<Asset>): Promise<Asset | undefined> {
+    // Check if we have property expenses in the update and log the details
+    if (assetData.propertyExpenses) {
+      const expensesCount = Object.keys(assetData.propertyExpenses).length;
+      console.log(`[STORAGE] Updating asset ${id} with ${expensesCount} expenses`);
+      console.log(`[STORAGE] Property expenses data:`, JSON.stringify(assetData.propertyExpenses));
+    } else {
+      console.log(`[STORAGE] Updating asset ${id} without property expenses`);
+    }
+    
+    // Before update - check current state
+    const [currentAsset] = await db
+      .select()
+      .from(assets)
+      .where(eq(assets.id, id));
+      
+    console.log(`[STORAGE] Current property expenses:`, 
+      currentAsset.propertyExpenses ? 
+      `Found ${Object.keys(currentAsset.propertyExpenses).length} expenses` : 
+      "None");
+    
+    // Do the update
     const [updatedAsset] = await db
       .update(assets)
       .set(assetData)
       .where(eq(assets.id, id))
       .returning();
+      
+    // Verify after update  
+    console.log(`[STORAGE] Updated property expenses:`, 
+      updatedAsset.propertyExpenses ? 
+      `Found ${Object.keys(updatedAsset.propertyExpenses).length} expenses` : 
+      "None");
+      
     return updatedAsset;
   }
   

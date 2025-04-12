@@ -308,11 +308,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Not authorized to update this asset" });
       }
       
+      // Enhanced logging for property expenses debug
+      console.log("PATCH request for asset:", id);
+      console.log("Property expenses in request:", 
+        req.body.propertyExpenses ? 
+        `Found ${Object.keys(req.body.propertyExpenses).length} expenses` : 
+        "None");
+      
+      // For real estate assets, check for property expenses
+      if (asset.assetClassId === 3 && req.body.propertyExpenses) {
+        console.log("Detailed property expenses data:", JSON.stringify(req.body.propertyExpenses));
+      }
+      
       const validatedData = insertAssetSchema.partial().parse(req.body);
+      
+      // Log the validated data to ensure property expenses survived validation
+      console.log("Property expenses after validation:", 
+        validatedData.propertyExpenses ? 
+        `Found ${Object.keys(validatedData.propertyExpenses).length} expenses` : 
+        "None");
+      
       const updatedAsset = await storage.updateAsset(id, validatedData);
+      
+      // Immediately verify the saved data by fetching it again
+      const verifiedAsset = await storage.getAsset(id);
+      console.log("VERIFICATION - Property expenses after save:", 
+        verifiedAsset?.propertyExpenses ? 
+        `Found ${Object.keys(verifiedAsset.propertyExpenses).length} expenses` : 
+        "None");
+      
       res.json(updatedAsset);
     } catch (err) {
+      console.error("Error updating asset:", err);
       if (err instanceof z.ZodError) {
+        console.error("Validation error details:", JSON.stringify(err.errors));
         return res.status(400).json({ errors: err.errors });
       }
       res.status(500).json({ message: "Failed to update asset" });
