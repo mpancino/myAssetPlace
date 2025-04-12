@@ -315,6 +315,20 @@ export const insertCashAccountSchema = insertAssetSchema.extend({
   accountPurpose: z.enum(["general", "emergency", "savings", "investment", "other"]).optional(),
   isOffsetAccount: z.boolean().optional().default(false),
   offsetLinkedLoanId: z.number().optional(),
+  // Balance history for tracking changes in balance over time (REQ-148)
+  balanceHistory: z.array(z.object({
+    id: z.string(),
+    date: z.date(),
+    balance: z.number(),
+    notes: z.string().optional(),
+  })).optional(),
+  // Transaction categories for tracking income and expenses (REQ-149)
+  transactionCategories: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    type: z.enum(["income", "expense"]),
+    color: z.string().optional(),
+  })).optional(),
 });
 
 export const insertLoanSchema = insertAssetSchema.extend({
