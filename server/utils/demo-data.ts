@@ -1,6 +1,18 @@
 import { storage } from "../storage";
 import { Asset, InsertAsset } from "@shared/schema";
 
+// Extended Asset type to include mortgage fields
+interface ExtendedAsset extends InsertAsset {
+  hasMortgage?: boolean;
+  mortgageAmount?: number;
+  mortgageInterestRate?: number;
+  mortgageTerm?: number;
+  mortgageStartDate?: string;
+  mortgageLender?: string;
+  mortgageType?: string;
+  mortgagePaymentFrequency?: string;
+}
+
 /**
  * Creates sample assets for a demo user
  * @param userId The ID of the user to create assets for
@@ -85,7 +97,15 @@ export async function createDemoAssets(userId: number): Promise<Asset[]> {
       country: "Australia",
       bedrooms: 3,
       bathrooms: 2,
-      parkingSpaces: 1
+      parkingSpaces: 1,
+      hasMortgage: true,
+      mortgageAmount: 280000,
+      mortgageInterestRate: 4.5,
+      mortgageTerm: 360,
+      mortgageStartDate: new Date("2015-06-20").toISOString(),
+      mortgageLender: "Home Loans Inc",
+      mortgageType: "variable",
+      mortgagePaymentFrequency: "monthly"
     },
     {
       userId,
@@ -122,23 +142,6 @@ export async function createDemoAssets(userId: number): Promise<Asset[]> {
     },
     
     // Loans & Liabilities
-    {
-      userId,
-      assetClassId: 2, // Loans & Liabilities (correct ID)
-      assetHoldingTypeId: 1, // Personal
-      name: "Mortgage",
-      description: "Home loan",
-      value: 280000,
-      loanProvider: "Home Loans Inc",
-      interestRate: 4.5,
-      loanTerm: 360, // 30 years in months
-      paymentFrequency: "monthly",
-      paymentAmount: 1500,
-      startDate: new Date("2015-06-20").toISOString(),
-      endDate: new Date("2045-06-20").toISOString(),
-      originalLoanAmount: 320000,
-      isLiability: true
-    },
     {
       userId,
       assetClassId: 2, // Loans & Liabilities (correct ID)

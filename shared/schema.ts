@@ -140,6 +140,15 @@ export const assets = pgTable("assets", {
   vacancyRate: real("vacancy_rate"), // percent of time property is vacant
   propertyExpenses: json("property_expenses"), // e.g., strata, council rates, insurance, maintenance
   mortgageId: integer("mortgage_id"), // link to associated mortgage (if any)
+  // Property mortgage fields (to store mortgage info directly on property)
+  hasMortgage: boolean("has_mortgage").default(false),
+  mortgageAmount: real("mortgage_amount"),
+  mortgageInterestRate: real("mortgage_interest_rate"),
+  mortgageTerm: integer("mortgage_term"), // In months
+  mortgageStartDate: date("mortgage_start_date"),
+  mortgageLender: text("mortgage_lender"),
+  mortgageType: text("mortgage_type"), // fixed, variable
+  mortgagePaymentFrequency: text("mortgage_payment_frequency"), // weekly, fortnightly, monthly
   // Maps/API-related fields
   longitude: real("longitude"),
   latitude: real("latitude"),
