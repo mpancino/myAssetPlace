@@ -13,10 +13,13 @@ import {
   LogOut,
   BookOpenCheck,
   Wallet,
+  Briefcase,
+  CreditCard
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { AssetClass, AssetHoldingType, Asset } from "@shared/schema";
 
 interface SidebarProps {
   className?: string;
@@ -35,6 +38,12 @@ export default function Sidebar({ className }: SidebarProps) {
   // Fetch asset classes
   const { data: assetClasses = [] } = useQuery<AssetClass[]>({
     queryKey: ["/api/asset-classes"],
+    enabled: !!user,
+  });
+  
+  // Fetch all assets to display counts in sidebar
+  const { data: assets = [] } = useQuery<Asset[]>({
+    queryKey: ["/api/assets"],
     enabled: !!user,
   });
 
@@ -115,19 +124,50 @@ export default function Sidebar({ className }: SidebarProps) {
                   Asset Classes
                 </h3>
                 {assetClasses ? (
-                  assetClasses.map((assetClass) => (
-                    <NavLink 
-                      key={assetClass.id} 
-                      href={`/asset-classes/${assetClass.id}`} 
-                      icon={
-                        assetClass.name === "Real Estate" ? <Building className="h-5 w-5 mr-3" /> :
-                        assetClass.name === "Stocks & Shares" ? <BarChart3 className="h-5 w-5 mr-3" /> :
-                        <LineChart className="h-5 w-5 mr-3" />
-                      }
-                    >
-                      {assetClass.name}
-                    </NavLink>
-                  ))
+                  assetClasses.map((assetClass) => {
+                    // Get count of assets in this asset class
+                    const assetsInClass = assets.filter(asset => asset.assetClassId === assetClass.id);
+                    const assetCount = assetsInClass.length;
+                    
+                    // Get appropriate icon based on asset class name
+                    let icon;
+                    switch(assetClass.name) {
+                      case "Real Estate":
+                        icon = <Building className="h-5 w-5 mr-3" />;
+                        break;
+                      case "Stocks & Shares":
+                        icon = <BarChart3 className="h-5 w-5 mr-3" />;
+                        break;
+                      case "Cash & Bank Accounts":
+                        icon = <Wallet className="h-5 w-5 mr-3" />;
+                        break;
+                      case "Loans & Liabilities":
+                        icon = <CreditCard className="h-5 w-5 mr-3" />;
+                        break;
+                      case "Business & Private Equity":
+                        icon = <Briefcase className="h-5 w-5 mr-3" />;
+                        break;
+                      default:
+                        icon = <LineChart className="h-5 w-5 mr-3" />;
+                    }
+                    
+                    return (
+                      <NavLink 
+                        key={assetClass.id} 
+                        href={`/asset-classes/${assetClass.id}`} 
+                        icon={icon}
+                      >
+                        <div className="flex justify-between items-center w-full">
+                          <span>{assetClass.name}</span>
+                          {assetCount > 0 && (
+                            <span className="bg-slate-100 text-slate-600 text-xs rounded-full px-2 py-1 ml-2">
+                              {assetCount}
+                            </span>
+                          )}
+                        </div>
+                      </NavLink>
+                    );
+                  })
                 ) : (
                   <>
                     <NavLink href="/asset-classes/real-estate" icon={<Building className="h-5 w-5 mr-3" />}>
