@@ -329,6 +329,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       
+      // Define protected core asset classes (from PDD)
+      const protectedAssetClassIds = [1, 2, 3, 4, 5, 6, 8, 9]; // Core asset classes from PDD
+      
+      // Check if this is a protected core asset class
+      if (protectedAssetClassIds.includes(id)) {
+        return res.status(400).json({ 
+          message: "Cannot delete core asset classes that are required by the system",
+          isProtected: true
+        });
+      }
+      
       // Check if this asset class is in use
       const allAssets = await storage.listAssets(req.user!.id);
       const assetsUsingClass = allAssets.filter(asset => asset.assetClassId === id);
