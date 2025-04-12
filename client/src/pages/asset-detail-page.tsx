@@ -388,6 +388,10 @@ export default function AssetDetailPage() {
                 {selectedClass?.name?.toLowerCase() === "real estate" && (
                   <TabsTrigger value="property">Property Info</TabsTrigger>
                 )}
+                {(selectedClass?.name?.toLowerCase() === "loans & liabilities" || 
+                  asset?.assetClassId === 5) && (
+                  <TabsTrigger value="loan">Loan Info</TabsTrigger>
+                )}
                 <TabsTrigger value="performance">Performance</TabsTrigger>
               </TabsList>
               
