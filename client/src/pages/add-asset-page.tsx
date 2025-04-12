@@ -193,6 +193,31 @@ export default function AddAssetPage() {
       const assetHoldingTypeValid = await form.trigger("assetHoldingTypeId");
       
       shouldProceed = assetClassValid && assetHoldingTypeValid;
+      
+      // If this is the first step and it's a specialized asset type, redirect to the appropriate form
+      if (shouldProceed) {
+        const selectedAssetClass = getSelectedAssetClassDetails();
+        
+        if (selectedAssetClass) {
+          // Redirect based on asset class type
+          if (selectedAssetClass.name.toLowerCase() === 'real estate') {
+            // Redirect to property-specific form
+            setLocation(`/add-property/${selectedAssetClass.id}`);
+            return; // Exit early to prevent further processing
+          } else if (selectedAssetClass.name.toLowerCase() === 'cash' || 
+                     selectedAssetClass.name.toLowerCase() === 'bank accounts') {
+            // Redirect to cash account-specific form
+            setLocation(`/add-cash-account?classId=${selectedAssetClass.id}`);
+            return; // Exit early to prevent further processing
+          } else if (selectedAssetClass.name.toLowerCase() === 'loans' || 
+                     selectedAssetClass.name.toLowerCase() === 'debts') {
+            // Redirect to loan-specific form
+            setLocation(`/add-loan?classId=${selectedAssetClass.id}`);
+            return; // Exit early to prevent further processing
+          }
+          // For other asset types, continue with the generic form
+        }
+      }
     } else if (currentStep === 1) {
       // Validate asset details
       const nameValid = await form.trigger("name");
