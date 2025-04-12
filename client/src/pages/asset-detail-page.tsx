@@ -279,12 +279,23 @@ export default function AssetDetailPage() {
         description: `${updatedAsset.name} has been updated successfully`,
       });
       
-      // CRITICAL FIX: Manually refetch the asset data to ensure the property expenses
-      // are properly loaded. This is more reliable than cache manipulation.
-      queryClient.refetchQueries({ queryKey: [`/api/assets/${assetId}`] });
+      // CRITICAL FIX: Forced approach to ensure data is visible after update
+      // First completely clear the cached data
+      queryClient.removeQueries({ queryKey: [`/api/assets/${assetId}`] });
+      
+      // Then refetch to get fresh data from the server
+      queryClient.fetchQuery({ 
+        queryKey: [`/api/assets/${assetId}`],
+        queryFn: getQueryFn()
+      }).then(freshData => {
+        console.log("Forced refetch complete. Fresh data received:", freshData);
+      });
       
       // Exit edit mode AFTER we've initiated the refetch
-      setIsEditing(false);
+      // Add a small delay to ensure the UI has time to process changes
+      setTimeout(() => {
+        setIsEditing(false);
+      }, 100);
       
       // Also invalidate other relevant queries for the list views
       queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
@@ -1539,6 +1550,9 @@ export default function AssetDetailPage() {
                         <CardHeader>
                           <CardTitle className="flex items-center">
                             <Receipt className="mr-2 h-4 w-4" /> Property Expenses
+                            <span className="ml-2 text-xs text-muted-foreground">
+                              (Last updated: {new Date().toLocaleTimeString()})
+                            </span>
                           </CardTitle>
                           <CardDescription>
                             Add, edit or remove expenses associated with this property
@@ -1571,7 +1585,7 @@ export default function AssetDetailPage() {
                               Property Expenses
                               {/* Add debug info */}
                               <span className="ml-2 text-xs text-muted-foreground">
-                                ({Object.keys(asset.propertyExpenses).length} items)
+                                ({Object.keys(asset.propertyExpenses).length} items | Last updated: {new Date().toLocaleTimeString()})
                               </span>
                             </CardTitle>
                           </CardHeader>

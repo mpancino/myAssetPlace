@@ -34,13 +34,16 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
   const [expenses, setExpenses] = useState<Record<string, PropertyExpense>>(value || {});
   
-  // Sync expenses with incoming value prop when it changes from outside
+  // CRITICAL FIX: More robust handling of prop changes
   useEffect(() => {
-    // Only update if value is not null/undefined and has different contents
-    if (value && JSON.stringify(value) !== JSON.stringify(expenses)) {
-      console.log("Updating expenses from value prop:", value);
-      setExpenses(value);
-    }
+    // Force update the expenses state when the value prop changes
+    // This is critical to ensure the table refreshes after a form submission
+    console.log("Value prop changed. New expenses:", value);
+    console.log("Current local expenses state:", expenses);
+    
+    // Always update the local state to match the prop value
+    // This ensures we always display the latest data from the server
+    setExpenses(value || {});
   }, [value]);
   
   const [newExpense, setNewExpense] = useState<Omit<PropertyExpense, "id" | "annualTotal">>({
