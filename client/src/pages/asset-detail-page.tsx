@@ -15,7 +15,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { MortgageDetails } from "@/components/property/mortgage-details";
-import { PropertyExpenses, PropertyExpenseAnalysis } from "@/components/property/property-expenses-new";
+import { PropertyExpenses, PropertyExpenseAnalysis } from "@/components/property/property-expenses";
 import { InvestmentExpenses, InvestmentExpenseAnalysis } from "@/components/expense/investment-expenses";
 import { 
   ArrowLeft, 
