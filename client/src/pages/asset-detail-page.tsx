@@ -16,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { MortgageDetails } from "@/components/property/mortgage-details";
 import { PropertyExpenses, PropertyExpenseAnalysis } from "@/components/property/property-expenses-new";
-import { InvestmentExpenses, InvestmentExpenseAnalysis, InvestmentExpense } from "@/components/expense/investment-expenses";
+import { InvestmentExpenses, InvestmentExpenseAnalysis } from "@/components/expense/investment-expenses";
 import { 
   ArrowLeft, 
   BarChart3,
@@ -66,6 +66,67 @@ import {
 
 // Import shared types
 import type { PropertyExpense } from "@shared/schema";
+
+// Investment expense interface (similar structure to PropertyExpense)
+export interface InvestmentExpense {
+  id: string;
+  categoryId: string;
+  name: string;
+  amount: number;
+  frequency: 'monthly' | 'quarterly' | 'annually';  
+  notes?: string;
+}
+
+// Helper function to safely parse investment expenses data
+function parseInvestmentExpenses(data: any): Record<string, InvestmentExpense> {
+  try {
+    // Create a hash from the data for a more stable identifier that won't change on every call
+    const valueStr = typeof data === 'string' ? data : JSON.stringify(data || {});
+    const hashCode = Array.from(valueStr).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString().slice(-4);
+    const parseId = `${hashCode}`;
+    
+    console.log(`\n[PARSE:${parseId}] ===== PARSE INVESTMENT EXPENSES =====`);
+    console.log(`[PARSE:${parseId}] Input type:`, typeof data);
+    console.log(`[PARSE:${parseId}] Input value:`, data ? (typeof data === 'object' ? 'Object with keys: ' + Object.keys(data).join(', ') : data.toString().substring(0, 100)) : 'null/undefined');
+    
+    // Log the call stack to track where this is being called from
+    console.log(`[PARSE:${parseId}] Call stack:`, new Error().stack?.split('\n').slice(2, 5).join('\n'));
+    
+    // If it's a string, try to parse it as JSON
+    if (typeof data === 'string') {
+      if (data.trim() === '') {
+        console.log(`[PARSE:${parseId}] Empty string detected, returning empty object`);
+        return {};
+      }
+      
+      const parsedData = JSON.parse(data) as Record<string, InvestmentExpense>;
+      console.log(`[PARSE:${parseId}] Parsed string into object with ${Object.keys(parsedData).length} items`);
+      console.log(`[PARSE:${parseId}] Keys:`, Object.keys(parsedData));
+      console.log(`[PARSE:${parseId}] ===== END PARSE =====\n`);
+      return parsedData;
+    }
+    
+    // If it's already an object, create a deep clone to break reference cycles
+    if (data && typeof data === 'object') {
+      console.log(`[PARSE:${parseId}] Received object with ${Object.keys(data).length} items`);
+      console.log(`[PARSE:${parseId}] Keys:`, Object.keys(data));
+      
+      // Create a deep clone to ensure we're not affected by reference issues
+      const clonedData = JSON.parse(JSON.stringify(data)) as Record<string, InvestmentExpense>;
+      console.log(`[PARSE:${parseId}] Created deep clone with ${Object.keys(clonedData).length} items`);
+      console.log(`[PARSE:${parseId}] ===== END PARSE =====\n`);
+      return clonedData;
+    }
+    
+    // Return empty object as fallback
+    console.log(`[PARSE:${parseId}] Fallback: returning empty object`);
+    console.log(`[PARSE:${parseId}] ===== END PARSE =====\n`);
+    return {};
+  } catch (err) {
+    console.error('[ERROR] Failed to parse investment expenses:', err);
+    return {};
+  }
+}
 
 // Helper function to safely parse property expenses data
 function parsePropertyExpenses(data: any): Record<string, PropertyExpense> {
@@ -155,6 +216,12 @@ const assetDetailSchema = z.object({
   // Property expenses
   propertyExpenses: z.record(z.string(), z.any()).optional().nullable(),
   
+  // Investment expenses
+  investmentExpenses: z.record(z.string(), z.any()).optional().nullable(),
+  
+  // Investment-specific fields
+  annualIncome: z.number().optional().nullable(),
+  
   // Mortgage fields
   hasMortgage: z.boolean().optional().nullable(),
   mortgageLender: z.string().optional().nullable(),
@@ -235,6 +302,27 @@ export default function AssetDetailPage() {
     }
   }, [asset, isLoadingAsset]);
   
+  // Add debug Effect to track investment expenses after asset loads/updates
+  useEffect(() => {
+    if (asset?.investmentExpenses && !isLoadingAsset) {
+      try {
+        // Use our utility function to get a properly parsed version of the expenses
+        const parsedExpenses = parseInvestmentExpenses(asset.investmentExpenses);
+          
+        console.log("ASSET DATA CHANGED: Investment expenses updated:", parsedExpenses);
+        console.log("Number of investment expenses:", Object.keys(parsedExpenses || {}).length);
+        console.log("Raw investment expenses type:", typeof asset.investmentExpenses);
+        
+        // Set the current expenses state when asset data changes
+        if (Object.keys(parsedExpenses).length > 0) {
+          setCurrentInvestmentExpenses(parsedExpenses);
+        }
+      } catch (err) {
+        console.error("Error parsing investment expenses in debug effect:", err);
+      }
+    }
+  }, [asset, isLoadingAsset]);
+  
   // Initialize form with asset data
   const form = useForm<AssetDetailFormValues>({
     resolver: zodResolver(assetDetailSchema),
@@ -269,6 +357,10 @@ export default function AssetDetailPage() {
       
       // Property expenses - use our enhanced parsing function
       propertyExpenses: parsePropertyExpenses(asset?.propertyExpenses),
+      
+      // Investment expenses
+      investmentExpenses: parseInvestmentExpenses(asset?.investmentExpenses),
+      annualIncome: asset?.annualIncome || null,
       
       // Mortgage fields
       hasMortgage: asset?.hasMortgage || false,
@@ -316,6 +408,10 @@ export default function AssetDetailPage() {
         
         // Property expenses - use our parsing function to handle it correctly
         propertyExpenses: parsePropertyExpenses(asset.propertyExpenses),
+        
+        // Investment expenses
+        investmentExpenses: parseInvestmentExpenses(asset.investmentExpenses),
+        annualIncome: asset.annualIncome,
         
         // Mortgage fields
         hasMortgage: asset.hasMortgage,
@@ -463,6 +559,95 @@ export default function AssetDetailPage() {
     },
   });
   
+  // Direct investment expense save mutation - immediately saves expenses to DB
+  const saveInvestmentExpensesMutation = useMutation({
+    mutationFn: async (expenses: Record<string, InvestmentExpense>) => {
+      if (!assetId) return null;
+      
+      // Create a minimal update payload with just the expenses
+      const dataToSend = {
+        investmentExpenses: expenses
+      };
+      
+      console.log("[DIRECT SAVE INV] Saving expenses to database:", Object.keys(expenses).length);
+      console.log("[DIRECT SAVE INV] Expense data:", JSON.stringify(expenses));
+      
+      const res = await apiRequest("PATCH", `/api/assets/${assetId}`, dataToSend);
+      const data = await res.json();
+      return data as Asset;
+    },
+    onSuccess: (updatedAsset) => {
+      if (!updatedAsset) return;
+      
+      console.log("[DIRECT SAVE INV] Success! Updated investment expenses:", updatedAsset.investmentExpenses);
+      
+      // Immediately make a new fetch request to get truly fresh data from the server
+      console.log('[DIRECT SAVE INV] Making direct fetch to get fresh data after update...');
+      
+      // Using a direct fetch request to bypass cache entirely
+      fetch(`/api/assets/${assetId}`)
+        .then(response => response.json())
+        .then(freshData => {
+          console.log('[DIRECT SAVE INV] Fresh data received via direct fetch:', freshData);
+          console.log('[DIRECT SAVE INV] Investment expenses in fresh data:', freshData.investmentExpenses);
+          
+          // Parse the data to ensure it's in the correct format
+          const parsedExpenses = parseInvestmentExpenses(freshData.investmentExpenses);
+          console.log('[DIRECT SAVE INV] Number of expenses after parsing:', Object.keys(parsedExpenses).length);
+          
+          // Update our local state - both component state and form state
+          setCurrentInvestmentExpenses(parsedExpenses);
+          form.setValue('investmentExpenses', parsedExpenses);
+          console.log('[DIRECT SAVE INV] Updated local and form state with parsed expenses');
+          
+          // Manually update the cache with this fresh data
+          console.log('[DIRECT SAVE INV] Setting query data with fresh data...');
+          queryClient.setQueryData([`/api/assets/${assetId}`], freshData);
+          
+          // Show brief success toast
+          toast({
+            title: "Investment Expenses Saved",
+            description: `Successfully saved ${Object.keys(parsedExpenses).length} expenses`,
+            duration: 2000,
+          });
+        })
+        .catch(error => {
+          console.error('[DIRECT SAVE INV] Error fetching fresh data:', error);
+          
+          // Fall back to the original approach if direct fetch fails
+          console.log('[DIRECT SAVE INV] Falling back to query client fetching...');
+          
+          // Update our local state using the original updatedAsset
+          if (updatedAsset.investmentExpenses) {
+            const parsedExpenses = parseInvestmentExpenses(updatedAsset.investmentExpenses);
+            setCurrentInvestmentExpenses(parsedExpenses);
+            form.setValue('investmentExpenses', parsedExpenses);
+          }
+          
+          // Use the query client to refresh
+          queryClient.removeQueries({ queryKey: [`/api/assets/${assetId}`] });
+          queryClient.fetchQuery({ 
+            queryKey: [`/api/assets/${assetId}`],
+            queryFn: getQueryFn({ on401: "throw" })
+          });
+          
+          // Show brief success toast
+          toast({
+            title: "Investment Expenses Saved",
+            description: `Successfully saved expenses`,
+            duration: 2000,
+          });
+        });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error saving investment expenses",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
   // Direct property expense save mutation - immediately saves expenses to DB
   const savePropertyExpensesMutation = useMutation({
     mutationFn: async (expenses: Record<string, PropertyExpense>) => {
@@ -559,47 +744,84 @@ export default function AssetDetailPage() {
     
     // First try to use any tracked currentPropertyExpenses from our state
     // This helps capture expenses that may have been added but not yet synced to the form
-    let expensesToSave = currentPropertyExpenses || {};
+    let propertyExpensesToSave = currentPropertyExpenses || {};
     
     // If we don't have current expenses in state, fallback to form values
-    if (!expensesToSave || Object.keys(expensesToSave).length === 0) {
+    if (!propertyExpensesToSave || Object.keys(propertyExpensesToSave).length === 0) {
       // Use our utility function to properly parse property expenses
-      expensesToSave = parsePropertyExpenses(formValues.propertyExpenses);
+      propertyExpensesToSave = parsePropertyExpenses(formValues.propertyExpenses);
     }
     
-    console.log("[FORM SUBMIT] Expenses to save:", expensesToSave);
-    console.log("[FORM SUBMIT] Number of expenses:", Object.keys(expensesToSave).length);
+    console.log("[FORM SUBMIT] Property expenses to save:", propertyExpensesToSave);
+    console.log("[FORM SUBMIT] Number of property expenses:", Object.keys(propertyExpensesToSave).length);
     
     // Log expense IDs to help with debugging
-    if (Object.keys(expensesToSave).length > 0) {
-      console.log("[FORM SUBMIT] Expense IDs:", Object.keys(expensesToSave));
+    if (Object.keys(propertyExpensesToSave).length > 0) {
+      console.log("[FORM SUBMIT] Property expense IDs:", Object.keys(propertyExpensesToSave));
+    }
+    
+    // Do the same for investment expenses
+    let investmentExpensesToSave = currentInvestmentExpenses || {};
+    
+    // If we don't have current expenses in state, fallback to form values
+    if (!investmentExpensesToSave || Object.keys(investmentExpensesToSave).length === 0) {
+      // Use our utility function to properly parse investment expenses
+      investmentExpensesToSave = parseInvestmentExpenses(formValues.investmentExpenses);
+    }
+    
+    console.log("[FORM SUBMIT] Investment expenses to save:", investmentExpensesToSave);
+    console.log("[FORM SUBMIT] Number of investment expenses:", Object.keys(investmentExpensesToSave).length);
+    
+    // Log expense IDs to help with debugging
+    if (Object.keys(investmentExpensesToSave).length > 0) {
+      console.log("[FORM SUBMIT] Investment expense IDs:", Object.keys(investmentExpensesToSave));
     }
     
     // Ensure property expenses are properly passed to the mutation by explicitly setting them
-    console.log("[FORM SUBMIT] Final expenses object being sent:", JSON.stringify(expensesToSave));
+    console.log("[FORM SUBMIT] Final property expenses object being sent:", JSON.stringify(propertyExpensesToSave));
     
-    // Debug log to check if expenses match what's in the component state
+    // Debug log to check if property expenses match what's in the component state
     if (currentPropertyExpenses) {
       const currentKeys = Object.keys(currentPropertyExpenses);
-      const saveKeys = Object.keys(expensesToSave);
-      console.log("[FORM SUBMIT] Current expenses in state:", currentKeys.length);
-      console.log("[FORM SUBMIT] Expenses being saved:", saveKeys.length);
+      const saveKeys = Object.keys(propertyExpensesToSave);
+      console.log("[FORM SUBMIT] Current property expenses in state:", currentKeys.length);
+      console.log("[FORM SUBMIT] Property expenses being saved:", saveKeys.length);
       
       // Check for any keys that might be in one but not the other
       const missingInSave = currentKeys.filter(k => !saveKeys.includes(k));
       const missingInCurrent = saveKeys.filter(k => !currentKeys.includes(k));
       
       if (missingInSave.length > 0) {
-        console.warn("[FORM SUBMIT] WARNING: These expense IDs are in state but not being saved:", missingInSave);
+        console.warn("[FORM SUBMIT] WARNING: These property expense IDs are in state but not being saved:", missingInSave);
       }
       if (missingInCurrent.length > 0) {
-        console.warn("[FORM SUBMIT] WARNING: These expense IDs are being saved but not in state:", missingInCurrent);
+        console.warn("[FORM SUBMIT] WARNING: These property expense IDs are being saved but not in state:", missingInCurrent);
+      }
+    }
+    
+    // Debug log to check if investment expenses match what's in the component state
+    if (currentInvestmentExpenses) {
+      const currentKeys = Object.keys(currentInvestmentExpenses);
+      const saveKeys = Object.keys(investmentExpensesToSave);
+      console.log("[FORM SUBMIT] Current investment expenses in state:", currentKeys.length);
+      console.log("[FORM SUBMIT] Investment expenses being saved:", saveKeys.length);
+      
+      // Check for any keys that might be in one but not the other
+      const missingInSave = currentKeys.filter(k => !saveKeys.includes(k));
+      const missingInCurrent = saveKeys.filter(k => !currentKeys.includes(k));
+      
+      if (missingInSave.length > 0) {
+        console.warn("[FORM SUBMIT] WARNING: These investment expense IDs are in state but not being saved:", missingInSave);
+      }
+      if (missingInCurrent.length > 0) {
+        console.warn("[FORM SUBMIT] WARNING: These investment expense IDs are being saved but not in state:", missingInCurrent);
       }
     }
     
     updateAssetMutation.mutate({
       ...values,
-      propertyExpenses: expensesToSave
+      propertyExpenses: propertyExpensesToSave,
+      investmentExpenses: investmentExpensesToSave
     });
   };
   
@@ -638,6 +860,10 @@ export default function AssetDetailPage() {
         
         // Property expenses - use the parsing utility function
         propertyExpenses: parsePropertyExpenses(asset.propertyExpenses),
+        
+        // Investment expenses
+        investmentExpenses: parseInvestmentExpenses(asset.investmentExpenses),
+        annualIncome: asset.annualIncome,
         
         // Mortgage fields
         hasMortgage: asset.hasMortgage,
