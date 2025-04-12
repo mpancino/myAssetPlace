@@ -2,10 +2,11 @@ import { Asset, AssetHoldingType } from "@shared/schema";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, MapPin, Home, Building, DollarSign, BedDouble, Bath, Car } from "lucide-react";
+import { Pencil, Trash2, MapPin, Home, Building, DollarSign, BedDouble, Bath, Car, CreditCard } from "lucide-react";
 import { useLocation } from "wouter";
 import { formatCurrency } from "@/lib/utils";
 import { type PropertyExpense } from "./property-expenses";
+import { calculateLoanPayment } from "@shared/calculations";
 
 interface PropertyCardProps {
   property: Asset;
@@ -85,6 +86,39 @@ export function PropertyCard({
             <div className="text-sm text-muted-foreground">Current Value</div>
             <div className="font-medium">{formatCurrency(property.value)}</div>
           </div>
+          
+          {/* Show mortgage details if property has a mortgage */}
+          {property.hasMortgage && (
+            <>
+              <div className="flex justify-between">
+                <div className="text-sm text-muted-foreground flex items-center">
+                  <CreditCard className="h-3 w-3 mr-1" />
+                  Mortgage Balance
+                </div>
+                <div className="font-medium text-destructive">
+                  {formatCurrency(property.mortgageAmount || 0)}
+                </div>
+              </div>
+              
+              <div className="flex justify-between">
+                <div className="text-sm text-muted-foreground">Equity</div>
+                <div className="font-medium text-green-600">
+                  {formatCurrency((property.value || 0) - (property.mortgageAmount || 0))}
+                </div>
+              </div>
+              
+              {/* Equity progress bar */}
+              <div className="w-full bg-muted rounded-full h-1.5 dark:bg-gray-700">
+                <div 
+                  className="bg-green-600 h-1.5 rounded-full"
+                  style={{ 
+                    width: `${property.value ? 
+                      Math.min(100, 100 - (((property.mortgageAmount || 0) / property.value) * 100)) : 0}%` 
+                  }}
+                ></div>
+              </div>
+            </>
+          )}
           
           {property.purchasePrice && (
             <div className="flex justify-between">

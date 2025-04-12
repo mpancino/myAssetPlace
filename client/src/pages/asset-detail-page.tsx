@@ -42,6 +42,7 @@ import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { AssetClass, AssetHoldingType, Asset } from "@shared/schema";
 import { OffsetAccountSection } from "@/components/loans/offset-account-section";
+import { calculateLoanPayment } from "@shared/calculations";
 import { type PropertyExpense } from "@/components/property/property-expenses";
 import { formatCurrency } from "@/lib/utils";
 import { 
@@ -479,6 +480,131 @@ export default function AssetDetailPage() {
               </TabsList>
               
               <TabsContent value="overview" className="space-y-4 pt-4">
+                {/* Property-specific overview with mortgage information */}
+                {selectedClass?.name?.toLowerCase() === "real estate" && asset?.hasMortgage && !isEditing && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <Card className="col-span-1 bg-gradient-to-br from-primary/5 to-primary/10">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="flex items-center text-lg">
+                          <Building className="mr-2 h-5 w-5 text-primary" /> Property Value Summary
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <div className="text-sm text-muted-foreground mb-1">Property Value</div>
+                            <div className="text-xl font-semibold">{formatCurrency(asset?.value || 0)}</div>
+                          </div>
+                          
+                          <div>
+                            <div className="text-sm text-muted-foreground mb-1">Mortgage Balance</div>
+                            <div className="text-xl font-semibold text-destructive">
+                              {formatCurrency(asset?.mortgageAmount || 0)}
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <div className="text-sm text-muted-foreground mb-1">Equity</div>
+                            <div className="text-xl font-semibold text-green-600">
+                              {formatCurrency((asset?.value || 0) - (asset?.mortgageAmount || 0))}
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <div className="text-sm text-muted-foreground mb-1">Loan-to-Value Ratio</div>
+                            <div className="text-xl font-semibold">
+                              {asset?.value ? 
+                                `${(((asset?.mortgageAmount || 0) / asset?.value) * 100).toFixed(1)}%` 
+                                : "N/A"}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-4">
+                          <div className="text-sm text-muted-foreground mb-1">Equity Percentage</div>
+                          <div className="w-full bg-muted rounded-full h-2.5 dark:bg-gray-700 mt-1 mb-3">
+                            <div 
+                              className="bg-green-600 h-2.5 rounded-full"
+                              style={{ 
+                                width: `${asset?.value ? 
+                                  Math.min(100, 100 - (((asset?.mortgageAmount || 0) / asset?.value) * 100)) : 0}%` 
+                              }}
+                            ></div>
+                          </div>
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>0%</span>
+                            <span>50%</span>
+                            <span>100%</span>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    <Card className="col-span-1 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="flex items-center text-lg">
+                          <CreditCard className="mr-2 h-5 w-5 text-blue-600" /> Mortgage Details
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <div className="text-sm text-muted-foreground mb-1">Lender</div>
+                            <div className="text-base font-medium">
+                              {asset?.mortgageLender || "Not specified"}
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <div className="text-sm text-muted-foreground mb-1">Interest Rate</div>
+                            <div className="text-base font-medium">
+                              {asset?.mortgageInterestRate ? `${asset.mortgageInterestRate}%` : "Not specified"}
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <div className="text-sm text-muted-foreground mb-1">Monthly Payment</div>
+                            <div className="text-base font-medium">
+                              {asset?.mortgageAmount && asset?.mortgageInterestRate && asset?.mortgageTerm ?
+                                formatCurrency(
+                                  calculateLoanPayment(
+                                    asset.mortgageAmount,
+                                    asset.mortgageInterestRate / 100,
+                                    asset.mortgageTerm / 12
+                                  )
+                                ) : "Not available"}
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <div className="text-sm text-muted-foreground mb-1">Type</div>
+                            <div className="text-base font-medium capitalize">
+                              {asset?.mortgageType || "Not specified"}
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <div className="text-sm text-muted-foreground mb-1">Term</div>
+                            <div className="text-base font-medium">
+                              {asset?.mortgageTerm ? 
+                                `${(asset.mortgageTerm / 12).toFixed(0)} years (${asset.mortgageTerm} months)` 
+                                : "Not specified"}
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <div className="text-sm text-muted-foreground mb-1">Payment Frequency</div>
+                            <div className="text-base font-medium capitalize">
+                              {asset?.mortgagePaymentFrequency || "Not specified"}
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+                
+                {/* Main asset details grid - for all asset types */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Card>
                     <CardHeader className="pb-2">
