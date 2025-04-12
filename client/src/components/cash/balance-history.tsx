@@ -3,23 +3,17 @@ import { BalanceHistoryEntry } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CalendarIcon, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, CalendarIcon } from "lucide-react";
+import { v4 as uuidv4 } from "uuid";
+import { 
+  Popover,
+  PopoverContent,
+  PopoverTrigger 
+} from "@/components/ui/popover";
 import { format } from "date-fns";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { v4 as uuidv4 } from "uuid";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
 
 interface BalanceHistoryProps {
   balanceHistory: BalanceHistoryEntry[];
@@ -36,100 +30,130 @@ export function BalanceHistory({
   const [newEntry, setNewEntry] = useState<Partial<BalanceHistoryEntry>>({
     id: uuidv4(),
     date: new Date(),
-    balance: initialBalance,
-    notes: "",
+    balance: initialBalance
   });
 
-  // Sort balance history by date
-  const sortedHistory = [...balanceHistory].sort((a, b) => 
-    new Date(a.date).getTime() - new Date(b.date).getTime()
-  );
-
-  // Prepare data for chart
-  const chartData = sortedHistory.map(entry => ({
-    date: format(new Date(entry.date), "MMM d, yyyy"),
-    balance: entry.balance,
-  }));
-
-  // Add a new balance history entry
-  const addEntry = () => {
-    if (!newEntry.date || newEntry.balance === undefined) {
+  // Add a new balance entry
+  const addBalanceEntry = () => {
+    if (!newEntry.balance) {
       toast({
-        title: "Incomplete data",
-        description: "Please fill in all required fields",
+        title: "Missing balance",
+        description: "Please enter a balance amount",
         variant: "destructive",
       });
       return;
     }
     
-    onChange([...balanceHistory, newEntry as BalanceHistoryEntry]);
+    const entry = {
+      ...newEntry,
+      id: uuidv4(),
+      date: newEntry.date || new Date(),
+      balance: newEntry.balance
+    } as BalanceHistoryEntry;
+    
+    // Sort history by date (newest first)
+    const updatedHistory = [...balanceHistory, entry].sort((a, b) => 
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+    
+    onChange(updatedHistory);
+    
+    // Reset form with current balance as default
     setNewEntry({
       id: uuidv4(),
       date: new Date(),
-      balance: initialBalance,
-      notes: "",
+      balance: newEntry.balance // Keep same balance for convenience
     });
   };
 
-  // Remove a balance history entry
-  const removeEntry = (id: string) => {
+  // Remove a balance entry
+  const removeBalanceEntry = (id: string) => {
     onChange(balanceHistory.filter(entry => entry.id !== id));
   };
 
   return (
     <div className="space-y-6">
-      {chartData.length > 1 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Balance History Trend</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart
-                data={chartData}
-                margin={{
-                  top: 5,
-                  right: 20,
-                  left: 20,
-                  bottom: 5,
-                }}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <Label htmlFor="entry-date">Date</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                id="entry-date"
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !newEntry.date && "text-muted-foreground"
+                )}
               >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Line
-                  type="monotone"
-                  dataKey="balance"
-                  stroke="#8884d8"
-                  activeDot={{ r: 8 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      )}
-      
-      {sortedHistory.length > 0 && (
-        <div className="space-y-2">
-          <div className="grid grid-cols-4 gap-2 font-medium text-sm">
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {newEntry.date ? (
+                  format(newEntry.date, "PPP")
+                ) : (
+                  <span>Pick a date</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={newEntry.date}
+                onSelect={(date) => 
+                  setNewEntry({ ...newEntry, date: date || new Date() })
+                }
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        <div>
+          <Label htmlFor="entry-balance">Balance</Label>
+          <Input
+            id="entry-balance"
+            type="number"
+            step="0.01"
+            value={newEntry.balance || ''}
+            onChange={(e) => setNewEntry({ 
+              ...newEntry, 
+              balance: e.target.value ? parseFloat(e.target.value) : undefined 
+            })}
+            placeholder="Current balance amount"
+          />
+        </div>
+
+        <div className="md:col-span-2">
+          <Button
+            type="button"
+            onClick={addBalanceEntry}
+            className="w-full"
+          >
+            <Plus className="h-4 w-4 mr-2" /> Add Balance Entry
+          </Button>
+        </div>
+      </div>
+
+      {balanceHistory.length > 0 && (
+        <div className="space-y-4 mt-6">
+          <div className="grid grid-cols-3 gap-2 font-medium text-sm">
             <div>Date</div>
             <div>Balance</div>
-            <div>Notes</div>
             <div></div>
           </div>
           
-          {sortedHistory.map((entry) => (
-            <div key={entry.id} className="grid grid-cols-4 gap-2 text-sm items-center">
+          {balanceHistory.map((entry) => (
+            <div key={entry.id} className="grid grid-cols-3 gap-2 items-center">
               <div>{format(new Date(entry.date), "MMM d, yyyy")}</div>
-              <div>${entry.balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-              <div>{entry.notes}</div>
-              <div>
+              <div>${entry.balance.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })}</div>
+              <div className="flex justify-end">
                 <Button 
                   type="button" 
                   variant="ghost" 
                   size="icon"
-                  onClick={() => removeEntry(entry.id)}
+                  onClick={() => removeBalanceEntry(entry.id)}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -138,69 +162,6 @@ export function BalanceHistory({
           ))}
         </div>
       )}
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="balance-date">Date</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                id="balance-date"
-                variant={"outline"}
-                className={cn(
-                  "w-full pl-3 text-left font-normal",
-                  !newEntry.date && "text-muted-foreground"
-                )}
-              >
-                {newEntry.date ? (
-                  format(new Date(newEntry.date), "PPP")
-                ) : (
-                  <span>Pick a date</span>
-                )}
-                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={newEntry.date ? new Date(newEntry.date) : undefined}
-                onSelect={(date) => setNewEntry({...newEntry, date})}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-
-        <div>
-          <Label htmlFor="balance-amount">Balance</Label>
-          <Input
-            id="balance-amount"
-            type="number"
-            step="0.01"
-            value={newEntry.balance || ''}
-            onChange={(e) => setNewEntry({...newEntry, balance: parseFloat(e.target.value) || 0})}
-          />
-        </div>
-
-        <div className="col-span-2">
-          <Label htmlFor="balance-notes">Notes</Label>
-          <Input
-            id="balance-notes"
-            value={newEntry.notes || ''}
-            onChange={(e) => setNewEntry({...newEntry, notes: e.target.value})}
-          />
-        </div>
-
-        <div className="col-span-2">
-          <Button
-            type="button"
-            onClick={addEntry}
-            className="w-full"
-          >
-            <Plus className="h-4 w-4 mr-2" /> Add Balance Entry
-          </Button>
-        </div>
-      </div>
     </div>
   );
 }

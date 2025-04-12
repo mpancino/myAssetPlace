@@ -57,6 +57,12 @@ export function CashAccountForm({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
+  const [balanceHistory, setBalanceHistory] = useState<BalanceHistoryEntry[]>(
+    defaultValues?.balanceHistory as BalanceHistoryEntry[] || []
+  );
+  const [transactionCategories, setTransactionCategories] = useState<TransactionCategory[]>(
+    defaultValues?.transactionCategories as TransactionCategory[] || []
+  );
 
   // Find the Cash/Bank Accounts asset class
   const cashAssetClass = assetClasses.find(
@@ -78,6 +84,8 @@ export function CashAccountForm({
       interestRate: 0,
       accountPurpose: "general",
       isOffsetAccount: false,
+      balanceHistory: [],
+      transactionCategories: [],
       ...defaultValues,
     },
   });
@@ -111,6 +119,9 @@ export function CashAccountForm({
   });
 
   const onSubmit = (data: InsertCashAccount) => {
+    // Add balance history and transaction categories to the data
+    data.balanceHistory = balanceHistory;
+    data.transactionCategories = transactionCategories;
     mutation.mutate(data);
   };
 
@@ -372,6 +383,27 @@ export function CashAccountForm({
                 </FormItem>
               )}
             />
+
+            {/* Advanced Features Tabs */}
+            <Tabs defaultValue="balance-history" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="balance-history">Balance History</TabsTrigger>
+                <TabsTrigger value="transaction-categories">Transaction Categories</TabsTrigger>
+              </TabsList>
+              <TabsContent value="balance-history" className="pt-4">
+                <BalanceHistory 
+                  balanceHistory={balanceHistory}
+                  onChange={setBalanceHistory}
+                  initialBalance={form.getValues("value")}
+                />
+              </TabsContent>
+              <TabsContent value="transaction-categories" className="pt-4">
+                <TransactionCategories 
+                  categories={transactionCategories}
+                  onChange={setTransactionCategories}
+                />
+              </TabsContent>
+            </Tabs>
 
             <div className="flex justify-end gap-2">
               <Button 
