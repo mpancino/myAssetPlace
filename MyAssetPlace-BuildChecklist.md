@@ -189,33 +189,33 @@ The development is divided into 11 logical phases:
 - [x] `[REQ-030]` Asset summary view implementation
 - [x] `[REQ-031]` Individual asset details view
 - [x] `[REQ-032]` Asset configuration (add, edit, delete)
-- [ ] `[REQ-035]` Financial metrics display
+- [x] `[REQ-035]` Financial metrics display
 - [x] `[REQ-103]` Asset class page overview/summary
-- [ ] `[REQ-134]` Bank account management (cash)
-- [ ] `[REQ-135]` Balance tracking (cash)
-- [ ] `[REQ-136]` Interest rate input (cash)
+- [x] `[REQ-134]` Bank account management (cash)
+- [x] `[REQ-135]` Balance tracking (cash)
+- [x] `[REQ-136]` Interest rate input (cash)
 - [ ] `[REQ-137]` Offset account functionality
-- [ ] `[REQ-138]` Account purpose tagging (cash)
-- [ ] `[REQ-139]` Cash account holding type classification
-- [ ] `[REQ-140]` Interest rate setting for cash assets
-- [ ] `[REQ-155]` Loan management implementation
-- [ ] `[REQ-156]` Loan details tracking
-- [ ] `[REQ-157]` Loan balance tracking
+- [x] `[REQ-138]` Account purpose tagging (cash)
+- [x] `[REQ-139]` Cash account holding type classification
+- [x] `[REQ-140]` Interest rate setting for cash assets
+- [x] `[REQ-155]` Loan management implementation
+- [x] `[REQ-156]` Loan details tracking
+- [x] `[REQ-157]` Loan balance tracking
 - [ ] `[REQ-158]` Offset account integration with loans
-- [ ] `[REQ-159]` Loan holding type classification
+- [x] `[REQ-159]` Loan holding type classification
 - [x] `[REQ-174]` Balance sheet tab implementation (basic version)
-- [ ] `[REQ-180]` Asset allocation visualization (basic version)
+- [x] `[REQ-180]` Asset allocation visualization (basic version)
 - [x] `[REQ-181]` Quick action buttons (add asset)
-- [ ] `[REQ-203]` Asset view switching implementation
+- [x] `[REQ-203]` Asset view switching implementation
 - [x] `[REQ-218]` Card design for asset representation
 - [x] `[REQ-219]` Data tables for asset lists
 - [x] `[REQ-243]` Asset class landing pages
 - [x] `[REQ-244]` Asset detail/edit wizard (basic mode)
 - [ ] `[REQ-245]` Asset detail/edit wizard (advanced mode)
-- [ ] `[REQ-266]` Cash/loan specific components
+- [x] `[REQ-266]` Cash/loan specific components
 - [x] `[REQ-297]` Asset visibility filtering
 - [x] `[REQ-307]` Asset visibility status tracking
-- [ ] `[REQ-340]` Dashboard integration for cash/loans
+- [x] `[REQ-340]` Dashboard integration for cash/loans
 
 ### Phase 4: Core Asset Management (Vertical Slice 2 - Real Estate & Mortgages)
 
