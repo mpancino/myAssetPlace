@@ -1832,6 +1832,7 @@ export default function AssetDetailPage() {
                                       // Database updates will occur when "Save Changes" is clicked
                                       // This ensures all changes are committed together
                                     }}
+                                    assetClassId={asset?.assetClassId}
                                     isEditMode={isEditing}
                                     isSaving={savePropertyExpensesMutation.isPending}
                                     // isSaved prop removed as it doesn't exist in new component
@@ -1853,6 +1854,7 @@ export default function AssetDetailPage() {
                                 console.log("Property expenses component triggered onChange in read-only mode");
                                 // We shouldn't reach here because of the overlay
                               }}
+                              assetClassId={asset?.assetClassId}
                               isEditMode={false}
                             />
 

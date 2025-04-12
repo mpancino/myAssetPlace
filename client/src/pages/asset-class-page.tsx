@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
 import { PropertyCard } from "@/components/property/property-card";
+import { useAssetClassDetails } from "@/hooks/use-asset-class-details";
 
 export default function AssetClassPage() {
   const { classId } = useParams<{ classId: string }>();
@@ -60,6 +61,9 @@ export default function AssetClassPage() {
       refetchAssets();
     }
   }, [classId, refetchAssetClass, refetchAssets]);
+  
+  // Get expense categories using our hook
+  const { expenseCategories, isLoading: isLoadingExpenseCategories } = useAssetClassDetails(parseInt(classId));
   
   // Filter assets by class ID and make additional adjustments for misclassified assets
   const assets = allAssets.filter(asset => {
@@ -232,6 +236,30 @@ export default function AssetClassPage() {
                   <div>
                     <dt className="text-sm text-muted-foreground">Default Income Yield</dt>
                     <dd className="text-lg font-medium">{(assetClass.defaultIncomeYield * 100).toFixed(2)}%</dd>
+                  </div>
+                )}
+                
+                {/* Display expense categories if this is a real estate asset class */}
+                {assetClass.name?.toLowerCase() === 'real estate' && (
+                  <div className="col-span-2 mt-4 border-t pt-4">
+                    <dt className="text-sm text-muted-foreground mb-2">Expense Categories</dt>
+                    <dd>
+                      {isLoadingExpenseCategories ? (
+                        <div className="flex gap-2">
+                          <Skeleton className="h-6 w-20" />
+                          <Skeleton className="h-6 w-20" />
+                          <Skeleton className="h-6 w-20" />
+                        </div>
+                      ) : expenseCategories && expenseCategories.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {expenseCategories.map((category, index) => (
+                            <Badge key={index} variant="outline">{category}</Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">No expense categories defined.</p>
+                      )}
+                    </dd>
                   </div>
                 )}
               </dl>
