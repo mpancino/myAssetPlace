@@ -404,7 +404,7 @@ export function InvestmentExpenses({
         variant: "destructive",
       });
     }
-  }, [expenses, onChange, toast]);
+  }, [expenses, onChange, toast, setContextExpenses]);
   
   // Calculate the total annual expenses
   const totalAnnualExpenses = Object.values(expenses).reduce(
