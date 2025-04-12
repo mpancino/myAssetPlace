@@ -77,7 +77,7 @@ const assetDetailSchema = z.object({
   propertyType: z.string().optional().nullable(),
   address: z.string().optional().nullable(),
   suburb: z.string().optional().nullable(),
-  city: z.string().optional().nullable(),
+  // city removed as it's not in the schema
   state: z.string().optional().nullable(),
   postcode: z.string().optional().nullable(),
   country: z.string().optional().nullable(),
@@ -180,7 +180,7 @@ export default function AssetDetailPage() {
         propertyType: asset.propertyType,
         address: asset.address,
         suburb: asset.suburb,
-        city: asset.city,
+        // city removed
         state: asset.state,
         postcode: asset.postcode,
         country: asset.country,
@@ -301,7 +301,7 @@ export default function AssetDetailPage() {
         propertyType: asset.propertyType,
         address: asset.address,
         suburb: asset.suburb,
-        city: asset.city,
+        // city removed
         state: asset.state,
         postcode: asset.postcode,
         country: asset.country,
