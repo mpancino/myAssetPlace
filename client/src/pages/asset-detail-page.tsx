@@ -153,6 +153,9 @@ export default function AssetDetailPage() {
   const { data: asset, isLoading: isLoadingAsset } = useQuery<Asset>({
     queryKey: [`/api/assets/${assetId}`],
     enabled: !!assetId,
+    staleTime: 0, // Disable caching for this query to always get fresh data
+    refetchOnMount: true, // Force refetch when component mounts
+    refetchOnWindowFocus: true, // Refetch when the window regains focus
   });
   
   // Fetch asset classes
@@ -485,6 +488,27 @@ export default function AssetDetailPage() {
     }
     
     // Ensure property expenses are properly passed to the mutation by explicitly setting them
+    console.log("[FORM SUBMIT] Final expenses object being sent:", JSON.stringify(expensesToSave));
+    
+    // Debug log to check if expenses match what's in the component state
+    if (currentPropertyExpenses) {
+      const currentKeys = Object.keys(currentPropertyExpenses);
+      const saveKeys = Object.keys(expensesToSave);
+      console.log("[FORM SUBMIT] Current expenses in state:", currentKeys.length);
+      console.log("[FORM SUBMIT] Expenses being saved:", saveKeys.length);
+      
+      // Check for any keys that might be in one but not the other
+      const missingInSave = currentKeys.filter(k => !saveKeys.includes(k));
+      const missingInCurrent = saveKeys.filter(k => !currentKeys.includes(k));
+      
+      if (missingInSave.length > 0) {
+        console.warn("[FORM SUBMIT] WARNING: These expense IDs are in state but not being saved:", missingInSave);
+      }
+      if (missingInCurrent.length > 0) {
+        console.warn("[FORM SUBMIT] WARNING: These expense IDs are being saved but not in state:", missingInCurrent);
+      }
+    }
+    
     updateAssetMutation.mutate({
       ...values,
       propertyExpenses: expensesToSave
