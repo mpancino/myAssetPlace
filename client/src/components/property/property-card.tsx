@@ -23,8 +23,17 @@ export function PropertyCard({
 }: PropertyCardProps) {
   const [, setLocation] = useLocation();
   
+  // Debug: Log property data
+  console.log("Property data:", property);
+  console.log("hasMortgage (camelCase):", property.hasMortgage);
+  console.log("has_mortgage (snake_case):", (property as any).has_mortgage);
+  
   // Determine if property is a rental
   const isRental = !!property.isRental;
+  
+  // Handle possible snake_case vs camelCase inconsistency
+  const hasMortgage = property.hasMortgage || (property as any).has_mortgage;
+  const mortgageAmount = property.mortgageAmount || (property as any).mortgage_amount;
   
   // Format rental income to monthly basis
   const formatRentalIncome = () => {
@@ -72,7 +81,7 @@ export function PropertyCard({
             {holdingType && (
               <Badge variant="outline">{holdingType.name}</Badge>
             )}
-            {property.hasMortgage && (
+            {hasMortgage && (
               <Badge variant="outline" className="bg-primary/10 text-primary">
                 <CreditCard className="h-3 w-3 mr-1" /> Has Mortgage
               </Badge>
@@ -95,7 +104,7 @@ export function PropertyCard({
           </div>
           
           {/* Show mortgage details if property has a mortgage */}
-          {property.hasMortgage && (
+          {hasMortgage && (
             <>
               <div className="flex justify-between">
                 <div className="text-sm text-muted-foreground flex items-center">
@@ -103,14 +112,14 @@ export function PropertyCard({
                   Mortgage Balance
                 </div>
                 <div className="font-medium text-destructive">
-                  {formatCurrency(property.mortgageAmount || 0)}
+                  {formatCurrency(mortgageAmount || 0)}
                 </div>
               </div>
               
               <div className="flex justify-between">
                 <div className="text-sm text-muted-foreground">Equity</div>
                 <div className="font-medium text-green-600">
-                  {formatCurrency((property.value || 0) - (property.mortgageAmount || 0))}
+                  {formatCurrency((property.value || 0) - (mortgageAmount || 0))}
                 </div>
               </div>
               
@@ -120,7 +129,7 @@ export function PropertyCard({
                   className="bg-green-600 h-1.5 rounded-full"
                   style={{ 
                     width: `${property.value ? 
-                      Math.min(100, 100 - (((property.mortgageAmount || 0) / property.value) * 100)) : 0}%` 
+                      Math.min(100, 100 - (((mortgageAmount || 0) / property.value) * 100)) : 0}%` 
                   }}
                 ></div>
               </div>
