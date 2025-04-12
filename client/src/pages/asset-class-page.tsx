@@ -35,7 +35,12 @@ export default function AssetClassPage() {
     data: assets, 
     isLoading: assetsLoading 
   } = useQuery<Asset[]>({ 
-    queryKey: ['/api/assets', { assetClassId: parseInt(classId) }],
+    queryKey: ['/api/assets'],
+    queryFn: async () => {
+      const res = await fetch(`/api/assets?assetClassId=${classId}`);
+      if (!res.ok) throw new Error('Failed to fetch assets');
+      return res.json();
+    },
     enabled: !!classId
   });
   
