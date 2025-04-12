@@ -139,6 +139,7 @@ export const assets = pgTable("assets", {
   rentalFrequency: text("rental_frequency"), // weekly, fortnightly, monthly
   vacancyRate: real("vacancy_rate"), // percent of time property is vacant
   propertyExpenses: json("property_expenses"), // e.g., strata, council rates, insurance, maintenance
+  investmentExpenses: json("investment_expenses"), // e.g., management fees, brokerage fees, etc.
   mortgageId: integer("mortgage_id"), // link to associated mortgage (if any)
   // Property mortgage fields (to store mortgage info directly on property)
   hasMortgage: boolean("has_mortgage").default(false),
@@ -276,6 +277,14 @@ export const insertAssetSchema = createInsertSchema(assets)
   })
   .extend({
     value: z.number().min(-1000000000, "Asset value must be greater than -1 billion").max(1000000000, "Asset value cannot exceed 1 billion"),
+    investmentExpenses: z.record(z.string(), z.object({
+      id: z.string(),
+      category: z.string(),
+      description: z.string(),
+      amount: z.number(),
+      frequency: z.string(),
+      annualTotal: z.number()
+    })).optional(),
   });
 
 export const insertCashAccountSchema = insertAssetSchema.extend({
@@ -392,6 +401,16 @@ export type ExpenseCategory = {
 
 // Property expense type for user assets
 export type PropertyExpense = {
+  id: string;
+  category: string;
+  description: string;
+  amount: number;
+  frequency: string;
+  annualTotal: number;
+};
+
+// Investment expense type for investment assets
+export type InvestmentExpense = {
   id: string;
   category: string;
   description: string;
