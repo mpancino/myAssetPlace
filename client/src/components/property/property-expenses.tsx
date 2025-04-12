@@ -160,32 +160,79 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
     return updatedExpenses;
   }, [processExpenseCommand, onChange]);
 
-  // External data sync
+  // Track if we have recent local changes that should take precedence
+  const hasRecentLocalChanges = useRef(false);
+  const localChangesTimestamp = useRef<number | null>(null);
+  
+  // Function to mark that we've made local changes
+  const markLocalChanges = useCallback(() => {
+    hasRecentLocalChanges.current = true;
+    localChangesTimestamp.current = Date.now();
+    
+    // Automatically clear the local changes flag after a reasonable time
+    // This ensures we eventually sync with server if a refetch doesn't happen
+    setTimeout(() => {
+      hasRecentLocalChanges.current = false;
+    }, 2000); // 2 seconds should be enough for most server operations to complete
+  }, []);
+  
+  // Function to check if we should accept external updates
+  const shouldAcceptExternalUpdates = useCallback(() => {
+    if (!hasRecentLocalChanges.current) return true;
+    
+    // If it's been more than 1.5 seconds since our local change,
+    // we'll accept external updates even if we flagged local changes
+    if (localChangesTimestamp.current && 
+        Date.now() - localChangesTimestamp.current > 1500) {
+      return true;
+    }
+    
+    return false;
+  }, []);
+  
+  // External data sync - with improved logic for handling local vs server state
   useEffect(() => {
+    // Always skip sync during active processing
     if (isProcessing) {
-      // Skip if we're currently processing an operation
       console.log('[SYNC SKIPPED] Skipping sync while processing local operation');
+      return;
+    }
+    
+    // Skip sync if we have recent local changes that should take precedence
+    if (hasRecentLocalChanges.current && !shouldAcceptExternalUpdates()) {
+      console.log('[SYNC SKIPPED] Recent local changes detected, preserving local state');
       return;
     }
     
     // Compare current expenses with incoming value
     const currentKeys = Object.keys(expenses);
     const incomingKeys = Object.keys(value || {});
+    const incomingExpenses = value || {};
     
     // Only sync if there's an actual difference
     if (JSON.stringify(currentKeys.sort()) !== JSON.stringify(incomingKeys.sort()) ||
-        JSON.stringify(expenses) !== JSON.stringify(value)) {
+        JSON.stringify(expenses) !== JSON.stringify(incomingExpenses)) {
       
       console.log('[SYNC] External data change detected');
+      console.log('Current expense count:', currentKeys.length);
+      console.log('Incoming expense count:', incomingKeys.length);
+      
+      // If we're accepting an update with fewer expenses than we have locally,
+      // it might be a race condition where the server hasn't processed our additions yet
+      if (incomingKeys.length < currentKeys.length && hasRecentLocalChanges.current) {
+        console.log('[SYNC DELAYED] Incoming data has fewer expenses than local state. Delaying sync to prevent data loss.');
+        return;
+      }
+      
       isExternalUpdate.current = true;
       
-      applyCommand({ type: 'SYNC', expenses: value || {} });
+      applyCommand({ type: 'SYNC', expenses: incomingExpenses });
       
       setTimeout(() => {
         isExternalUpdate.current = false;
-      }, 100);
+      }, 200);
     }
-  }, [value, expenses, applyCommand, isProcessing]);
+  }, [value, expenses, applyCommand, isProcessing, shouldAcceptExternalUpdates]);
 
   // Handler for adding a new expense
   const handleAddExpense = useCallback(() => {
@@ -207,6 +254,9 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
       annualTotal,
     };
     
+    // Mark that we have a local change that should take precedence
+    markLocalChanges();
+    
     applyCommand({ type: 'ADD', expense: newExpenseWithId });
     resetForm();
     
@@ -214,7 +264,7 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
       title: "Expense added",
       description: `Added ${newExpense.category} expense with annual total of ${formatCurrency(annualTotal)}`
     });
-  }, [newExpense, applyCommand, calculateAnnualTotal, resetForm, toast]);
+  }, [newExpense, applyCommand, calculateAnnualTotal, resetForm, toast, markLocalChanges]);
 
   // Handler for updating an existing expense
   const handleUpdateExpense = useCallback((expenseId: string) => {
@@ -226,6 +276,9 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
       });
       return;
     }
+    
+    // Mark that we have a local change that should take precedence
+    markLocalChanges();
     
     applyCommand({ 
       type: 'UPDATE', 
@@ -239,12 +292,15 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
       title: "Expense updated",
       description: `Updated ${newExpense.category} expense successfully`
     });
-  }, [newExpense, applyCommand, resetForm, toast]);
+  }, [newExpense, applyCommand, resetForm, toast, markLocalChanges]);
 
   // Handler for deleting an expense
   const handleDeleteExpense = useCallback((expenseId: string) => {
     const expenseToDelete = expenses[expenseId];
     if (!expenseToDelete) return;
+    
+    // Mark that we have a local change that should take precedence
+    markLocalChanges();
     
     applyCommand({ type: 'DELETE', id: expenseId });
     
@@ -252,7 +308,7 @@ export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: Prop
       title: "Expense deleted",
       description: `Removed ${expenseToDelete.category} expense of ${formatCurrency(expenseToDelete.amount)}`
     });
-  }, [expenses, applyCommand, toast]);
+  }, [expenses, applyCommand, toast, markLocalChanges]);
 
   // Handler for starting the edit process
   const handleStartEdit = useCallback((expense: PropertyExpense) => {
