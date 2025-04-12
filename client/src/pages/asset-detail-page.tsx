@@ -66,6 +66,27 @@ import {
 // Import shared types
 import type { PropertyExpense } from "@shared/schema";
 
+// Helper function to safely parse property expenses data
+function parsePropertyExpenses(data: any): Record<string, PropertyExpense> {
+  try {
+    // If it's a string, try to parse it as JSON
+    if (typeof data === 'string') {
+      return JSON.parse(data) as Record<string, PropertyExpense>;
+    }
+    
+    // If it's already an object, return it
+    if (data && typeof data === 'object') {
+      return data as Record<string, PropertyExpense>;
+    }
+    
+    // Return empty object as fallback
+    return {};
+  } catch (err) {
+    console.error('[ERROR] Failed to parse property expenses:', err);
+    return {};
+  }
+}
+
 // Asset detail validation schema
 const assetDetailSchema = z.object({
   name: z.string().min(1, "Asset name is required"),
