@@ -7,13 +7,15 @@ import { AssetAllocationChart } from "@/components/dashboard/asset-allocation-ch
 import { ViewToggle } from "@/components/dashboard/view-toggle";
 import FloatingActionButton from "@/components/ui/floating-action-button";
 import ModeToggle from "@/components/ui/mode-toggle";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
-import { Download, MoreHorizontal, Filter } from "lucide-react";
+import { Download, MoreHorizontal, Filter, Database } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Asset, AssetClass, AssetHoldingType, SubscriptionPlan } from "@shared/schema";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +31,7 @@ interface UserSubscription {
 export default function DashboardPage() {
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const { toast } = useToast();
   const [viewBy, setViewBy] = useState<"assetClass" | "holdingType">("assetClass");
 
   // Fetch user subscription details
@@ -59,6 +62,31 @@ export default function DashboardPage() {
   const { data: holdingTypes = [] } = useQuery<AssetHoldingType[]>({
     queryKey: ["/api/asset-holding-types"],
     enabled: !!user,
+  });
+  
+  // Add sample data mutation
+  const addSampleDataMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/user/add-sample-data");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Sample data added",
+        description: "Sample assets have been added to your account",
+        variant: "default",
+      });
+      // Invalidate queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/assets/by-class"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error adding sample data",
+        description: error.message || "There was an error adding sample data",
+        variant: "destructive",
+      });
+    },
   });
 
   // Placeholder functions
@@ -106,6 +134,15 @@ export default function DashboardPage() {
             
             {/* Desktop actions */}
             <div className="hidden md:flex mt-4 md:mt-0 space-x-3">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => addSampleDataMutation.mutate()} 
+                disabled={addSampleDataMutation.isPending}
+              >
+                <Database className="mr-2 h-4 w-4" />
+                Add Sample Data
+              </Button>
               <Button variant="outline" size="sm" onClick={handleExport}>
                 <Download className="mr-2 h-4 w-4" />
                 Export
@@ -126,6 +163,13 @@ export default function DashboardPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem 
+                    onClick={() => addSampleDataMutation.mutate()}
+                    disabled={addSampleDataMutation.isPending}
+                  >
+                    <Database className="mr-2 h-4 w-4" />
+                    Add Sample Data
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleExport}>
                     <Download className="mr-2 h-4 w-4" />
                     Export Data

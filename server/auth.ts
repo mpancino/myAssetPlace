@@ -253,13 +253,14 @@ export function setupAuth(app: Express) {
           console.log("Demo user logged in successfully");
           
           // Create demo assets for the user
-          try {
-            const assets = await createDemoAssets(user.id);
-            console.log(`Created ${assets.length} demo assets for user ID: ${user.id}`);
-          } catch (assetError) {
-            console.error("Error creating demo assets:", assetError);
-            // Continue even if asset creation fails - not a critical error
-          }
+          createDemoAssets(user.id)
+            .then(assets => {
+              console.log(`Created ${assets.length} demo assets for user ID: ${user.id}`);
+            })
+            .catch(assetError => {
+              console.error("Error creating demo assets:", assetError);
+              // Continue even if asset creation fails - not a critical error
+            });
           
           res.status(201).json(user);
         });
@@ -307,6 +308,26 @@ export function setupAuth(app: Express) {
       res.json(subscription);
     } catch (err) {
       res.status(500).json({ message: "Failed to fetch subscription details" });
+    }
+  });
+  
+  // Add sample data to the current user (for testing)
+  app.post("/api/user/add-sample-data", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      // Import the createDemoAssets function
+      const { createDemoAssets } = require("./utils/demo-data");
+      const assets = await createDemoAssets(req.user.id);
+      res.status(201).json({ 
+        message: "Sample data added successfully", 
+        assetCount: assets.length 
+      });
+    } catch (err) {
+      console.error("Error adding sample data:", err);
+      res.status(500).json({ message: "Failed to add sample data" });
     }
   });
 }
