@@ -54,6 +54,130 @@ const EXPENSE_CATEGORIES = [
   "Other",
 ];
 
+// A new component to show expense analysis
+export function PropertyExpenseAnalysis({ 
+  expenses, 
+  rentalIncome = 0,
+  rentalFrequency = "monthly",
+  currencySymbol = "$"
+}: {
+  expenses: Record<string, PropertyExpense>;
+  rentalIncome?: number;
+  rentalFrequency?: string;
+  currencySymbol?: string;
+}) {
+  // Calculate total annual expenses
+  const totalAnnualExpenses = useMemo(() => 
+    Object.values(expenses).reduce(
+      (total, expense) => total + expense.annualTotal, 0
+    ), [expenses]);
+  
+  // Calculate annual rental income
+  const annualRentalIncome = useMemo(() => {
+    if (!rentalIncome) return 0;
+    const FREQUENCY_MULTIPLIER: {[key: string]: number} = {
+      weekly: 52,
+      fortnightly: 26,
+      monthly: 12,
+      quarterly: 4,
+      annually: 1
+    };
+    return rentalIncome * (FREQUENCY_MULTIPLIER[rentalFrequency] || 0);
+  }, [rentalIncome, rentalFrequency]);
+  
+  // Calculate expense ratio
+  const expenseRatio = useMemo(() => 
+    annualRentalIncome > 0 ? (totalAnnualExpenses / annualRentalIncome) * 100 : 0
+  , [totalAnnualExpenses, annualRentalIncome]);
+  
+  // Calculate net rental income
+  const netAnnualRentalIncome = annualRentalIncome - totalAnnualExpenses;
+  
+  // Group expenses by category for the chart
+  const expensesByCategory = useMemo(() => {
+    const categories: {[key: string]: number} = {};
+    Object.values(expenses).forEach(expense => {
+      if (!categories[expense.category]) {
+        categories[expense.category] = 0;
+      }
+      categories[expense.category] += expense.annualTotal;
+    });
+    return categories;
+  }, [expenses]);
+  
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center text-lg">
+            <PieChart className="mr-2 h-5 w-5 text-primary" /> Expense Analysis
+          </CardTitle>
+          <CardDescription>
+            {Object.keys(expenses).length > 0 
+              ? `Summary of ${Object.keys(expenses).length} property expenses`
+              : "No expenses added yet"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <div className="text-sm text-muted-foreground mb-1">Total Annual Expenses</div>
+              <div className="text-xl font-semibold">{formatCurrency(totalAnnualExpenses, currencySymbol)}</div>
+            </div>
+            {annualRentalIncome > 0 && (
+              <div>
+                <div className="text-sm text-muted-foreground mb-1">Expense to Income Ratio</div>
+                <div className="text-xl font-semibold">{expenseRatio.toFixed(1)}%</div>
+              </div>
+            )}
+            {annualRentalIncome > 0 && (
+              <div>
+                <div className="text-sm text-muted-foreground mb-1">Annual Rental Income</div>
+                <div className="text-xl font-semibold text-green-600">
+                  {formatCurrency(annualRentalIncome, currencySymbol)}
+                </div>
+              </div>
+            )}
+            {annualRentalIncome > 0 && (
+              <div>
+                <div className="text-sm text-muted-foreground mb-1">Net Annual Rental Income</div>
+                <div className={cn(
+                  "text-xl font-semibold",
+                  netAnnualRentalIncome >= 0 ? "text-green-600" : "text-red-600"
+                )}>
+                  {formatCurrency(netAnnualRentalIncome, currencySymbol)}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {Object.keys(expensesByCategory).length > 0 && (
+            <div className="mt-4">
+              <div className="text-sm font-medium mb-2">Expense Breakdown by Category</div>
+              <div className="space-y-2">
+                {Object.entries(expensesByCategory).map(([category, amount]) => (
+                  <div key={category} className="space-y-1">
+                    <div className="flex justify-between text-sm">
+                      <span>{category}</span>
+                      <span className="font-medium">{formatCurrency(amount, currencySymbol)}</span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-2">
+                      <div 
+                        className="bg-primary h-2 rounded-full"
+                        style={{ width: `${(amount / totalAnnualExpenses) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export function PropertyExpenses({ value, onChange, currencySymbol = "$" }: PropertyExpensesProps) {
   const { toast } = useToast();
   const [isAddingExpense, setIsAddingExpense] = useState(false);
