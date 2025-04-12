@@ -1738,15 +1738,30 @@ export default function AssetDetailPage() {
                             )}
                           />
                         ) : asset.propertyExpenses ? (
-                          <PropertyExpenses
-                            value={parsePropertyExpenses(asset.propertyExpenses)}
-                            onChange={(value) => {
-                              // Read-only when not editing
-                              console.log("Property expenses component triggered onChange in read-only mode");
-                            }}
-                          />
+                          <div className="relative">
+                            {/* Read-only overlay when not in edit mode */}
+                            <div className="absolute inset-0 bg-transparent z-10" onClick={() => setIsEditing(true)}></div>
+                            <PropertyExpenses
+                              value={parsePropertyExpenses(asset.propertyExpenses)}
+                              onChange={(value) => {
+                                // Read-only when not editing - should trigger edit mode
+                                console.log("Property expenses component triggered onChange in read-only mode");
+                                // We shouldn't reach here because of the overlay
+                              }}
+                            />
+                            <div className="mt-4 flex justify-center">
+                              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                                <Edit className="mr-2 h-4 w-4" /> Edit Expenses
+                              </Button>
+                            </div>
+                          </div>
                         ) : (
-                          <p className="text-muted-foreground">No property expenses have been added yet.</p>
+                          <div className="text-center p-6 border rounded border-dashed">
+                            <p className="text-muted-foreground mb-4">No property expenses have been added yet.</p>
+                            <Button variant="outline" onClick={() => setIsEditing(true)}>
+                              <Plus className="mr-2 h-4 w-4" /> Add Expenses
+                            </Button>
+                          </div>
                         )}
                       </CardContent>
                     </Card>

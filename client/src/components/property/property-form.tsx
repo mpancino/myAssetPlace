@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
-import { insertPropertySchema, InsertProperty, AssetClass, AssetHoldingType } from "@shared/schema";
+import { insertPropertySchema, InsertProperty, AssetClass, AssetHoldingType, PropertyExpense } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -876,7 +876,7 @@ export function PropertyForm({
           render={({ field }) => (
             <FormItem>
               <PropertyExpenses 
-                value={field.value as Record<string, any>}
+                value={field.value as Record<string, PropertyExpense> || {}}
                 onChange={field.onChange}
               />
               <FormMessage />
