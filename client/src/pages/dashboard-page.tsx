@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Download, MoreHorizontal, Filter } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Asset, AssetClass, AssetHoldingType } from "@shared/schema";
+import { Asset, AssetClass, AssetHoldingType, SubscriptionPlan } from "@shared/schema";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,13 +21,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+// Define subscription type
+interface UserSubscription {
+  plan: SubscriptionPlan;
+}
+
 export default function DashboardPage() {
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const [viewBy, setViewBy] = useState<"assetClass" | "holdingType">("assetClass");
 
   // Fetch user subscription details
-  const { data: subscription } = useQuery({
+  const { data: subscription = { plan: { allowedInterfaceModes: ["basic"] } } } = useQuery<UserSubscription>({
     queryKey: ["/api/user/subscription"],
     enabled: !!user,
   });
@@ -107,7 +112,7 @@ export default function DashboardPage() {
               </Button>
               <ModeToggle 
                 currentMode={user?.preferredMode || "basic"} 
-                allowedModes={(subscription?.plan?.allowedInterfaceModes as string[]) || ["basic"]} 
+                allowedModes={subscription.plan.allowedInterfaceModes as string[]} 
               />
             </div>
             
@@ -160,16 +165,27 @@ export default function DashboardPage() {
           />
         </div>
 
+        {/* Advanced Asset Allocation Chart with View Toggling */}
+        <div className="mb-6">
+          <ViewToggle view={viewBy} onChange={setViewBy} />
+          <AssetAllocationChart 
+            assets={assets} 
+            assetClasses={assetClasses} 
+            holdingTypes={holdingTypes} 
+            viewBy={viewBy} 
+          />
+        </div>
+
         {/* Asset allocation and Recent assets in different layouts based on screen size */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Asset allocation - full width on mobile/tablet, half width on desktop */}
           <div className="lg:col-span-1">
-            <AssetAllocation data={assetsByClass || []} />
+            <AssetAllocation data={assetsByClass} />
           </div>
 
           {/* Recent assets - full width on mobile/tablet, half width on desktop */}
           <div className="lg:col-span-1">
-            <RecentAssets assets={assets || []} />
+            <RecentAssets assets={assets} />
           </div>
         </div>
 
