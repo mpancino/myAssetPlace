@@ -242,7 +242,21 @@ export default function AddAssetPage() {
         if (selectedAssetClass) {
           console.log(`Asset class name: "${selectedAssetClass.name}", ID: ${selectedAssetClass.id}`);
           
-          // Redirect based on asset class type
+          // First check for asset class ID direct routing
+          if (selectedAssetClass.id === 9) {
+            // Employee Stock Options (ID 9) should always go to the stock options form
+            console.log(`Routing BY ID: Stock Option Form (/add-stock-option/${selectedAssetClass.id}) for ID: 9`);
+            setLocation(`/add-stock-option/${selectedAssetClass.id}`);
+            return; // Exit early
+          } 
+          else if (selectedAssetClass.id === 4) {
+            // Investments (ID 4) should always go to the share form
+            console.log(`Routing BY ID: Share Form (/add-share/${selectedAssetClass.id}) for ID: 4`);
+            setLocation(`/add-share/${selectedAssetClass.id}`);
+            return; // Exit early
+          }
+          
+          // Then check asset class name-based routing for backward compatibility
           if (selectedAssetClass.name.toLowerCase() === 'real estate') {
             console.log("Redirecting to property form");
             // Redirect to property-specific form
@@ -261,6 +275,22 @@ export default function AddAssetPage() {
             // Redirect to loan-specific form
             setLocation(`/add-loan?classId=${selectedAssetClass.id}`);
             return; // Exit early to prevent further processing
+          } else if (selectedAssetClass.name.toLowerCase().includes('share') || 
+                     selectedAssetClass.name.toLowerCase().includes('stock') || 
+                     selectedAssetClass.name.toLowerCase().includes('equit')) {
+            console.log(`Redirecting to share form for ID: ${selectedAssetClass.id}`);
+            setLocation(`/add-share/${selectedAssetClass.id}`);
+            return; // Exit early
+          } else if (selectedAssetClass.name.toLowerCase().includes('option')) {
+            console.log(`Redirecting to stock option form for ID: ${selectedAssetClass.id}`);
+            setLocation(`/add-stock-option/${selectedAssetClass.id}`);
+            return; // Exit early
+          } else if (selectedAssetClass.name.toLowerCase().includes('retirement') || 
+                     selectedAssetClass.name.toLowerCase().includes('superannuation') || 
+                     selectedAssetClass.name.toLowerCase().includes('pension')) {
+            console.log(`Redirecting to retirement form for ID: ${selectedAssetClass.id}`);
+            setLocation(`/add-retirement/${selectedAssetClass.id}`);
+            return; // Exit early
           }
           // For other asset types, continue with the generic form
         }
