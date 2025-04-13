@@ -428,14 +428,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/asset-holding-types/:id", isAdmin, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      
+      // Debug logging for incoming request
+      console.log('[ASSET_HOLDING_TYPE] Update request for ID:', id);
+      console.log('[ASSET_HOLDING_TYPE] Request body:', JSON.stringify(req.body));
+      
+      // Check if taxSettings exists and log its type/value
+      if (req.body.taxSettings !== undefined) {
+        console.log('[ASSET_HOLDING_TYPE] Incoming taxSettings type:', typeof req.body.taxSettings);
+        console.log('[ASSET_HOLDING_TYPE] Incoming taxSettings value:', 
+          typeof req.body.taxSettings === 'string' 
+            ? req.body.taxSettings 
+            : JSON.stringify(req.body.taxSettings));
+      }
+      
       const validatedData = insertAssetHoldingTypeSchema.partial().parse(req.body);
+      
+      // Log after validation
+      console.log('[ASSET_HOLDING_TYPE] After validation - taxSettings:', 
+        validatedData.taxSettings ? JSON.stringify(validatedData.taxSettings) : 'undefined');
+      
       const type = await storage.updateAssetHoldingType(id, validatedData);
       if (!type) {
         return res.status(404).json({ message: "Asset holding type not found" });
       }
+      
+      // Log what's being sent back
+      console.log('[ASSET_HOLDING_TYPE] Response data:', JSON.stringify(type));
+      console.log('[ASSET_HOLDING_TYPE] Response taxSettings:', 
+        type.taxSettings ? JSON.stringify(type.taxSettings) : 'null/undefined');
+      
       res.json(type);
     } catch (err) {
+      console.error('[ASSET_HOLDING_TYPE] Error updating:', err);
+      
       if (err instanceof z.ZodError) {
+        console.log('[ASSET_HOLDING_TYPE] Zod validation error:', JSON.stringify(err.errors));
         return res.status(400).json({ errors: err.errors });
       }
       res.status(500).json({ message: "Failed to update asset holding type" });

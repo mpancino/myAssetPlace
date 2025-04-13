@@ -478,9 +478,38 @@ export const insertCountrySchema = createInsertSchema(countries).omit({
   id: true,
 });
 
-export const insertAssetHoldingTypeSchema = createInsertSchema(assetHoldingTypes).omit({
-  id: true,
-});
+export const insertAssetHoldingTypeSchema = createInsertSchema(assetHoldingTypes)
+  .omit({
+    id: true,
+  })
+  .transform((data) => {
+    // Add detailed logging for taxSettings transformation
+    console.log('[SCHEMA] Transform input data:', JSON.stringify(data));
+    
+    if (data.taxSettings !== undefined) {
+      console.log('[SCHEMA] Input taxSettings type:', typeof data.taxSettings);
+      console.log('[SCHEMA] Input taxSettings raw value:',
+        typeof data.taxSettings === 'string' 
+          ? data.taxSettings.slice(0, 200) + (data.taxSettings.length > 200 ? '...' : '')
+          : JSON.stringify(data.taxSettings));
+        
+      // If taxSettings is a string, attempt to parse it
+      if (typeof data.taxSettings === 'string') {
+        try {
+          const parsedSettings = JSON.parse(data.taxSettings);
+          data.taxSettings = parsedSettings;
+          console.log('[SCHEMA] Successfully parsed taxSettings JSON');
+        } catch (e) {
+          console.error('[SCHEMA] Failed to parse taxSettings JSON:', e);
+          // If parsing fails, set to empty object
+          data.taxSettings = {};
+        }
+      }
+    }
+    
+    console.log('[SCHEMA] Transformed data:', JSON.stringify(data));
+    return data;
+  });
 
 export const insertAssetClassSchema = createInsertSchema(assetClasses).omit({
   id: true,

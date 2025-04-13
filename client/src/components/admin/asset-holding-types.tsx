@@ -177,6 +177,14 @@ export default function AssetHoldingTypes() {
   // Form submission for editing holding type
   function onEditSubmit(values: EditHoldingTypeFormValues) {
     if (!selectedType) return;
+    
+    // Debug logging for tax settings
+    console.log('[ADMIN_DEBUG] Edit submission - raw tax settings:', values.taxSettings);
+    console.log('[ADMIN_DEBUG] Edit submission - parsed tax settings JSON:', 
+      typeof values.taxSettings === 'string' 
+        ? 'Still string - not parsed yet' 
+        : JSON.stringify(values.taxSettings));
+    
     updateHoldingType.mutate({ id: selectedType.id, data: values });
   }
 

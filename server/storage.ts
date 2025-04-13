@@ -175,12 +175,36 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateAssetHoldingType(id: number, typeData: Partial<AssetHoldingType>): Promise<AssetHoldingType | undefined> {
-    const [updatedType] = await db
-      .update(assetHoldingTypes)
-      .set(typeData)
-      .where(eq(assetHoldingTypes.id, id))
-      .returning();
-    return updatedType;
+    console.log('[STORAGE] updateAssetHoldingType called for ID:', id);
+    console.log('[STORAGE] typeData:', JSON.stringify(typeData));
+    
+    // Deep inspect the taxSettings property
+    if ('taxSettings' in typeData) {
+      console.log('[STORAGE] taxSettings type:', typeof typeData.taxSettings);
+      console.log('[STORAGE] taxSettings value:', 
+        typeData.taxSettings ? JSON.stringify(typeData.taxSettings) : 'null/undefined');
+    }
+    
+    try {
+      const [updatedType] = await db
+        .update(assetHoldingTypes)
+        .set(typeData)
+        .where(eq(assetHoldingTypes.id, id))
+        .returning();
+      
+      console.log('[STORAGE] DB update completed, result:', updatedType ? 'success' : 'no record found');
+      
+      if (updatedType) {
+        console.log('[STORAGE] Returned taxSettings type:', typeof updatedType.taxSettings);
+        console.log('[STORAGE] Returned taxSettings value:', 
+          updatedType.taxSettings ? JSON.stringify(updatedType.taxSettings) : 'null/undefined');
+      }
+      
+      return updatedType;
+    } catch (error) {
+      console.error('[STORAGE] Error in updateAssetHoldingType:', error);
+      throw error;
+    }
   }
 
   async listAssetHoldingTypes(countryId?: number): Promise<AssetHoldingType[]> {
