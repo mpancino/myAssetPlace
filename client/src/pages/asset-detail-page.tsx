@@ -1198,7 +1198,7 @@ export default function AssetDetailPage() {
           <div className="flex space-x-2">
             {!isEditing ? (
               <>
-                {/* Conditional Edit button: Cash accounts go to dedicated edit page */}
+                {/* Conditional Edit button for different asset types */}
                 {selectedClass && 
                  (selectedClass.name.toLowerCase().includes("cash") || 
                   selectedClass.name.toLowerCase().includes("bank")) ? (
@@ -1207,6 +1207,16 @@ export default function AssetDetailPage() {
                     onClick={() => setLocation(`/edit-cash-account/${assetId}`)}
                   >
                     <Edit className="mr-2 h-4 w-4" /> Edit Cash Account
+                  </Button>
+                ) : selectedClass && 
+                 (selectedClass.name.toLowerCase().includes("retirement") || 
+                  selectedClass.name.toLowerCase().includes("superannuation") ||
+                  selectedClass.name.toLowerCase().includes("pension")) ? (
+                  <Button 
+                    variant="outline"
+                    onClick={() => setLocation(`/edit-retirement/${assetId}`)}
+                  >
+                    <Edit className="mr-2 h-4 w-4" /> Edit Retirement Account
                   </Button>
                 ) : (
                   <Button 
