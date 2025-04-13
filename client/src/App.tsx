@@ -12,6 +12,7 @@ import EditCashAccountPage from "@/pages/edit-cash-account-page";
 import AddLoanPage from "@/pages/add-loan-page";
 import AddPropertyPage from "@/pages/add-property-page";
 import AddSharePage from "@/pages/add-share-page";
+import EditSharePage from "@/pages/edit-share-page"; 
 import AddStockOptionPage from "@/pages/add-stock-option-page";
 import EditStockOptionPage from "@/pages/edit-stock-option-page";
 import AddRetirementPage from "@/pages/add-retirement-page";
@@ -50,6 +51,7 @@ function Router() {
       <ProtectedRoute path="/add-stock-option" component={AddStockOptionPage} />
       <ProtectedRoute path="/add-stock-option/:classId" component={AddStockOptionPage} />
       <ProtectedRoute path="/edit-stock-option/:assetId" component={EditStockOptionPage} />
+      <ProtectedRoute path="/edit-share/:assetId" component={EditSharePage} />
       <ProtectedRoute path="/add-retirement" component={AddRetirementPage} />
       <ProtectedRoute path="/add-retirement/:classId" component={AddRetirementPage} />
       <ProtectedRoute path="/edit-retirement/:assetId" component={EditRetirementPage} />
