@@ -66,7 +66,10 @@ export function ShareForm({
     defaultValues?.purchaseHistory || []
   );
   const [dividendHistory, setDividendHistory] = useState<DividendTransaction[]>(
-    defaultValues?.dividendHistory || []
+    defaultValues?.dividendHistory?.map(d => ({
+      ...d,
+      frequency: d.frequency || "quarterly" // Ensure frequency is set
+    })) || []
   );
   const [newTransaction, setNewTransaction] = useState<Partial<SharePurchaseTransaction>>({
     id: uuidv4(),
@@ -188,7 +191,7 @@ export function ShareForm({
   };
 
   // Handle expenses
-  const handleExpensesChange = (expenses: any) => {
+  const handleExpensesChange = (expenses: Record<string, any>) => {
     form.setValue("investmentExpenses", expenses);
   };
 

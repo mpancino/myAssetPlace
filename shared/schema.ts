@@ -405,6 +405,7 @@ export const insertShareSchema = insertAssetSchema.extend({
     id: z.string(),
     date: z.date(),
     amount: z.number().min(0),
+    frequency: z.enum(["monthly", "quarterly", "semi-annual", "annual"]),
     frankedAmount: z.number().min(0).optional(),
     notes: z.string().optional(),
   })).optional(),
@@ -522,6 +523,7 @@ export type DividendTransaction = {
   id: string;
   date: Date;
   amount: number;
+  frequency: "monthly" | "quarterly" | "semi-annual" | "annual";
   frankedAmount?: number;
   notes?: string;
 };
