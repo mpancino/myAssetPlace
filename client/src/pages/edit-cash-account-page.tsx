@@ -127,6 +127,28 @@ export default function EditCashAccountPage() {
                 // Handle arrays with proper typing
                 balanceHistory: Array.isArray(asset.balanceHistory) ? asset.balanceHistory : [],
                 transactionCategories: Array.isArray(asset.transactionCategories) ? asset.transactionCategories : [],
+                
+                // Handle investment expenses and property expenses properly with empty objects that have correct type signatures
+                investmentExpenses: asset.investmentExpenses ? 
+                  { ...asset.investmentExpenses } : 
+                  {} as unknown as Record<string, {
+                    id: string;
+                    description: string;
+                    category: string;
+                    amount: number;
+                    frequency: string;
+                    annualTotal: number;
+                  }>,
+                propertyExpenses: asset.propertyExpenses ? 
+                  { ...asset.propertyExpenses } : 
+                  {} as unknown as Record<string, {
+                    id: string;
+                    description: string;
+                    category: string;
+                    amount: number;
+                    frequency: string;
+                    annualTotal: number;
+                  }>,
               }}
               isEditing={true}
               assetId={assetId}

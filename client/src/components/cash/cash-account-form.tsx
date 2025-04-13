@@ -113,7 +113,9 @@ export function CashAccountForm({
         // But force these fields to have proper values in case they're missing
         assetClassId: defaultValues.assetClassId || initialAssetClassId,
         assetHoldingTypeId: defaultValues.assetHoldingTypeId || holdingTypes[0]?.id,
-        accountType: defaultValues.accountType || "savings",
+        accountType: (defaultValues.accountType && ['savings', 'checking', 'term_deposit', 'other'].includes(defaultValues.accountType)) 
+          ? (defaultValues.accountType as "savings" | "checking" | "term_deposit" | "other")
+          : "savings",
         accountPurpose: defaultValues.accountPurpose || "general",
         // Ensure numeric fields are properly initialized
         value: defaultValues.value ?? 0,
@@ -259,6 +261,15 @@ export function CashAccountForm({
       // Force AssetHoldingTypeId to be a number
       submitData.assetHoldingTypeId = typeof submitData.assetHoldingTypeId === 'string' ? 
         parseInt(submitData.assetHoldingTypeId) : (submitData.assetHoldingTypeId || 1);
+        
+      // Ensure accountType is a valid enum value
+      if (!['savings', 'checking', 'term_deposit', 'other'].includes(submitData.accountType)) {
+        submitData.accountType = 'savings';
+      }
+        
+      // Ensure expenses are properly initialized as objects, not null
+      submitData.investmentExpenses = submitData.investmentExpenses || {};
+      submitData.propertyExpenses = submitData.propertyExpenses || {};
       
       // Add detailed debugging
       console.log("Submitting cash account data:", submitData);
