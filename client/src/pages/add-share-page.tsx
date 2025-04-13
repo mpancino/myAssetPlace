@@ -9,9 +9,13 @@ import MainLayout from "@/components/layout/main-layout";
 import { Loader2 } from "lucide-react";
 
 export default function AddSharePage() {
+  console.log("PAGE LOADED: AddSharePage - for Share Holdings with dividend tracking");
+  
   const [location, setLocation] = useLocation();
   const params = new URLSearchParams(window.location.search);
   const classId = params.get("classId");
+  
+  console.log("URL classId param:", classId);
 
   // Fetch asset classes
   const { data: assetClasses = [], isLoading: assetClassesLoading } = useQuery<AssetClass[]>({

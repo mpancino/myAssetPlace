@@ -131,37 +131,45 @@ export default function AssetClassPage() {
   const handleAddAsset = () => {
     if (!assetClass) return;
     
-    console.log(`Adding asset for class ID: ${assetClass.id}, name: ${assetClass.name}`);
+    console.log(`BUTTON PRESS: Adding asset for class ID: ${assetClass.id}, name: ${assetClass.name}`);
     
     // Navigate to the appropriate add asset page based on asset class type
     const lowerCaseName = assetClass.name?.toLowerCase() || '';
+    console.log(`ASSET CLASS NAME: "${lowerCaseName}"`);
     
     // For Cash & Bank Accounts, we use a query parameter
     if (lowerCaseName.includes('cash') || lowerCaseName.includes('bank')) {
+      console.log(`ROUTING TO: Cash Account Form (/add-cash-account?classId=${assetClass.id})`);
       setLocation(`/add-cash-account?classId=${assetClass.id}`);
     } 
     // For Property/Real Estate, we use a path parameter
     else if (lowerCaseName.includes('property') || lowerCaseName.includes('real estate')) {
+      console.log(`ROUTING TO: Property Form (/add-property/${assetClass.id})`);
       setLocation(`/add-property/${assetClass.id}`);
     } 
     // For Loans, we use a query parameter
     else if (lowerCaseName.includes('loan') || lowerCaseName.includes('liabilit') || lowerCaseName.includes('debt')) {
+      console.log(`ROUTING TO: Loan Form (/add-loan?classId=${assetClass.id})`);
       setLocation(`/add-loan?classId=${assetClass.id}`);
     }
     // For Shares, we use a path parameter
     else if (lowerCaseName.includes('share') || lowerCaseName.includes('stock') || lowerCaseName.includes('equit')) {
+      console.log(`ROUTING TO: Share Form (/add-share/${assetClass.id})`);
       setLocation(`/add-share/${assetClass.id}`);
     }
     // For Stock Options
     else if (lowerCaseName.includes('option')) {
+      console.log(`ROUTING TO: Stock Option Form (/add-stock-option/${assetClass.id})`);
       setLocation(`/add-stock-option/${assetClass.id}`);
     }
     // For Retirement accounts
     else if (lowerCaseName.includes('retirement') || lowerCaseName.includes('superannuation') || lowerCaseName.includes('pension')) {
+      console.log(`ROUTING TO: Retirement Form (/add-retirement/${assetClass.id})`);
       setLocation(`/add-retirement/${assetClass.id}`);
     }
     // For other asset types, redirect to the generic form with the classId parameter
     else {
+      console.log(`ROUTING TO: Generic Asset Form (/add-asset?classId=${assetClass.id})`);
       setLocation(`/add-asset?classId=${assetClass.id}`);
     }
   };

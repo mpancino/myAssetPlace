@@ -76,6 +76,10 @@ export function StockOptionForm({
   isEditing = false,
   assetId,
 }: StockOptionFormProps) {
+  console.log("FORM LOADED: StockOptionForm with vesting schedule tab");
+  console.log("PROPS: isEditing:", isEditing, "assetId:", assetId);
+  console.log("DEFAULT VALUES:", defaultValues);
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();

@@ -46,6 +46,10 @@ export function ShareForm({
   isEditing = false,
   assetId,
 }: ShareFormProps) {
+  console.log("FORM LOADED: ShareForm with dividend tracking tab");
+  console.log("PROPS: isEditing:", isEditing, "assetId:", assetId);
+  console.log("DEFAULT VALUES:", defaultValues);
+  
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();

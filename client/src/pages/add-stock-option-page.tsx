@@ -9,9 +9,13 @@ import MainLayout from "@/components/layout/main-layout";
 import { Loader2 } from "lucide-react";
 
 export default function AddStockOptionPage() {
+  console.log("PAGE LOADED: AddStockOptionPage - for Stock Options with vesting schedules");
+  
   const [location, setLocation] = useLocation();
   const params = new URLSearchParams(window.location.search);
   const classId = params.get("classId");
+  
+  console.log("URL classId param:", classId);
 
   // Fetch asset classes
   const { data: assetClasses = [], isLoading: assetClassesLoading } = useQuery<AssetClass[]>({
