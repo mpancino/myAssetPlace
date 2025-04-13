@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DividendTransaction } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,13 @@ import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface DividendHistoryProps {
   dividendHistory: DividendTransaction[];
@@ -35,7 +42,7 @@ export function DividendHistory({
     id: uuidv4(),
     date: new Date(),
     amount: 0,
-    frankedAmount: 0,
+    frequency: "quarterly",
     notes: ""
   });
 
@@ -43,8 +50,8 @@ export function DividendHistory({
   const addDividendEntry = () => {
     if (!newEntry.amount) {
       toast({
-        title: "Missing amount",
-        description: "Please enter a dividend amount",
+        title: "Incomplete data",
+        description: "Please enter the dividend amount",
         variant: "destructive",
       });
       return;
@@ -55,7 +62,7 @@ export function DividendHistory({
       id: uuidv4(),
       date: newEntry.date || new Date(),
       amount: newEntry.amount,
-      frankedAmount: newEntry.frankedAmount || 0,
+      frequency: newEntry.frequency || "quarterly",
       notes: newEntry.notes || ""
     } as DividendTransaction;
     
@@ -66,21 +73,12 @@ export function DividendHistory({
     
     onChange(updatedHistory);
     
-    // Calculate and update dividend yield if callback provided
-    if (onYieldChange && currentPrice > 0 && sharesQuantity > 0) {
-      // Calculate annual dividend based on history
-      // This is a simplification - in reality would need to analyze frequency
-      const totalDividend = updatedHistory.reduce((sum, entry) => sum + entry.amount, 0);
-      const annualYield = (totalDividend / (currentPrice * sharesQuantity)) * 100;
-      onYieldChange(annualYield);
-    }
-    
-    // Reset form but keep date for convenience
+    // Reset form but keep date and frequency for convenience
     setNewEntry({
       id: uuidv4(),
       date: newEntry.date,
       amount: 0,
-      frankedAmount: 0,
+      frequency: newEntry.frequency,
       notes: ""
     });
   };
@@ -89,19 +87,70 @@ export function DividendHistory({
   const removeDividendEntry = (id: string) => {
     const updatedHistory = dividendHistory.filter(entry => entry.id !== id);
     onChange(updatedHistory);
-    
-    // Update dividend yield if callback provided
-    if (onYieldChange && currentPrice > 0 && sharesQuantity > 0) {
-      const totalDividend = updatedHistory.reduce((sum, entry) => sum + entry.amount, 0);
-      const annualYield = (totalDividend / (currentPrice * sharesQuantity)) * 100;
-      onYieldChange(annualYield);
-    }
   };
 
-  // Calculate totals
-  const totalDividend = dividendHistory.reduce((sum, entry) => sum + entry.amount, 0);
-  const totalFranked = dividendHistory.reduce((sum, entry) => sum + (entry.frankedAmount || 0), 0);
-  const averagePerShare = sharesQuantity > 0 ? totalDividend / sharesQuantity : 0;
+  // Calculate annual dividend yield
+  useEffect(() => {
+    if (onYieldChange && currentPrice > 0 && sharesQuantity > 0) {
+      // Get most recent dividend entry
+      const latestDividend = dividendHistory.length > 0 
+        ? dividendHistory.sort((a, b) => 
+            new Date(b.date).getTime() - new Date(a.date).getTime()
+          )[0]
+        : null;
+      
+      if (latestDividend) {
+        // Calculate annual dividend based on frequency
+        let annualAmount = latestDividend.amount;
+        
+        switch (latestDividend.frequency) {
+          case "monthly":
+            annualAmount *= 12;
+            break;
+          case "quarterly":
+            annualAmount *= 4;
+            break;
+          case "semi-annual":
+            annualAmount *= 2;
+            break;
+          // annual is already correct
+        }
+        
+        // Calculate annual yield percentage: (annual dividend per share / share price) * 100
+        const dividendPerShare = latestDividend.amount / sharesQuantity;
+        const annualDividendPerShare = dividendPerShare * 
+          (latestDividend.frequency === "monthly" ? 12 : 
+           latestDividend.frequency === "quarterly" ? 4 : 
+           latestDividend.frequency === "semi-annual" ? 2 : 1);
+        
+        const yield_ = (annualDividendPerShare / currentPrice) * 100;
+        onYieldChange(parseFloat(yield_.toFixed(2)));
+      }
+    }
+  }, [dividendHistory, sharesQuantity, currentPrice, onYieldChange]);
+
+  // Calculate total annual dividend income
+  const calculateAnnualDividendIncome = () => {
+    if (dividendHistory.length === 0) return 0;
+    
+    // Get latest dividend
+    const latestDividend = dividendHistory.sort((a, b) => 
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    )[0];
+    
+    // Calculate annual dividend based on frequency
+    let factor = 1;
+    switch (latestDividend.frequency) {
+      case "monthly": factor = 12; break;
+      case "quarterly": factor = 4; break;
+      case "semi-annual": factor = 2; break;
+      // annual is already correct
+    }
+    
+    return latestDividend.amount * factor;
+  };
+
+  const annualDividendIncome = calculateAnnualDividendIncome();
 
   return (
     <div className="space-y-6">
@@ -140,7 +189,7 @@ export function DividendHistory({
         </div>
 
         <div>
-          <Label htmlFor="dividend-amount">Amount</Label>
+          <Label htmlFor="dividend-amount">Total Amount</Label>
           <Input
             id="dividend-amount"
             type="number"
@@ -150,26 +199,31 @@ export function DividendHistory({
               ...newEntry, 
               amount: e.target.value ? parseFloat(e.target.value) : undefined 
             })}
-            placeholder="Dividend amount"
+            placeholder="Total dividend payment"
           />
         </div>
 
         <div>
-          <Label htmlFor="dividend-franked">Franked Amount</Label>
-          <Input
-            id="dividend-franked"
-            type="number"
-            step="0.01"
-            value={newEntry.frankedAmount || ''}
-            onChange={(e) => setNewEntry({ 
-              ...newEntry, 
-              frankedAmount: e.target.value ? parseFloat(e.target.value) : 0
-            })}
-            placeholder="Franked portion (optional)"
-          />
+          <Label htmlFor="dividend-frequency">Frequency</Label>
+          <Select
+            value={newEntry.frequency || "quarterly"}
+            onValueChange={(value) => 
+              setNewEntry({ ...newEntry, frequency: value as "annual" | "semi-annual" | "quarterly" | "monthly" })
+            }
+          >
+            <SelectTrigger id="dividend-frequency">
+              <SelectValue placeholder="Select frequency" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="monthly">Monthly</SelectItem>
+              <SelectItem value="quarterly">Quarterly</SelectItem>
+              <SelectItem value="semi-annual">Semi-Annual</SelectItem>
+              <SelectItem value="annual">Annual</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        <div>
+        <div className="md:col-span-2">
           <Label htmlFor="dividend-notes">Notes</Label>
           <Input
             id="dividend-notes"
@@ -178,7 +232,7 @@ export function DividendHistory({
               ...newEntry, 
               notes: e.target.value
             })}
-            placeholder="Optional notes"
+            placeholder="Optional notes about this dividend"
           />
         </div>
 
@@ -188,7 +242,7 @@ export function DividendHistory({
             onClick={addDividendEntry}
             className="w-full"
           >
-            <Plus className="h-4 w-4 mr-2" /> Add Dividend Payment
+            <Plus className="h-4 w-4 mr-2" /> Add Dividend Entry
           </Button>
         </div>
       </div>
@@ -198,7 +252,7 @@ export function DividendHistory({
           <div className="grid grid-cols-4 gap-2 font-medium text-sm">
             <div>Date</div>
             <div>Amount</div>
-            <div>Franked</div>
+            <div>Frequency</div>
             <div></div>
           </div>
           
@@ -209,10 +263,7 @@ export function DividendHistory({
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
               })}</div>
-              <div>${(entry.frankedAmount || 0).toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-              })}</div>
+              <div className="capitalize">{entry.frequency}</div>
               <div className="flex justify-end">
                 <Button 
                   type="button" 
@@ -226,28 +277,17 @@ export function DividendHistory({
             </div>
           ))}
           
-          <div className="grid grid-cols-4 gap-2 items-center pt-4 border-t">
-            <div className="font-medium">Totals:</div>
-            <div className="font-medium">${totalDividend.toLocaleString(undefined, {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-            })}</div>
-            <div className="font-medium">${totalFranked.toLocaleString(undefined, {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-            })}</div>
-            <div></div>
-          </div>
-          
-          <div className="grid grid-cols-4 gap-2 items-center pt-1">
-            <div className="font-medium">Per Share:</div>
-            <div className="font-medium">${averagePerShare.toLocaleString(undefined, {
-              minimumFractionDigits: 4,
-              maximumFractionDigits: 4
-            })}</div>
-            <div></div>
-            <div></div>
-          </div>
+          {annualDividendIncome > 0 && (
+            <div className="grid grid-cols-4 gap-2 items-center pt-4 border-t">
+              <div className="font-medium">Annual Income:</div>
+              <div className="font-medium">${annualDividendIncome.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })}</div>
+              <div></div>
+              <div></div>
+            </div>
+          )}
         </div>
       )}
     </div>

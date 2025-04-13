@@ -33,7 +33,15 @@ import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { Label } from "@/components/ui/label";
-import { SharePurchaseTransaction, InvestmentExpense } from "@shared/schema";
+import { SharePurchaseTransaction, DividendTransaction } from "@shared/schema";
+import { PurchaseHistory } from "@/components/shares/purchase-history";
+import { DividendHistory } from "@/components/shares/dividend-history";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
+} from "@/components/ui/tabs";
 import { InvestmentExpenses } from "@/components/expense/investment-expenses";
 
 interface ShareFormProps {
@@ -56,6 +64,9 @@ export function ShareForm({
   const [, setLocation] = useLocation();
   const [purchaseHistory, setPurchaseHistory] = useState<SharePurchaseTransaction[]>(
     defaultValues?.purchaseHistory || []
+  );
+  const [dividendHistory, setDividendHistory] = useState<DividendTransaction[]>(
+    defaultValues?.dividendHistory || []
   );
   const [newTransaction, setNewTransaction] = useState<Partial<SharePurchaseTransaction>>({
     id: uuidv4(),
@@ -177,7 +188,7 @@ export function ShareForm({
   };
 
   // Handle expenses
-  const handleExpensesChange = (expenses: Record<string, InvestmentExpense>) => {
+  const handleExpensesChange = (expenses: any) => {
     form.setValue("investmentExpenses", expenses);
   };
 
@@ -403,136 +414,45 @@ export function ShareForm({
               )}
             />
 
-            {/* Purchase History Section */}
-            <div className="space-y-4 border rounded-md p-4">
-              <h3 className="font-semibold text-lg">Purchase History</h3>
-              
-              {purchaseHistory.length > 0 && (
-                <div className="space-y-2">
-                  <div className="grid grid-cols-6 gap-2 font-medium text-sm">
-                    <div>Date</div>
-                    <div>Quantity</div>
-                    <div>Price</div>
-                    <div>Fees</div>
-                    <div>Total</div>
-                    <div></div>
-                  </div>
-                  
-                  {purchaseHistory.map((transaction) => (
-                    <div key={transaction.id} className="grid grid-cols-6 gap-2 text-sm items-center">
-                      <div>{format(new Date(transaction.date), "MMM d, yyyy")}</div>
-                      <div>{transaction.quantity.toLocaleString()}</div>
-                      <div>${transaction.pricePerShare.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                      <div>${transaction.fees?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}</div>
-                      <div>${((transaction.quantity * transaction.pricePerShare) + (transaction.fees || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-                      <div>
-                        <Button 
-                          type="button" 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => removeTransaction(transaction.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="transaction-date">Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        id="transaction-date"
-                        variant={"outline"}
-                        className={cn(
-                          "w-full pl-3 text-left font-normal",
-                          !newTransaction.date && "text-muted-foreground"
-                        )}
-                      >
-                        {newTransaction.date ? (
-                          format(new Date(newTransaction.date), "PPP")
-                        ) : (
-                          <span>Pick a date</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={newTransaction.date ? new Date(newTransaction.date) : undefined}
-                        onSelect={(date) => setNewTransaction({...newTransaction, date})}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                <div>
-                  <Label htmlFor="transaction-quantity">Quantity</Label>
-                  <Input
-                    id="transaction-quantity"
-                    type="number"
-                    step="0.001"
-                    value={newTransaction.quantity || ''}
-                    onChange={(e) => setNewTransaction({...newTransaction, quantity: parseFloat(e.target.value) || 0})}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="transaction-price">Price per Share</Label>
-                  <Input
-                    id="transaction-price"
-                    type="number"
-                    step="0.01"
-                    value={newTransaction.pricePerShare || ''}
-                    onChange={(e) => setNewTransaction({...newTransaction, pricePerShare: parseFloat(e.target.value) || 0})}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="transaction-fees">Fees</Label>
-                  <Input
-                    id="transaction-fees"
-                    type="number"
-                    step="0.01"
-                    value={newTransaction.fees || ''}
-                    onChange={(e) => setNewTransaction({...newTransaction, fees: parseFloat(e.target.value) || 0})}
-                  />
-                </div>
-
-                <div className="col-span-2">
-                  <Label htmlFor="transaction-notes">Notes</Label>
-                  <Input
-                    id="transaction-notes"
-                    value={newTransaction.notes || ''}
-                    onChange={(e) => setNewTransaction({...newTransaction, notes: e.target.value})}
-                  />
-                </div>
-
-                <div className="col-span-2">
-                  <Button
-                    type="button"
-                    onClick={addTransaction}
-                    className="w-full"
-                  >
-                    <Plus className="h-4 w-4 mr-2" /> Add Transaction
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Investment Expenses Section */}
+            {/* Tabbed Details Sections */}
             <div className="border rounded-md p-4">
-              <h3 className="font-semibold text-lg mb-4">Investment Expenses</h3>
-              <InvestmentExpenses 
-                expenses={form.getValues("investmentExpenses") || {}}
-                onChange={handleExpensesChange}
-              />
+              <Tabs defaultValue="purchases" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="purchases">Purchase History</TabsTrigger>
+                  <TabsTrigger value="dividends">Dividend History</TabsTrigger>
+                  <TabsTrigger value="expenses">Expenses</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="purchases" className="pt-4">
+                  <PurchaseHistory 
+                    purchaseHistory={purchaseHistory}
+                    onChange={setPurchaseHistory}
+                    onQuantityChange={(totalQuantity) => {
+                      // Optionally update the form's quantity field
+                      form.setValue("sharesQuantity", totalQuantity);
+                    }}
+                  />
+                </TabsContent>
+                
+                <TabsContent value="dividends" className="pt-4">
+                  <DividendHistory 
+                    dividendHistory={dividendHistory}
+                    onChange={setDividendHistory}
+                    sharesQuantity={watchQuantity}
+                    currentPrice={watchCurrentPrice}
+                    onYieldChange={(annualYield) => {
+                      form.setValue("dividendYield", annualYield);
+                    }}
+                  />
+                </TabsContent>
+                
+                <TabsContent value="expenses" className="pt-4">
+                  <InvestmentExpenses 
+                    value={form.getValues("investmentExpenses") || {}}
+                    onChange={handleExpensesChange}
+                  />
+                </TabsContent>
+              </Tabs>
             </div>
 
             <div className="flex justify-end gap-2">
