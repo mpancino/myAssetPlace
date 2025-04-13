@@ -374,29 +374,11 @@ export default function AssetClassPage() {
                     </div>
                   </CardContent>
                   <Separator />
-                  <CardFooter className="flex justify-between pt-4">
-                    <div className="flex space-x-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => setLocation(`/assets/${asset.id}`)}
-                      >
-                        <Edit className="h-4 w-4 mr-1" /> Edit
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="text-destructive"
-                        onClick={() => setLocation(`/assets/${asset.id}`)}
-                      >
-                        <Trash2 className="h-4 w-4 mr-1" /> Delete
-                      </Button>
-                    </div>
+                  <CardFooter className="flex justify-end pt-4">
                     <Button 
-                      variant="ghost" 
+                      variant="outline" 
                       size="sm"
                       onClick={() => setLocation(`/assets/${asset.id}`)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       View Details <ArrowRight className="ml-1 h-4 w-4" />
                     </Button>
