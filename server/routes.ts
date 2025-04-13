@@ -15,7 +15,8 @@ import {
   users,
   assets,
   assetClasses,
-  transformTaxSettings
+  transformTaxSettings,
+  type AssetHoldingType
 } from "@shared/schema";
 import { z } from "zod";
 import { db } from "./db";
@@ -434,53 +435,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('[ASSET_HOLDING_TYPE] Update request for ID:', id);
       console.log('[ASSET_HOLDING_TYPE] Request body:', JSON.stringify(req.body));
       
-      // Check if taxSettings exists and log its type/value
+      // For simplicity, directly process the request body
+      let updatedData: Partial<AssetHoldingType> = {
+        name: req.body.name,
+        description: req.body.description,
+        countryId: req.body.countryId ? parseInt(req.body.countryId) : undefined
+      };
+      
+      // Handle taxSettings separately - this is causing the problems
       if (req.body.taxSettings !== undefined) {
         console.log('[ASSET_HOLDING_TYPE] Incoming taxSettings type:', typeof req.body.taxSettings);
-        console.log('[ASSET_HOLDING_TYPE] Incoming taxSettings value:', 
-          typeof req.body.taxSettings === 'string' 
-            ? req.body.taxSettings 
-            : JSON.stringify(req.body.taxSettings));
+        
+        // Convert taxSettings to proper format based on its current type
+        if (typeof req.body.taxSettings === 'string') {
+          try {
+            updatedData.taxSettings = JSON.parse(req.body.taxSettings);
+            console.log('[ASSET_HOLDING_TYPE] Successfully parsed taxSettings string');
+          } catch (e) {
+            console.error('[ASSET_HOLDING_TYPE] Failed to parse taxSettings string:', e);
+            // If parsing fails, use empty object
+            updatedData.taxSettings = {};
+          }
+        } else {
+          // If it's already an object, use it directly
+          updatedData.taxSettings = req.body.taxSettings;
+        }
+        
+        console.log('[ASSET_HOLDING_TYPE] Processed taxSettings:', 
+          JSON.stringify(updatedData.taxSettings));
       }
       
-      // Create a partial schema from the base schema, with the imported transformTaxSettings
-      const partialAssetHoldingTypeSchema = z.object({
-        name: z.string().min(2, "Name is required").optional(),
-        description: z.string().optional(),
-        countryId: z.coerce.number().int().positive("Country is required").optional(),
-        taxSettings: z.any().optional(),
-      }).transform(transformTaxSettings); // Uses the imported transform function
+      // Basic validation
+      if (updatedData.name !== undefined && updatedData.name.length < 2) {
+        return res.status(400).json({ 
+          errors: [{ path: ["name"], message: "Name is required and must be at least 2 characters" }] 
+        });
+      }
       
-      // Use explicit typing for validatedData
-      const validatedData: {
-        name?: string;
-        description?: string;
-        countryId?: number;
-        taxSettings?: any;
-      } = partialAssetHoldingTypeSchema.parse(req.body);
+      if (updatedData.countryId !== undefined && (!Number.isInteger(updatedData.countryId) || updatedData.countryId <= 0)) {
+        return res.status(400).json({ 
+          errors: [{ path: ["countryId"], message: "Country ID must be a positive integer" }] 
+        });
+      }
       
-      // Log after validation
-      console.log('[ASSET_HOLDING_TYPE] After validation - taxSettings:', 
-        validatedData.taxSettings ? JSON.stringify(validatedData.taxSettings) : 'undefined');
-      
-      const type = await storage.updateAssetHoldingType(id, validatedData);
+      const type = await storage.updateAssetHoldingType(id, updatedData);
       if (!type) {
         return res.status(404).json({ message: "Asset holding type not found" });
       }
       
       // Log what's being sent back
       console.log('[ASSET_HOLDING_TYPE] Response data:', JSON.stringify(type));
-      console.log('[ASSET_HOLDING_TYPE] Response taxSettings:', 
-        type.taxSettings ? JSON.stringify(type.taxSettings) : 'null/undefined');
       
       res.json(type);
     } catch (err) {
       console.error('[ASSET_HOLDING_TYPE] Error updating:', err);
-      
-      if (err instanceof z.ZodError) {
-        console.log('[ASSET_HOLDING_TYPE] Zod validation error:', JSON.stringify(err.errors));
-        return res.status(400).json({ errors: err.errors });
-      }
       res.status(500).json({ message: "Failed to update asset holding type" });
     }
   });
