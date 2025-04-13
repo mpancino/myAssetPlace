@@ -105,23 +105,46 @@ export function CashAccountForm({
   const initialAssetClassId = defaultValues?.assetClassId || cashAssetClass?.id;
   console.log("Initializing form with assetClassId:", initialAssetClassId);
   
+  // When editing, properly load all existing values from the defaultValues
+  const formDefaultValues = isEditing && defaultValues 
+    ? {
+        // Ensure all fields are populated from defaultValues
+        ...defaultValues, 
+        // But force these fields to have proper values in case they're missing
+        assetClassId: defaultValues.assetClassId || initialAssetClassId,
+        assetHoldingTypeId: defaultValues.assetHoldingTypeId || holdingTypes[0]?.id,
+        accountType: defaultValues.accountType || "savings",
+        accountPurpose: defaultValues.accountPurpose || "general",
+        // Ensure numeric fields are properly initialized
+        value: defaultValues.value ?? 0,
+        interestRate: defaultValues.interestRate ?? 0,
+        // Ensure arrays are properly initialized
+        balanceHistory: defaultValues.balanceHistory || [],
+        transactionCategories: defaultValues.transactionCategories || [],
+      }
+    : {
+        // Default values for creating a new account
+        name: "",
+        description: "",
+        value: 0,
+        assetClassId: initialAssetClassId,
+        assetHoldingTypeId: holdingTypes[0]?.id,
+        institution: "",
+        accountType: "savings",
+        interestRate: 0,
+        accountPurpose: "general",
+        isOffsetAccount: false,
+        balanceHistory: [],
+        transactionCategories: [],
+        ...defaultValues, // Still apply any values provided
+      };
+      
+  console.log("Form initialization with defaultValues:", isEditing ? "EDITING MODE" : "CREATE MODE");
+  console.log("Form defaultValues:", formDefaultValues);
+
   const form = useForm<InsertCashAccount>({
     resolver: zodResolver(insertCashAccountSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      value: 0,
-      assetClassId: initialAssetClassId,
-      assetHoldingTypeId: holdingTypes[0]?.id,
-      institution: "",
-      accountType: "savings",
-      interestRate: 0,
-      accountPurpose: "general",
-      isOffsetAccount: false,
-      balanceHistory: [],
-      transactionCategories: [],
-      ...defaultValues,
-    },
+    defaultValues: formDefaultValues,
   });
 
   // Create or update mutation
