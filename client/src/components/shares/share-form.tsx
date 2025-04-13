@@ -143,6 +143,9 @@ export function ShareForm({
   });
 
   const onSubmit = (data: InsertShare) => {
+    // Add purchase history and dividend history to the data
+    data.purchaseHistory = purchaseHistory;
+    data.dividendHistory = dividendHistory;
     mutation.mutate(data);
   };
 

@@ -164,8 +164,8 @@ Status indicators:
   - ✅ Bank account tracking [REQ-144, REQ-145]
   - ⚠️ Interest rate settings [REQ-146] - Basic implementation
   - ❌ Interest calculation [REQ-147]
-  - ❌ Account balance history [REQ-148]
-  - ❌ Transaction categories [REQ-149]
+  - ✅ Account balance history [REQ-148]
+  - ✅ Transaction categories [REQ-149]
 
 - ⚠️ **Equity/Share Management**
   - ⚠️ Stock/share data entry [REQ-151] - Basic implementation
@@ -265,12 +265,15 @@ Status indicators:
    - Fix PropertyExpenses component category display issue (DEF-001) where categories show as "[object Object]"
    - Fix property expense deduplication issues in Phase 4 [REQ-121, REQ-122, REQ-124]
    - Fix TypeScript errors in asset-detail-page.tsx related to expense handling
+   - Fix TypeScript errors in share-form and stock-option-form components
 
 2. ⚠️ **Stabilize Core Features**
    - Complete expense categories implementation for asset classes [REQ-065]
    - Standardize expense handling between PropertyExpenses and InvestmentExpenses components
    - Improve ExpenseContext API for consistent expense management
    - Improve security implementation (CSRF, cookies) [REQ-371, REQ-372]
+   - Complete Share Management features (purchase history, enhanced dividend tracking) [REQ-152, REQ-153]
+   - Implement interest calculation for cash accounts [REQ-147]
 
 ### Medium Priority
 1. ⚠️ **Subscription Management (Phase 8)**
