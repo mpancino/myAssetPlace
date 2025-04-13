@@ -208,13 +208,14 @@ export default function AddAssetPage() {
             // Redirect to property-specific form
             setLocation(`/add-property/${selectedAssetClass.id}`);
             return; // Exit early to prevent further processing
-          } else if (selectedAssetClass.name.toLowerCase() === 'cash' || 
-                     selectedAssetClass.name.toLowerCase() === 'bank accounts') {
+          } else if (selectedAssetClass.name.toLowerCase().includes('cash') || 
+                     selectedAssetClass.name.toLowerCase().includes('bank')) {
             // Redirect to cash account-specific form
             setLocation(`/add-cash-account?classId=${selectedAssetClass.id}`);
             return; // Exit early to prevent further processing
-          } else if (selectedAssetClass.name.toLowerCase() === 'loans' || 
-                     selectedAssetClass.name.toLowerCase() === 'debts') {
+          } else if (selectedAssetClass.name.toLowerCase().includes('loan') || 
+                     selectedAssetClass.name.toLowerCase().includes('liabilit') || 
+                     selectedAssetClass.name.toLowerCase().includes('debt')) {
             // Redirect to loan-specific form
             setLocation(`/add-loan?classId=${selectedAssetClass.id}`);
             return; // Exit early to prevent further processing

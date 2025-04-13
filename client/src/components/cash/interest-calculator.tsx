@@ -81,7 +81,7 @@ export function InterestCalculator({ initialBalance, interestRate = 0 }: Interes
     const chartData = projection.map((item, index) => ({
       month: index,
       balance: item.balance,
-      deposits: item.totalDeposits,
+      deposits: item.deposits,
       interest: item.totalInterest,
     }));
     
@@ -213,7 +213,7 @@ export function InterestCalculator({ initialBalance, interestRate = 0 }: Interes
                   label={{ value: 'Months', position: 'insideBottomRight', offset: -5 }} 
                 />
                 <YAxis 
-                  tickFormatter={(value) => formatCurrency(value, 0)} 
+                  tickFormatter={(value) => formatCurrency(value as number) as unknown as string} 
                   label={{ value: 'Balance', angle: -90, position: 'insideLeft' }} 
                 />
                 <Tooltip 
