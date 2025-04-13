@@ -73,7 +73,27 @@ export default function AddEmploymentIncomePage() {
           <EmploymentIncomeForm 
             assetClasses={assetClasses} 
             assetHoldingTypes={assetHoldingTypes}
-            defaultValues={{ assetClassId: 8 }} // Employment Income asset class ID
+            defaultValues={{
+              assetClassId: 8, // Employment Income asset class ID
+              assetHoldingTypeId: 1, // Default to Personal
+              name: "",
+              description: "",
+              value: 0,
+              employer: "",
+              jobTitle: "",
+              employmentType: "full-time",
+              baseSalary: 0,
+              paymentFrequency: "fortnightly",
+              bonusType: "none",
+              bonusFixedAmount: 0,
+              bonusPercentage: 0, 
+              bonusFrequency: "annually",
+              bonusLikelihood: 80, // Default 80% likelihood
+              taxWithholdingRate: 30,
+              superContributionRate: 11,
+              salaryGrowthRate: 2.5,
+              salaryReviewFrequency: "annually"
+            }}
           />
         )}
       </div>
