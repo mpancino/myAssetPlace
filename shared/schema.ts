@@ -438,6 +438,41 @@ export const insertStockOptionSchema = insertAssetSchema.extend({
   vestedQuantity: z.number().int().min(0).optional(),
 });
 
+// Employment Income schema - for REQ-149 through REQ-154
+export const insertEmploymentIncomeSchema = insertAssetSchema.extend({
+  // Base salary details
+  baseSalary: z.number().min(0, "Base salary must be non-negative"),
+  paymentFrequency: z.enum(["weekly", "fortnightly", "monthly", "annually"]),
+  
+  // Bonus structure
+  bonusType: z.enum(["none", "fixed", "percentage", "mixed"]),
+  bonusFixedAmount: z.number().min(0).optional(),
+  bonusPercentage: z.number().min(0).max(100).optional(),
+  bonusFrequency: z.enum(["monthly", "quarterly", "annually", "one-time"]).optional(),
+  
+  // Tax and deductions
+  taxWithholdingRate: z.number().min(0).max(100).optional(),
+  superContributionRate: z.number().min(0).max(100).optional(), // For Australia / retirement contribution
+  additionalDeductions: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    amount: z.number(),
+    isPercentage: z.boolean(),
+    frequency: z.enum(["per-payment", "monthly", "annually"])
+  })).optional(),
+  
+  // Growth projections
+  salaryGrowthRate: z.number().min(-100).max(100).optional(),
+  salaryReviewFrequency: z.enum(["annually", "bi-annually", "quarterly"]).optional(),
+  
+  // Employment details
+  employer: z.string(),
+  jobTitle: z.string().optional(),
+  employmentType: z.enum(["full-time", "part-time", "casual", "contract"]),
+  startDate: z.date().optional(),
+  endDate: z.date().optional(), // For contract or temporary positions
+});
+
 export const insertCountrySchema = createInsertSchema(countries).omit({
   id: true,
 });
