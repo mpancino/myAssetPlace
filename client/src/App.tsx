@@ -13,6 +13,8 @@ import AddLoanPage from "@/pages/add-loan-page";
 import AddPropertyPage from "@/pages/add-property-page";
 import AddSharePage from "@/pages/add-share-page";
 import AddStockOptionPage from "@/pages/add-stock-option-page";
+import AddRetirementPage from "@/pages/add-retirement-page";
+import EditRetirementPage from "@/pages/edit-retirement-page";
 import AssetDetailPage from "@/pages/asset-detail-page";
 import BalanceSheetPage from "@/pages/balance-sheet-page";
 import ExpenseGeneratorPage from "@/pages/expense-generator-page";
@@ -46,6 +48,9 @@ function Router() {
       <ProtectedRoute path="/add-share/:classId" component={AddSharePage} />
       <ProtectedRoute path="/add-stock-option" component={AddStockOptionPage} />
       <ProtectedRoute path="/add-stock-option/:classId" component={AddStockOptionPage} />
+      <ProtectedRoute path="/add-retirement" component={AddRetirementPage} />
+      <ProtectedRoute path="/add-retirement/:classId" component={AddRetirementPage} />
+      <ProtectedRoute path="/edit-retirement/:assetId" component={EditRetirementPage} />
       <ProtectedRoute path="/assets/:assetId" component={AssetDetailPage} />
       <ProtectedRoute path="/balance-sheet" component={BalanceSheetPage} />
       <ProtectedRoute path="/expense-generator" component={ExpenseGeneratorPage} />

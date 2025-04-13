@@ -156,6 +156,10 @@ export default function AssetClassPage() {
     else if (lowerCaseName.includes('option')) {
       setLocation(`/add-stock-option/${assetClass.id}`);
     }
+    // For Retirement accounts
+    else if (lowerCaseName.includes('retirement') || lowerCaseName.includes('superannuation') || lowerCaseName.includes('pension')) {
+      setLocation(`/add-retirement/${assetClass.id}`);
+    }
     // For other asset types, redirect to the generic form with the classId parameter
     else {
       setLocation(`/add-asset?classId=${assetClass.id}`);
