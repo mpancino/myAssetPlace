@@ -17,6 +17,8 @@ export default function AddCashAccountPage() {
   const classIdFromUrl = urlParams.get('classId');
   
   console.log("Cash account classId from URL:", classIdFromUrl);
+  console.log("Full URL:", window.location.href);
+  console.log("Search parameters:", window.location.search);
 
   useEffect(() => {
     if (!user) {

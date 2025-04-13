@@ -73,6 +73,8 @@ export function CashAccountForm({
   );
   
   console.log("Found cash asset class:", cashAssetClass);
+  console.log("Default values passed to form:", defaultValues);
+  console.log("All available asset classes:", assetClasses);
 
   const form = useForm<InsertCashAccount>({
     resolver: zodResolver(insertCashAccountSchema),
@@ -153,8 +155,25 @@ export function CashAccountForm({
     data.balanceHistory = balanceHistory;
     data.transactionCategories = transactionCategories;
     
+    // Make sure we have an asset class ID - fallback to the cash asset class if none was set
+    if (!data.assetClassId && cashAssetClass) {
+      console.log("No assetClassId detected, using fallback cash asset class:", cashAssetClass.id);
+      data.assetClassId = cashAssetClass.id;
+    }
+    
     // Add debugging
     console.log("Submitting cash account data:", data);
+    
+    // Final validation check
+    if (!data.assetClassId) {
+      console.error("Missing assetClassId in form data - cannot submit!");
+      toast({
+        title: "Missing Asset Class",
+        description: "Please try again or contact support - asset class ID is missing.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     mutation.mutate(data);
   };
@@ -422,9 +441,22 @@ export function CashAccountForm({
             <FormField
               control={form.control}
               name="assetClassId"
-              render={({ field }) => (
-                <input type="hidden" value={field.value || cashAssetClass?.id || ''} />
-              )}
+              render={({ field }) => {
+                console.log("Asset class ID in hidden field:", field.value);
+                // Important: We need to use the onChange handler to ensure the value gets set in the form data
+                return (
+                  <>
+                    <input 
+                      type="hidden" 
+                      value={field.value || cashAssetClass?.id || ''} 
+                      onChange={field.onChange}
+                    />
+                    <div className="text-xs text-muted-foreground">
+                      Asset Class ID: {field.value || cashAssetClass?.id || 'Not set'}
+                    </div>
+                  </>
+                );
+              }}
             />
 
             {/* Advanced Features Tabs */}

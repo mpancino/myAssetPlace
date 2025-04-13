@@ -251,7 +251,8 @@ export default function AddAssetPage() {
           } else if (selectedAssetClass.name.toLowerCase().includes('cash') || 
                      selectedAssetClass.name.toLowerCase().includes('bank')) {
             console.log(`Redirecting to cash account form with classId=${selectedAssetClass.id}`);
-            // Redirect to cash account-specific form
+            // Redirect to cash account-specific form with a more reliable parameter format
+            console.log(`Full redirect URL: /add-cash-account?classId=${selectedAssetClass.id}`);
             setLocation(`/add-cash-account?classId=${selectedAssetClass.id}`);
             return; // Exit early to prevent further processing
           } else if (selectedAssetClass.name.toLowerCase().includes('loan') || 
