@@ -71,6 +71,8 @@ export function CashAccountForm({
       assetClass.name.toLowerCase().includes("cash") || 
       assetClass.name.toLowerCase().includes("bank")
   );
+  
+  console.log("Found cash asset class:", cashAssetClass);
 
   const form = useForm<InsertCashAccount>({
     resolver: zodResolver(insertCashAccountSchema),
@@ -94,15 +96,41 @@ export function CashAccountForm({
   // Create or update mutation
   const mutation = useMutation({
     mutationFn: async (data: InsertCashAccount) => {
-      if (isEditing && assetId) {
-        const res = await apiRequest("PATCH", `/api/assets/${assetId}`, data);
-        return await res.json();
-      } else {
-        const res = await apiRequest("POST", "/api/assets", data);
-        return await res.json();
+      console.log("Mutation executing with data:", data);
+      
+      try {
+        if (isEditing && assetId) {
+          console.log("Updating existing cash account:", assetId);
+          const res = await apiRequest("PATCH", `/api/assets/${assetId}`, data);
+          const result = await res.json();
+          console.log("Update response:", result);
+          return result;
+        } else {
+          console.log("Creating new cash account with data:", data);
+          // Make sure we're sending a properly formed asset
+          if (!data.assetClassId) {
+            console.error("Missing assetClassId in form data!");
+            throw new Error("Asset class must be selected");
+          }
+          
+          const res = await apiRequest("POST", "/api/assets", data);
+          if (!res.ok) {
+            const errorText = await res.text();
+            console.error("API error response:", errorText);
+            throw new Error(`API error: ${res.status} ${errorText}`);
+          }
+          
+          const result = await res.json();
+          console.log("Create response:", result);
+          return result;
+        }
+      } catch (err) {
+        console.error("API request error:", err);
+        throw err;
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log("Mutation succeeded:", data);
       queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
       toast({
         title: `Cash account ${isEditing ? "updated" : "created"} successfully`,
@@ -111,6 +139,7 @@ export function CashAccountForm({
       setLocation("/asset-classes/" + cashAssetClass?.id);
     },
     onError: (error: Error) => {
+      console.error("Mutation error:", error);
       toast({
         title: "Error",
         description: `Failed to ${isEditing ? "update" : "create"} cash account: ${error.message}`,
@@ -123,6 +152,10 @@ export function CashAccountForm({
     // Add balance history and transaction categories to the data
     data.balanceHistory = balanceHistory;
     data.transactionCategories = transactionCategories;
+    
+    // Add debugging
+    console.log("Submitting cash account data:", data);
+    
     mutation.mutate(data);
   };
 
@@ -382,6 +415,15 @@ export function CashAccountForm({
                   </FormControl>
                   <FormMessage />
                 </FormItem>
+              )}
+            />
+            
+            {/* Hidden field for asset class ID */}
+            <FormField
+              control={form.control}
+              name="assetClassId"
+              render={({ field }) => (
+                <input type="hidden" value={field.value || cashAssetClass?.id || ''} />
               )}
             />
 

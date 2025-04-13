@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "wouter";
+import { useLocation, useRoute } from "wouter";
 import MainLayout from "@/components/layout/main-layout";
 import { useAuth } from "@/hooks/use-auth";
 import { CashAccountForm } from "@/components/cash/cash-account-form";
@@ -10,6 +10,13 @@ import { AssetClass, AssetHoldingType } from "@shared/schema";
 export default function AddCashAccountPage() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
+  const [, params] = useRoute("/add-cash-account");
+  
+  // Extract classId from query parameters if it exists
+  const urlParams = new URLSearchParams(window.location.search);
+  const classIdFromUrl = urlParams.get('classId');
+  
+  console.log("Cash account classId from URL:", classIdFromUrl);
 
   useEffect(() => {
     if (!user) {
@@ -55,6 +62,11 @@ export default function AddCashAccountPage() {
             <CashAccountForm 
               assetClasses={assetClasses}
               holdingTypes={holdingTypes}
+              defaultValues={{
+                // If classId is in URL, set it as the default asset class
+                assetClassId: classIdFromUrl ? parseInt(classIdFromUrl) : undefined,
+                assetHoldingTypeId: holdingTypes[0]?.id
+              }}
             />
           ) : (
             <div>Error loading data</div>
