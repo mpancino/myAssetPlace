@@ -705,7 +705,7 @@ export function EmploymentIncomeForm({
                       <FormField
                         control={form.control}
                         name="bonusLikelihood"
-                        render={({ field }) => (
+                        render={({ field: { onChange, ...field } }) => (
                           <FormItem className="mt-4">
                             <FormLabel>Bonus Likelihood (%)</FormLabel>
                             <FormDescription>
@@ -719,10 +719,12 @@ export function EmploymentIncomeForm({
                                   min="0"
                                   max="100"
                                   placeholder="80"
-                                  {...field}
+                                  value={field.value || 80}
                                   onChange={(e) => {
-                                    field.onChange(parseFloat(e.target.value));
+                                    const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                                    onChange(value);
                                   }}
+                                  {...field}
                                 />
                               </FormControl>
                               <span className="ml-2">%</span>

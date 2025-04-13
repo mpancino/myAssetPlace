@@ -79,20 +79,21 @@ export default function AddEmploymentIncomePage() {
               name: "",
               description: "",
               value: 0,
-              employer: "",
+              employer: "", // Required
               jobTitle: "",
-              employmentType: "full-time",
-              baseSalary: 0,
-              paymentFrequency: "fortnightly",
-              bonusType: "none",
+              employmentType: "full-time" as const, // Type casting as const to match enum
+              baseSalary: 0, // Required
+              paymentFrequency: "fortnightly" as const, // Type casting as const to match enum
+              bonusType: "none" as const, // Type casting as const to match enum
               bonusFixedAmount: 0,
-              bonusPercentage: 0, 
-              bonusFrequency: "annually",
+              bonusPercentage: 0,
+              bonusFrequency: "annually" as const, // Type casting as const to match enum
               bonusLikelihood: 80, // Default 80% likelihood
               taxWithholdingRate: 30,
               superContributionRate: 11,
               salaryGrowthRate: 2.5,
-              salaryReviewFrequency: "annually"
+              salaryReviewFrequency: "annually" as const, // Type casting as const to match enum
+              additionalDeductions: []
             }}
           />
         )}
