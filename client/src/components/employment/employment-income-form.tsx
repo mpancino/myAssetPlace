@@ -41,11 +41,11 @@ import {
   Asset,
   AssetClass,
   AssetHoldingType,
-  insertEmploymentIncomeSchema,
+  insertEmploymentIncomeSchema
 } from "@shared/schema";
 
 type EmploymentIncomeFormProps = {
-  defaultValues?: Partial<Asset>;
+  defaultValues?: Partial<InsertEmploymentIncome>;
   assetClasses?: AssetClass[];
   assetHoldingTypes?: AssetHoldingType[];
   onSuccess?: (data: any) => void;
@@ -166,19 +166,43 @@ export function EmploymentIncomeForm({
   };
 
   // Update the value field whenever base salary or bonus changes
+  // Also set the Employer name as the asset name
   useEffect(() => {
-    const subscription = form.watch((value, { name }) => {
+    const subscription = form.watch((value, { name: fieldName }) => {
       if (
-        name?.includes("baseSalary") ||
-        name?.includes("paymentFrequency") ||
-        name?.includes("bonusType") ||
-        name?.includes("bonusFixedAmount") ||
-        name?.includes("bonusPercentage") ||
-        name?.includes("bonusFrequency") ||
-        name?.includes("bonusLikelihood")
+        fieldName?.includes("baseSalary") ||
+        fieldName?.includes("paymentFrequency") ||
+        fieldName?.includes("bonusType") ||
+        fieldName?.includes("bonusFixedAmount") ||
+        fieldName?.includes("bonusPercentage") ||
+        fieldName?.includes("bonusFrequency") ||
+        fieldName?.includes("bonusLikelihood")
       ) {
         const annualIncome = calculateAnnualIncome();
         form.setValue("value", annualIncome);
+      }
+      
+      // Update the name field when employer changes
+      if (fieldName === "employer") {
+        const employer = form.getValues("employer");
+        const jobTitle = form.getValues("jobTitle");
+        
+        // Set name to employer, or "employer - job title" if both exist
+        if (employer && jobTitle) {
+          form.setValue("name", `${employer} - ${jobTitle}`);
+        } else if (employer) {
+          form.setValue("name", employer);
+        }
+      }
+      
+      // Update name when job title changes
+      if (fieldName === "jobTitle") {
+        const employer = form.getValues("employer");
+        const jobTitle = form.getValues("jobTitle");
+        
+        if (employer && jobTitle) {
+          form.setValue("name", `${employer} - ${jobTitle}`);
+        }
       }
     });
     
@@ -371,25 +395,7 @@ export function EmploymentIncomeForm({
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Income Source Name*</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="e.g., ABC Company Salary" 
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Enter a name for this income source
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Name field removed as per request - using Employer as key field */}
                 
                 <FormField
                   control={form.control}
@@ -705,7 +711,7 @@ export function EmploymentIncomeForm({
                       <FormField
                         control={form.control}
                         name="bonusLikelihood"
-                        render={({ field: { onChange, ...field } }) => (
+                        render={({ field }) => (
                           <FormItem className="mt-4">
                             <FormLabel>Bonus Likelihood (%)</FormLabel>
                             <FormDescription>
@@ -719,12 +725,11 @@ export function EmploymentIncomeForm({
                                   min="0"
                                   max="100"
                                   placeholder="80"
-                                  value={field.value || 80}
+                                  {...field}
                                   onChange={(e) => {
                                     const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
-                                    onChange(value);
+                                    field.onChange(value);
                                   }}
-                                  {...field}
                                 />
                               </FormControl>
                               <span className="ml-2">%</span>

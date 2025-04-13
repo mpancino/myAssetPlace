@@ -76,10 +76,9 @@ export default function AddEmploymentIncomePage() {
             defaultValues={{
               assetClassId: 8, // Employment Income asset class ID
               assetHoldingTypeId: 1, // Default to Personal
-              name: "",
               description: "",
               value: 0,
-              employer: "", // Required
+              employer: "", // Required - this will be used as name
               jobTitle: "",
               employmentType: "full-time" as const, // Type casting as const to match enum
               baseSalary: 0, // Required
