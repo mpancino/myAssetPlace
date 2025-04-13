@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import { AssetClass, AssetHoldingType, InsertAsset } from "@shared/schema";
+import { AssetClass, AssetHoldingType, InsertAsset, InsertShare, insertShareSchema } from "@shared/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -21,25 +21,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-// Define share form schema
-const shareFormSchema = z.object({
-  name: z.string().min(1, "Investment name is required"),
-  description: z.string().optional(),
-  assetClassId: z.number(),
-  assetHoldingTypeId: z.number(),
-  value: z.number().min(0, "Current value must be at least 0"),
-  ticker: z.string().min(1, "Stock ticker/symbol is required"),
-  exchange: z.string().optional(),
-  shareQuantity: z.number().int().positive("Number of shares must be positive"),
-  purchasePrice: z.number().min(0, "Purchase price must be at least 0"),
-  currentPrice: z.number().min(0, "Current share price must be at least 0"),
-  purchaseDate: z.date().optional().nullable(),
-  dividendYield: z.number().min(0, "Dividend yield must be at least 0").max(100, "Dividend yield must be 100% or less").optional(),
-  growthRate: z.number().optional(),
+// Define share form schema based on the InsertShare schema
+const shareFormSchema = insertShareSchema.extend({
+  // Add additional validations or fields as needed
+  sharesQuantity: z.number().int().positive("Number of shares must be positive"),
   lastDividendAmount: z.number().min(0, "Dividend amount must be at least 0").optional(),
   lastDividendDate: z.date().optional().nullable(),
-  isHidden: z.boolean().default(false),
-  investmentExpenses: z.record(z.string(), z.any()).default({}),
 });
 
 type ShareFormValues = z.infer<typeof shareFormSchema>;
@@ -100,7 +87,7 @@ export function ShareForm({
       value: defaultValues?.value || 0,
       ticker: defaultValues?.ticker || "",
       exchange: defaultValues?.exchange || "",
-      shareQuantity: defaultValues?.shareQuantity || 0,
+      sharesQuantity: defaultValues?.sharesQuantity || 0,
       purchasePrice: defaultValues?.purchasePrice || 0,
       currentPrice: defaultValues?.currentPrice || 0,
       purchaseDate: defaultValues?.purchaseDate ? new Date(defaultValues.purchaseDate) : null,
@@ -115,10 +102,10 @@ export function ShareForm({
 
   // Watch form values to calculate market value
   const currentPrice = form.watch("currentPrice") || 0;
-  const shareQuantity = form.watch("shareQuantity") || 0;
+  const sharesQuantity = form.watch("sharesQuantity") || 0;
   const purchasePrice = form.watch("purchasePrice") || 0;
-  const marketValue = calculateMarketValue(currentPrice, shareQuantity);
-  const gainLoss = calculateGainLoss(currentPrice, purchasePrice, shareQuantity);
+  const marketValue = calculateMarketValue(currentPrice, sharesQuantity);
+  const gainLoss = calculateGainLoss(currentPrice, purchasePrice, sharesQuantity);
   
   // Update value field when market value changes
   const updateValueFromMarket = () => {
@@ -329,11 +316,11 @@ export function ShareForm({
                   <h3 className="font-medium mb-2">Current Market Value</h3>
                   <p className="text-xl font-bold">{formatCurrency(marketValue)}</p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {shareQuantity} shares × {formatCurrency(currentPrice)} per share
+                    {sharesQuantity} shares × {formatCurrency(currentPrice)} per share
                   </p>
                   <p className={`text-sm mt-1 ${gainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                     {gainLoss >= 0 ? '+' : ''}{formatCurrency(gainLoss)} ({gainLoss !== 0 && purchasePrice !== 0 ? 
-                      `${Math.round(gainLoss / (purchasePrice * shareQuantity) * 100)}%` : '0%'})
+                      `${Math.round(gainLoss / (purchasePrice * sharesQuantity) * 100)}%` : '0%'})
                   </p>
                   <Button 
                     type="button" 
@@ -349,7 +336,7 @@ export function ShareForm({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
-                    name="shareQuantity"
+                    name="sharesQuantity"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Number of Shares*</FormLabel>
