@@ -49,10 +49,12 @@ const stockOptionFormSchema = z.object({
   currentPrice: z.number().min(0, "Current stock price must be at least 0").optional(),
   grantDate: z.date().optional().nullable(),
   expirationDate: z.date().optional().nullable(),
-  // Extra fields not in the base schema
+  vestedQuantity: z.number().int().min(0).optional(),
+  // Fields that aren't part of the schema but useful for UI
   companyName: z.string().min(1, "Company name is required"),
   optionType: z.enum(["iso", "nso", "rsu", "other"]).optional(),
   vestingSchedule: z.string().optional(),
+  grantPrice: z.number().optional(),
   isHidden: z.boolean().default(false),
   investmentExpenses: z.record(z.string(), z.any()).default({}),
 });
@@ -124,10 +126,10 @@ export function StockOptionForm({
   });
 
   // Watch form values to calculate intrinsic value
-  const currentSharePrice = form.watch("currentPrice") || 0;
+  const currentPrice = form.watch("currentPrice") || 0;
   const strikePrice = form.watch("strikePrice") || 0;
-  const quantity = form.watch("optionQuantity") || 0;
-  const intrinsicValue = calculateIntrinsicValue(currentSharePrice, strikePrice, quantity);
+  const optionQuantity = form.watch("optionQuantity") || 0;
+  const intrinsicValue = calculateIntrinsicValue(currentPrice, strikePrice, optionQuantity);
   
   // Update value field when intrinsic value changes
   const updateValueFromIntrinsic = () => {
@@ -352,7 +354,7 @@ export function StockOptionForm({
                   <h3 className="font-medium mb-2">Estimated Value</h3>
                   <p className="text-xl font-bold">{formatCurrency(intrinsicValue)}</p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {quantity} options × {formatCurrency(Math.max(0, currentSharePrice - strikePrice))} per option
+                    {optionQuantity} options × {formatCurrency(Math.max(0, currentPrice - strikePrice))} per option
                   </p>
                   <Button 
                     type="button" 

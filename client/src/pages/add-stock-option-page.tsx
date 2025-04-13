@@ -10,8 +10,8 @@ import { Loader2 } from "lucide-react";
 
 export default function AddStockOptionPage() {
   const [location, setLocation] = useLocation();
-  const [, params] = useLocation("/add-stock-option/:classId");
-  const classId = params?.classId || new URLSearchParams(window.location.search).get("classId");
+  const params = new URLSearchParams(window.location.search);
+  const classId = params.get("classId");
 
   // Fetch asset classes
   const { data: assetClasses = [], isLoading: assetClassesLoading } = useQuery<AssetClass[]>({
