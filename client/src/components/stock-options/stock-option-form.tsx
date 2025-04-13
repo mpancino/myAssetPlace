@@ -41,18 +41,18 @@ const stockOptionFormSchema = z.object({
   assetClassId: z.number(),
   assetHoldingTypeId: z.number(),
   value: z.number().min(0, "Current value must be at least 0"),
-  companyName: z.string().min(1, "Company name is required"),
+  isStockOption: z.boolean().default(true),
+  ticker: z.string().optional(),
+  exchange: z.string().optional(),
+  optionQuantity: z.number().int().positive("Number of options must be positive"),
+  strikePrice: z.number().min(0, "Strike price must be at least 0"),
+  currentPrice: z.number().min(0, "Current stock price must be at least 0").optional(),
   grantDate: z.date().optional().nullable(),
-  grantPrice: z.number().optional().nullable()
-    .transform(val => val === null ? null : Number(val)),
   expirationDate: z.date().optional().nullable(),
+  // Extra fields not in the base schema
+  companyName: z.string().min(1, "Company name is required"),
+  optionType: z.enum(["iso", "nso", "rsu", "other"]).optional(),
   vestingSchedule: z.string().optional(),
-  quantity: z.number().positive("Number of options must be positive"),
-  currentSharePrice: z.number().min(0, "Current share price must be at least 0")
-    .transform(val => val === null ? 0 : Number(val)),
-  strikePrice: z.number().min(0, "Strike price must be at least 0")
-    .transform(val => val === null ? 0 : Number(val)),
-  optionType: z.enum(["iso", "nso", "rsu", "other"]),
   isHidden: z.boolean().default(false),
   investmentExpenses: z.record(z.string(), z.any()).default({}),
 });
@@ -106,24 +106,27 @@ export function StockOptionForm({
       assetClassId: defaultValues?.assetClassId || stockOptionsAssetClass?.id,
       assetHoldingTypeId: defaultValues?.assetHoldingTypeId || 1,
       value: defaultValues?.value || 0,
-      companyName: defaultValues?.companyName || "",
-      grantDate: defaultValues?.grantDate ? new Date(defaultValues.grantDate) : null,
-      grantPrice: defaultValues?.grantPrice || null,
-      expirationDate: defaultValues?.expirationDate ? new Date(defaultValues.expirationDate) : null,
-      vestingSchedule: defaultValues?.vestingSchedule || "",
-      quantity: defaultValues?.quantity || 0,
-      currentSharePrice: defaultValues?.currentSharePrice || 0,
+      isStockOption: true,
+      ticker: defaultValues?.ticker || "",
+      exchange: defaultValues?.exchange || "",
+      optionQuantity: defaultValues?.optionQuantity || 0,
       strikePrice: defaultValues?.strikePrice || 0,
+      currentPrice: defaultValues?.currentPrice || 0,
+      grantDate: defaultValues?.grantDate ? new Date(defaultValues.grantDate) : null,
+      expirationDate: defaultValues?.expirationDate ? new Date(defaultValues.expirationDate) : null,
+      // Extra fields
+      companyName: defaultValues?.companyName || "",
       optionType: (defaultValues?.optionType as "iso" | "nso" | "rsu" | "other") || "iso",
+      vestingSchedule: defaultValues?.vestingSchedule || "",
       isHidden: defaultValues?.isHidden || false,
       investmentExpenses: defaultValues?.investmentExpenses || {},
     },
   });
 
   // Watch form values to calculate intrinsic value
-  const currentSharePrice = form.watch("currentSharePrice") || 0;
+  const currentSharePrice = form.watch("currentPrice") || 0;
   const strikePrice = form.watch("strikePrice") || 0;
-  const quantity = form.watch("quantity") || 0;
+  const quantity = form.watch("optionQuantity") || 0;
   const intrinsicValue = calculateIntrinsicValue(currentSharePrice, strikePrice, quantity);
   
   // Update value field when intrinsic value changes
@@ -365,7 +368,7 @@ export function StockOptionForm({
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
-                    name="quantity"
+                    name="optionQuantity"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Number of Options*</FormLabel>
@@ -407,7 +410,7 @@ export function StockOptionForm({
 
                   <FormField
                     control={form.control}
-                    name="currentSharePrice"
+                    name="currentPrice"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Current Share Price*</FormLabel>
