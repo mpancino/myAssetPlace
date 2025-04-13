@@ -862,17 +862,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Handle empty expense objects to avoid type errors
+      if (req.body.investmentExpenses && Object.keys(req.body.investmentExpenses).length === 0) {
+        req.body.investmentExpenses = null;
+      }
+      if (req.body.propertyExpenses && Object.keys(req.body.propertyExpenses).length === 0) {
+        req.body.propertyExpenses = null;
+      }
+      
+      // Ensure accountType is a string to match schema
+      if (req.body.accountType) {
+        req.body.accountType = String(req.body.accountType);
+      }
+      
+      console.log("Validating data for PATCH request:", JSON.stringify(req.body, null, 2));
+      
+      // Validate the data
       const validatedData = insertAssetSchema.partial().parse(req.body);
+      console.log("Successfully validated data");
       
       // Log the validated data to ensure expenses survived validation
       console.log("Property expenses after validation:", 
         validatedData.propertyExpenses ? 
-        `Found ${Object.keys(validatedData.propertyExpenses).length} expenses` : 
+        `Found ${Object.keys(validatedData.propertyExpenses || {}).length} expenses` : 
         "None");
         
       console.log("Investment expenses after validation:", 
         validatedData.investmentExpenses ? 
-        `Found ${Object.keys(validatedData.investmentExpenses).length} expenses` : 
+        `Found ${Object.keys(validatedData.investmentExpenses || {}).length} expenses` : 
         "None");
       
       const updatedAsset = await storage.updateAsset(id, validatedData);
@@ -880,12 +897,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Immediately verify the saved data by fetching it again
       const verifiedAsset = await storage.getAsset(id);
       console.log("VERIFICATION - Property expenses after save:", 
-        verifiedAsset?.propertyExpenses ? 
+        verifiedAsset && verifiedAsset.propertyExpenses && typeof verifiedAsset.propertyExpenses === 'object' ? 
         `Found ${Object.keys(verifiedAsset.propertyExpenses).length} expenses` : 
         "None");
         
       console.log("VERIFICATION - Investment expenses after save:", 
-        verifiedAsset?.investmentExpenses ? 
+        verifiedAsset && verifiedAsset.investmentExpenses && typeof verifiedAsset.investmentExpenses === 'object' ? 
         `Found ${Object.keys(verifiedAsset.investmentExpenses).length} expenses` : 
         "None");
       
