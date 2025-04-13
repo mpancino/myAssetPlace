@@ -171,6 +171,36 @@ export default function AddAssetPage() {
   
   // Submit handler
   const onSubmit = (values: FormValues) => {
+    console.log("Form submitted with data:", values);
+    
+    const selectedAssetClass = getSelectedAssetClassDetails();
+    console.log("Selected asset class for form submission:", selectedAssetClass);
+    
+    // Make sure the asset is associated with a class and holding type
+    if (!values.assetClassId || !values.assetHoldingTypeId) {
+      console.error("Missing required fields:", { 
+        assetClassId: values.assetClassId, 
+        assetHoldingTypeId: values.assetHoldingTypeId 
+      });
+      
+      toast({
+        title: "Missing information",
+        description: "Please select both an asset class and holding type",
+        variant: "destructive",
+      });
+      setCurrentStep(0);
+      return;
+    }
+    
+    // If we have a Cash & Bank Account, check if the handling was correct
+    if (selectedAssetClass && 
+        (selectedAssetClass.name.toLowerCase().includes("cash") || 
+         selectedAssetClass.name.toLowerCase().includes("bank"))) {
+      console.log("Cash account detected, should have been redirected to special form");
+    }
+    
+    // Log the final data being sent
+    console.log("Submitting asset data to API:", values);
     createAssetMutation.mutate(values);
   };
   
@@ -185,6 +215,7 @@ export default function AddAssetPage() {
   
   // Move to next step
   const handleNext = async () => {
+    console.log("handleNext called, currentStep:", currentStep);
     let shouldProceed = false;
     
     // Validate fields based on current step
@@ -193,23 +224,33 @@ export default function AddAssetPage() {
       const assetClassId = form.getValues("assetClassId");
       const assetHoldingTypeId = form.getValues("assetHoldingTypeId");
       
+      console.log("Validating step 0 - Asset Class ID:", assetClassId, "Holding Type ID:", assetHoldingTypeId);
+      
       const assetClassValid = await form.trigger("assetClassId");
       const assetHoldingTypeValid = await form.trigger("assetHoldingTypeId");
       
+      console.log("Validation results - Asset Class:", assetClassValid, "Holding Type:", assetHoldingTypeValid);
+      
       shouldProceed = assetClassValid && assetHoldingTypeValid;
+      console.log("Should proceed to next step:", shouldProceed);
       
       // If this is the first step and it's a specialized asset type, redirect to the appropriate form
       if (shouldProceed) {
         const selectedAssetClass = getSelectedAssetClassDetails();
+        console.log("Selected asset class for redirection:", selectedAssetClass);
         
         if (selectedAssetClass) {
+          console.log(`Asset class name: "${selectedAssetClass.name}", ID: ${selectedAssetClass.id}`);
+          
           // Redirect based on asset class type
           if (selectedAssetClass.name.toLowerCase() === 'real estate') {
+            console.log("Redirecting to property form");
             // Redirect to property-specific form
             setLocation(`/add-property/${selectedAssetClass.id}`);
             return; // Exit early to prevent further processing
           } else if (selectedAssetClass.name.toLowerCase().includes('cash') || 
                      selectedAssetClass.name.toLowerCase().includes('bank')) {
+            console.log(`Redirecting to cash account form with classId=${selectedAssetClass.id}`);
             // Redirect to cash account-specific form
             setLocation(`/add-cash-account?classId=${selectedAssetClass.id}`);
             return; // Exit early to prevent further processing
@@ -275,75 +316,93 @@ export default function AddAssetPage() {
                 <FormField
                   control={form.control}
                   name="assetClassId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Asset Class*</FormLabel>
-                      <Select 
-                        value={field.value !== undefined ? field.value.toString() : undefined} 
-                        onValueChange={value => field.onChange(parseInt(value))}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="h-20">
-                            <SelectValue placeholder="Select an asset class" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {assetClasses?.map(assetClass => (
-                            <SelectItem 
-                              key={assetClass.id} 
-                              value={assetClass.id.toString()}
-                              className="h-16 py-2"
-                            >
-                              <div>
-                                <div className="font-semibold">{assetClass.name}</div>
-                                {assetClass.description && (
-                                  <div className="text-xs text-muted-foreground">{assetClass.description}</div>
-                                )}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    console.log("Asset Class field value:", field.value);
+                    console.log("Asset Classes available:", assetClasses);
+                    
+                    return (
+                      <FormItem>
+                        <FormLabel>Asset Class*</FormLabel>
+                        <Select 
+                          value={field.value !== undefined ? field.value.toString() : undefined} 
+                          onValueChange={value => {
+                            console.log("Asset Class selected:", value);
+                            field.onChange(parseInt(value));
+                            console.log("Form values after asset class change:", form.getValues());
+                          }}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="h-20">
+                              <SelectValue placeholder="Select an asset class" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {assetClasses?.map(assetClass => (
+                              <SelectItem 
+                                key={assetClass.id} 
+                                value={assetClass.id.toString()}
+                                className="h-16 py-2"
+                              >
+                                <div>
+                                  <div className="font-semibold">{assetClass.name}</div>
+                                  {assetClass.description && (
+                                    <div className="text-xs text-muted-foreground">{assetClass.description}</div>
+                                  )}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
                 
                 <FormField
                   control={form.control}
                   name="assetHoldingTypeId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Holding Type*</FormLabel>
-                      <Select 
-                        value={field.value !== undefined ? field.value.toString() : undefined} 
-                        onValueChange={value => field.onChange(parseInt(value))}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="h-20">
-                            <SelectValue placeholder="Select a holding type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {holdingTypes?.map(type => (
-                            <SelectItem 
-                              key={type.id} 
-                              value={type.id.toString()}
-                              className="h-16 py-2"
-                            >
-                              <div>
-                                <div className="font-semibold">{type.name}</div>
-                                {type.description && (
-                                  <div className="text-xs text-muted-foreground">{type.description}</div>
-                                )}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    console.log("Holding Type field value:", field.value);
+                    console.log("Holding Types available:", holdingTypes);
+                    
+                    return (
+                      <FormItem>
+                        <FormLabel>Holding Type*</FormLabel>
+                        <Select 
+                          value={field.value !== undefined ? field.value.toString() : undefined} 
+                          onValueChange={value => {
+                            console.log("Holding Type selected:", value);
+                            field.onChange(parseInt(value));
+                            console.log("Form values after holding type change:", form.getValues());
+                          }}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="h-20">
+                              <SelectValue placeholder="Select a holding type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {holdingTypes?.map(type => (
+                              <SelectItem 
+                                key={type.id} 
+                                value={type.id.toString()}
+                                className="h-16 py-2"
+                              >
+                                <div>
+                                  <div className="font-semibold">{type.name}</div>
+                                  {type.description && (
+                                    <div className="text-xs text-muted-foreground">{type.description}</div>
+                                  )}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
               </div>
             </CardContent>
