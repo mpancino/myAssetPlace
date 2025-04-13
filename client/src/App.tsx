@@ -8,6 +8,7 @@ import AdminPage from "@/pages/admin-page";
 import AssetClassPage from "@/pages/asset-class-page";
 import AddAssetPage from "@/pages/add-asset-page";
 import AddCashAccountPage from "@/pages/add-cash-account-page";
+import EditCashAccountPage from "@/pages/edit-cash-account-page";
 import AddLoanPage from "@/pages/add-loan-page";
 import AddPropertyPage from "@/pages/add-property-page";
 import AddSharePage from "@/pages/add-share-page";
@@ -37,6 +38,7 @@ function Router() {
       <ProtectedRoute path="/asset-classes/:classId" component={AssetClassPage} />
       <ProtectedRoute path="/add-asset" component={AddAssetPage} />
       <ProtectedRoute path="/add-cash-account" component={AddCashAccountPage} />
+      <ProtectedRoute path="/edit-cash-account/:assetId" component={EditCashAccountPage} />
       <ProtectedRoute path="/add-loan" component={AddLoanPage} />
       <ProtectedRoute path="/add-property" component={AddPropertyPage} />
       <ProtectedRoute path="/add-property/:classId" component={AddPropertyPage} />
