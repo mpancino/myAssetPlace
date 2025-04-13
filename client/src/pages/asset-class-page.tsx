@@ -144,6 +144,11 @@ export default function AssetClassPage() {
       console.log(`ROUTING BY ID: Stock Option Form (/add-stock-option/${assetClass.id}) for ID: 9`);
       setLocation(`/add-stock-option/${assetClass.id}`);
     }
+    else if (assetClass.id === 8) {
+      // Employment Income (ID 8) should always go to the employment income form
+      console.log(`ROUTING BY ID: Employment Income Form (/add-employment-income) for ID: 8`);
+      setLocation(`/add-employment-income`);
+    }
     else if (assetClass.id === 4) {
       // Investments (ID 4) should always go to the share form
       console.log(`ROUTING BY ID: Share Form (/add-share/${assetClass.id}) for ID: 4`);
@@ -179,6 +184,11 @@ export default function AssetClassPage() {
     else if (lowerCaseName.includes('retirement') || lowerCaseName.includes('superannuation') || lowerCaseName.includes('pension')) {
       console.log(`ROUTING TO: Retirement Form (/add-retirement/${assetClass.id})`);
       setLocation(`/add-retirement/${assetClass.id}`);
+    }
+    // For Employment Income
+    else if (lowerCaseName.includes('employment') || lowerCaseName.includes('income') || lowerCaseName.includes('salary')) {
+      console.log(`ROUTING TO: Employment Income Form (/add-employment-income)`);
+      setLocation('/add-employment-income');
     }
     // For other asset types, redirect to the generic form with the classId parameter
     else {
