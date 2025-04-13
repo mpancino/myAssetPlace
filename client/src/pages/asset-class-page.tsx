@@ -137,8 +137,21 @@ export default function AssetClassPage() {
     const lowerCaseName = assetClass.name?.toLowerCase() || '';
     console.log(`ASSET CLASS NAME: "${lowerCaseName}"`);
     
+    // First, check for asset class ID direct routing
+    // This ensures that specific asset classes always go to their dedicated forms regardless of name
+    if (assetClass.id === 9) {
+      // Employee Stock Options (ID 9) should always go to the stock options form
+      console.log(`ROUTING BY ID: Stock Option Form (/add-stock-option/${assetClass.id}) for ID: 9`);
+      setLocation(`/add-stock-option/${assetClass.id}`);
+    }
+    else if (assetClass.id === 4) {
+      // Investments (ID 4) should always go to the share form
+      console.log(`ROUTING BY ID: Share Form (/add-share/${assetClass.id}) for ID: 4`);
+      setLocation(`/add-share/${assetClass.id}`);
+    }
+    // Then check for name-based routing as fallback
     // For Cash & Bank Accounts, we use a query parameter
-    if (lowerCaseName.includes('cash') || lowerCaseName.includes('bank')) {
+    else if (lowerCaseName.includes('cash') || lowerCaseName.includes('bank')) {
       console.log(`ROUTING TO: Cash Account Form (/add-cash-account?classId=${assetClass.id})`);
       setLocation(`/add-cash-account?classId=${assetClass.id}`);
     } 
