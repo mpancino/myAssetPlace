@@ -1198,12 +1198,24 @@ export default function AssetDetailPage() {
           <div className="flex space-x-2">
             {!isEditing ? (
               <>
-                <Button 
-                  variant="outline"
-                  onClick={() => setIsEditing(true)}
-                >
-                  <Edit className="mr-2 h-4 w-4" /> Edit
-                </Button>
+                {/* Conditional Edit button: Cash accounts go to dedicated edit page */}
+                {selectedClass && 
+                 (selectedClass.name.toLowerCase().includes("cash") || 
+                  selectedClass.name.toLowerCase().includes("bank")) ? (
+                  <Button 
+                    variant="outline"
+                    onClick={() => setLocation(`/edit-cash-account/${assetId}`)}
+                  >
+                    <Edit className="mr-2 h-4 w-4" /> Edit Cash Account
+                  </Button>
+                ) : (
+                  <Button 
+                    variant="outline"
+                    onClick={() => setIsEditing(true)}
+                  >
+                    <Edit className="mr-2 h-4 w-4" /> Edit
+                  </Button>
+                )}
                 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
