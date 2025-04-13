@@ -313,6 +313,7 @@ Status indicators:
 |---|---|---|---|---|
 | DEF-001 | PropertyExpenses component displays "[object Object]" in category dropdown menu instead of category names | PropertyExpenses | High | 🔄 In Progress |
 | DEF-002 | TypeScript errors in asset-detail-page.tsx related to expense handling and property types | AssetDetailPage | High | ⏳ Not Started |
+| DEF-003 | NaN errors in numeric input fields when clearing values (particularly in bonusLikelihood field) | Employment Income Form | Medium | 🔄 In Progress |
 
 ## Implementation Notes
 1. We should NOT implement cryptocurrency or any asset classes not explicitly mentioned in the PDD

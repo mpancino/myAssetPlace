@@ -648,7 +648,8 @@ export function EmploymentIncomeForm({
                               placeholder="0.00"
                               {...field}
                               onChange={(e) => {
-                                field.onChange(parseFloat(e.target.value));
+                                const value = e.target.value === '' ? '' : parseFloat(e.target.value);
+                                field.onChange(isNaN(value) ? 0 : value);
                               }}
                             />
                           </FormControl>
@@ -675,7 +676,8 @@ export function EmploymentIncomeForm({
                                 placeholder="0.00"
                                 {...field}
                                 onChange={(e) => {
-                                  field.onChange(parseFloat(e.target.value));
+                                  const value = e.target.value === '' ? '' : parseFloat(e.target.value);
+                                  field.onChange(isNaN(value) ? 0 : value);
                                 }}
                               />
                             </FormControl>
