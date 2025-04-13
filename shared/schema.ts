@@ -515,6 +515,7 @@ export type InsertLoan = z.infer<typeof insertLoanSchema>;
 export type InsertProperty = z.infer<typeof insertPropertySchema>;
 export type InsertShare = z.infer<typeof insertShareSchema>;
 export type InsertStockOption = z.infer<typeof insertStockOptionSchema>;
+export type InsertEmploymentIncome = z.infer<typeof insertEmploymentIncomeSchema>;
 
 // Expense category definition for administrators
 export type ExpenseCategory = {

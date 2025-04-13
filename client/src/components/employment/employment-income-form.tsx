@@ -41,7 +41,8 @@ import {
   Asset,
   AssetClass,
   AssetHoldingType,
-  insertEmploymentIncomeSchema
+  insertEmploymentIncomeSchema,
+  InsertEmploymentIncome
 } from "@shared/schema";
 
 type EmploymentIncomeFormProps = {
@@ -168,15 +169,17 @@ export function EmploymentIncomeForm({
   // Update the value field whenever base salary or bonus changes
   // Also set the Employer name as the asset name
   useEffect(() => {
-    const subscription = form.watch((value, { name: fieldName }) => {
+    const subscription = form.watch((formValues, { name: fieldName }) => {
       if (
-        fieldName?.includes("baseSalary") ||
-        fieldName?.includes("paymentFrequency") ||
-        fieldName?.includes("bonusType") ||
-        fieldName?.includes("bonusFixedAmount") ||
-        fieldName?.includes("bonusPercentage") ||
-        fieldName?.includes("bonusFrequency") ||
-        fieldName?.includes("bonusLikelihood")
+        typeof fieldName === 'string' && (
+          fieldName.includes("baseSalary") ||
+          fieldName.includes("paymentFrequency") ||
+          fieldName.includes("bonusType") ||
+          fieldName.includes("bonusFixedAmount") ||
+          fieldName.includes("bonusPercentage") ||
+          fieldName.includes("bonusFrequency") ||
+          fieldName.includes("bonusLikelihood")
+        )
       ) {
         const annualIncome = calculateAnnualIncome();
         form.setValue("value", annualIncome);
@@ -206,7 +209,11 @@ export function EmploymentIncomeForm({
       }
     });
     
-    return () => subscription.unsubscribe();
+    return () => {
+      if (subscription && typeof subscription.unsubscribe === 'function') {
+        subscription.unsubscribe();
+      }
+    };
   }, [form, form.watch]);
 
   // Format a currency value
@@ -220,10 +227,10 @@ export function EmploymentIncomeForm({
 
   // Create mutation for adding a new income source
   const createMutation = useMutation({
-    mutationFn: async (data: typeof form.getValues) => {
+    mutationFn: async (formValues: any) => {
       // Add the additionalDeductions to the form data
-      const formData = {
-        ...data,
+      const formData: Record<string, any> = {
+        ...formValues,
         additionalDeductions,
       };
       
@@ -274,14 +281,14 @@ export function EmploymentIncomeForm({
 
   // Update mutation for editing an existing income source
   const updateMutation = useMutation({
-    mutationFn: async (data: typeof form.getValues) => {
+    mutationFn: async (formValues: any) => {
       if (!defaultValues?.id) {
         throw new Error("Asset ID is required for updates");
       }
       
       // Add the additionalDeductions to the form data
-      const formData = {
-        ...data,
+      const formData: Record<string, any> = {
+        ...formValues,
         additionalDeductions,
       };
       
