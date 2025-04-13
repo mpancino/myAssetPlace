@@ -1,53 +1,53 @@
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { insertShareSchema, InsertShare, AssetClass, AssetHoldingType } from "@shared/schema";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import { useLocation } from "wouter";
-import { v4 as uuidv4 } from "uuid";
-
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
 import { useState } from "react";
-import { CalendarIcon, Plus, Trash2 } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
-import { Label } from "@/components/ui/label";
-import { SharePurchaseTransaction, DividendTransaction } from "@shared/schema";
-import { PurchaseHistory } from "@/components/shares/purchase-history";
-import { DividendHistory } from "@/components/shares/dividend-history";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger
-} from "@/components/ui/tabs";
+import { useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
+import { AssetClass, AssetHoldingType, InsertAsset } from "@shared/schema";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { apiRequest } from "@/lib/queryClient";
+import { formatCurrency } from "@/lib/utils";
 import { InvestmentExpenses } from "@/components/expense/investment-expenses";
+
+// UI Components
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { DatePicker } from "@/components/ui/date-picker";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+// Define share form schema
+const shareFormSchema = z.object({
+  name: z.string().min(1, "Investment name is required"),
+  description: z.string().optional(),
+  assetClassId: z.number(),
+  assetHoldingTypeId: z.number(),
+  value: z.number().min(0, "Current value must be at least 0"),
+  ticker: z.string().min(1, "Stock ticker/symbol is required"),
+  exchange: z.string().optional(),
+  shareQuantity: z.number().int().positive("Number of shares must be positive"),
+  purchasePrice: z.number().min(0, "Purchase price must be at least 0"),
+  currentPrice: z.number().min(0, "Current share price must be at least 0"),
+  purchaseDate: z.date().optional().nullable(),
+  dividendYield: z.number().min(0, "Dividend yield must be at least 0").max(100, "Dividend yield must be 100% or less").optional(),
+  growthRate: z.number().optional(),
+  lastDividendAmount: z.number().min(0, "Dividend amount must be at least 0").optional(),
+  lastDividendDate: z.date().optional().nullable(),
+  isHidden: z.boolean().default(false),
+  investmentExpenses: z.record(z.string(), z.any()).default({}),
+});
+
+type ShareFormValues = z.infer<typeof shareFormSchema>;
 
 interface ShareFormProps {
   assetClasses: AssetClass[];
   holdingTypes: AssetHoldingType[];
-  defaultValues?: Partial<InsertShare>;
+  defaultValues?: Partial<InsertAsset>;
   isEditing?: boolean;
   assetId?: number;
 }
@@ -62,415 +62,492 @@ export function ShareForm({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
-  const [purchaseHistory, setPurchaseHistory] = useState<SharePurchaseTransaction[]>(
-    defaultValues?.purchaseHistory || []
+  const [investmentExpenses, setInvestmentExpenses] = useState<Record<string, any>>(
+    defaultValues?.investmentExpenses || {}
   );
-  const [dividendHistory, setDividendHistory] = useState<DividendTransaction[]>(
-    defaultValues?.dividendHistory?.map(d => ({
-      ...d,
-      frequency: d.frequency || "quarterly" // Ensure frequency is set
-    })) || []
-  );
-  const [newTransaction, setNewTransaction] = useState<Partial<SharePurchaseTransaction>>({
-    id: uuidv4(),
-    date: new Date(),
-    quantity: 0,
-    pricePerShare: 0,
-    fees: 0,
-    notes: "",
-  });
+  const [activeTab, setActiveTab] = useState("details");
 
-  // Find the Shares/Investments asset class
-  const sharesAssetClass = assetClasses.find(
-    (assetClass) => 
-      assetClass.name.toLowerCase().includes("share") || 
-      assetClass.name.toLowerCase().includes("investment") ||
-      assetClass.name.toLowerCase().includes("stock")
+  // Find the Investments asset class
+  const investmentsAssetClass = assetClasses.find(
+    (assetClass) => assetClass.name.toLowerCase().includes("investment")
   );
 
-  const form = useForm<InsertShare>({
-    resolver: zodResolver(insertShareSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      value: 0,
-      assetClassId: sharesAssetClass?.id,
-      assetHoldingTypeId: holdingTypes[0]?.id,
-      ticker: "",
-      exchange: "",
-      sharesQuantity: 0,
-      currentPrice: 0,
-      purchaseDate: new Date(),
-      dividendYield: 0,
-      purchaseHistory: [],
-      dividendHistory: [],
-      investmentExpenses: {},
-      ...defaultValues,
-    },
-  });
-
-  // Calculate total value based on quantity and current price
-  const watchQuantity = form.watch("sharesQuantity");
-  const watchCurrentPrice = form.watch("currentPrice");
-  
-  // Update the total value whenever quantity or price changes
-  const updateTotalValue = () => {
-    const quantity = parseFloat(watchQuantity.toString()) || 0;
-    const price = parseFloat(watchCurrentPrice.toString()) || 0;
-    form.setValue("value", quantity * price);
+  // Calculate the current market value
+  const calculateMarketValue = (
+    currentPrice: number = 0,
+    quantity: number = 0
+  ): number => {
+    return currentPrice * quantity;
   };
 
-  // Update total value when either field changes
-  form.watch(() => {
-    updateTotalValue();
+  // Calculate gain/loss
+  const calculateGainLoss = (
+    currentPrice: number = 0,
+    purchasePrice: number = 0,
+    quantity: number = 0
+  ): number => {
+    return (currentPrice - purchasePrice) * quantity;
+  };
+
+  // Form setup
+  const form = useForm<ShareFormValues>({
+    resolver: zodResolver(shareFormSchema),
+    defaultValues: {
+      name: defaultValues?.name || "",
+      description: defaultValues?.description || "",
+      assetClassId: defaultValues?.assetClassId || investmentsAssetClass?.id,
+      assetHoldingTypeId: defaultValues?.assetHoldingTypeId || 1,
+      value: defaultValues?.value || 0,
+      ticker: defaultValues?.ticker || "",
+      exchange: defaultValues?.exchange || "",
+      shareQuantity: defaultValues?.shareQuantity || 0,
+      purchasePrice: defaultValues?.purchasePrice || 0,
+      currentPrice: defaultValues?.currentPrice || 0,
+      purchaseDate: defaultValues?.purchaseDate ? new Date(defaultValues.purchaseDate) : null,
+      dividendYield: defaultValues?.dividendYield || 0,
+      growthRate: defaultValues?.growthRate || investmentsAssetClass?.defaultMediumGrowthRate || 7,
+      lastDividendAmount: defaultValues?.lastDividendAmount || 0,
+      lastDividendDate: defaultValues?.lastDividendDate ? new Date(defaultValues.lastDividendDate) : null,
+      isHidden: defaultValues?.isHidden || false,
+      investmentExpenses: defaultValues?.investmentExpenses || {},
+    },
   });
 
-  // Create or update mutation
-  const mutation = useMutation({
-    mutationFn: async (data: InsertShare) => {
-      // Add purchase history to the data
-      data.purchaseHistory = purchaseHistory;
-      
+  // Watch form values to calculate market value
+  const currentPrice = form.watch("currentPrice") || 0;
+  const shareQuantity = form.watch("shareQuantity") || 0;
+  const purchasePrice = form.watch("purchasePrice") || 0;
+  const marketValue = calculateMarketValue(currentPrice, shareQuantity);
+  const gainLoss = calculateGainLoss(currentPrice, purchasePrice, shareQuantity);
+  
+  // Update value field when market value changes
+  const updateValueFromMarket = () => {
+    form.setValue("value", marketValue);
+  };
+
+  // Handle expenses change
+  const handleExpensesChange = (expenses: Record<string, any>) => {
+    setInvestmentExpenses(expenses);
+  };
+
+  // Handler for form submission
+  const onSubmit = async (values: ShareFormValues) => {
+    try {
+      // Include the investment expenses from the state
+      const dataToSubmit = {
+        ...values,
+        investmentExpenses,
+      };
+
+      // Make the API request
       if (isEditing && assetId) {
-        const res = await apiRequest("PATCH", `/api/assets/${assetId}`, data);
-        return await res.json();
+        // Update existing asset
+        const response = await apiRequest("PATCH", `/api/assets/${assetId}`, dataToSubmit);
+        const updatedAsset = await response.json();
+
+        toast({
+          title: "Investment Updated",
+          description: "Your investment has been updated successfully.",
+        });
+
+        // Invalidate queries to refresh data
+        queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
+        queryClient.invalidateQueries({ queryKey: [`/api/assets/${assetId}`] });
+        queryClient.invalidateQueries({ queryKey: ["/api/assets/by-class"] });
       } else {
-        const res = await apiRequest("POST", "/api/assets", data);
-        return await res.json();
+        // Create new asset
+        const response = await apiRequest("POST", "/api/assets", dataToSubmit);
+        const newAsset = await response.json();
+
+        toast({
+          title: "Investment Added",
+          description: "Your investment has been added successfully.",
+        });
+
+        // Invalidate queries to refresh data
+        queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/assets/by-class"] });
       }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
-      toast({
-        title: `Investment ${isEditing ? "updated" : "created"} successfully`,
-        description: `Your ${form.getValues("name")} investment has been ${isEditing ? "updated" : "created"}.`,
-      });
-      setLocation("/asset-classes/" + sharesAssetClass?.id);
-    },
-    onError: (error: Error) => {
+
+      // Navigate back to the appropriate page
+      if (investmentsAssetClass) {
+        setLocation(`/asset-classes/${investmentsAssetClass.id}`);
+      } else {
+        setLocation("/dashboard");
+      }
+    } catch (error) {
+      console.error("Error saving investment:", error);
       toast({
         title: "Error",
-        description: `Failed to ${isEditing ? "update" : "create"} investment: ${error.message}`,
+        description: "Failed to save investment. Please try again.",
         variant: "destructive",
       });
-    },
-  });
-
-  const onSubmit = (data: InsertShare) => {
-    // Add purchase history and dividend history to the data
-    data.purchaseHistory = purchaseHistory;
-    data.dividendHistory = dividendHistory;
-    mutation.mutate(data);
-  };
-
-  // Add a new purchase transaction
-  const addTransaction = () => {
-    if (!newTransaction.date || !newTransaction.quantity || !newTransaction.pricePerShare) {
-      toast({
-        title: "Incomplete data",
-        description: "Please fill in all required transaction fields",
-        variant: "destructive",
-      });
-      return;
     }
-    
-    setPurchaseHistory([...purchaseHistory, newTransaction as SharePurchaseTransaction]);
-    setNewTransaction({
-      id: uuidv4(),
-      date: new Date(),
-      quantity: 0,
-      pricePerShare: 0,
-      fees: 0,
-      notes: "",
-    });
-  };
-
-  // Remove a purchase transaction
-  const removeTransaction = (id: string) => {
-    setPurchaseHistory(purchaseHistory.filter(transaction => transaction.id !== id));
-  };
-
-  // Handle expenses
-  const handleExpensesChange = (expenses: Record<string, any>) => {
-    form.setValue("investmentExpenses", expenses);
   };
 
   return (
     <Card className="max-w-2xl mx-auto">
       <CardHeader>
         <CardTitle>{isEditing ? "Edit Investment" : "Add Investment"}</CardTitle>
+        <CardDescription>
+          Track your stock and ETF investments to monitor their performance and value.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Investment Name*</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Apple Inc. Shares" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="mb-4">
+                <TabsTrigger value="details">Details</TabsTrigger>
+                <TabsTrigger value="valuation">Valuation</TabsTrigger>
+                <TabsTrigger value="dividends">Dividends</TabsTrigger>
+                <TabsTrigger value="expenses">Expenses</TabsTrigger>
+              </TabsList>
 
-              <FormField
-                control={form.control}
-                name="ticker"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Ticker Symbol*</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., AAPL" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="exchange"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Exchange*</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., NASDAQ" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="sharesQuantity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Quantity*</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.001"
-                        placeholder="Number of shares"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="currentPrice"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Current Price*</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        placeholder="Current price per share"
-                        {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="value"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Total Value*</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        {...field}
-                        readOnly
-                        className="bg-muted"
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Automatically calculated from quantity × price
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="purchaseDate"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Purchase Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
+              <TabsContent value="details" className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Investment Name*</FormLabel>
                         <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(new Date(field.value), "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
+                          <Input placeholder="e.g., Apple Shares" {...field} />
                         </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={new Date(field.value)}
-                          onSelect={(date) => field.onChange(date)}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-              <FormField
-                control={form.control}
-                name="dividendYield"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Dividend Yield (%)</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        placeholder="e.g., 2.5"
-                        {...field}
-                        onChange={(e) => 
-                          field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  <FormField
+                    control={form.control}
+                    name="ticker"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ticker Symbol*</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., AAPL" {...field} />
+                        </FormControl>
+                        <FormDescription>The stock's ticker symbol on its exchange</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-              <FormField
-                control={form.control}
-                name="assetHoldingTypeId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Holding Type*</FormLabel>
-                    <Select
-                      onValueChange={(value) => field.onChange(parseInt(value))}
-                      defaultValue={field.value?.toString()}
-                    >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="exchange"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Exchange</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., NASDAQ" {...field} />
+                        </FormControl>
+                        <FormDescription>The exchange where the stock is traded</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="assetHoldingTypeId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Holding Type*</FormLabel>
+                        <Select
+                          onValueChange={(value) => field.onChange(parseInt(value))}
+                          defaultValue={field.value?.toString()}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select holding type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {holdingTypes.map((type) => (
+                              <SelectItem key={type.id} value={type.id.toString()}>
+                                {type.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          The legal structure under which this investment is held
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select holding type" />
-                        </SelectTrigger>
+                        <Textarea
+                          placeholder="Enter notes about your investment (optional)"
+                          className="min-h-[100px]"
+                          {...field}
+                        />
                       </FormControl>
-                      <SelectContent>
-                        {holdingTypes.map((type) => (
-                          <SelectItem key={type.id} value={type.id.toString()}>
-                            {type.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="Optional notes about this investment" 
-                      {...field}
-                      value={field.value || ''}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                <FormField
+                  control={form.control}
+                  name="isHidden"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Hide from dashboard</FormLabel>
+                        <FormDescription>
+                          Hidden assets won't appear in your dashboard summary, but will still be included in calculations
+                        </FormDescription>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+              </TabsContent>
 
-            {/* Tabbed Details Sections */}
-            <div className="border rounded-md p-4">
-              <Tabs defaultValue="purchases" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="purchases">Purchase History</TabsTrigger>
-                  <TabsTrigger value="dividends">Dividend History</TabsTrigger>
-                  <TabsTrigger value="expenses">Expenses</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="purchases" className="pt-4">
-                  <PurchaseHistory 
-                    purchaseHistory={purchaseHistory}
-                    onChange={setPurchaseHistory}
-                    onQuantityChange={(totalQuantity) => {
-                      // Optionally update the form's quantity field
-                      form.setValue("sharesQuantity", totalQuantity);
-                    }}
-                  />
-                </TabsContent>
-                
-                <TabsContent value="dividends" className="pt-4">
-                  <DividendHistory 
-                    dividendHistory={dividendHistory}
-                    onChange={setDividendHistory}
-                    sharesQuantity={watchQuantity}
-                    currentPrice={watchCurrentPrice}
-                    onYieldChange={(annualYield) => {
-                      form.setValue("dividendYield", annualYield);
-                    }}
-                  />
-                </TabsContent>
-                
-                <TabsContent value="expenses" className="pt-4">
-                  <InvestmentExpenses 
-                    value={form.getValues("investmentExpenses") || {}}
-                    onChange={handleExpensesChange}
-                  />
-                </TabsContent>
-              </Tabs>
-            </div>
+              <TabsContent value="valuation" className="space-y-4">
+                <div className="rounded-md bg-muted p-4 mb-4">
+                  <h3 className="font-medium mb-2">Current Market Value</h3>
+                  <p className="text-xl font-bold">{formatCurrency(marketValue)}</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {shareQuantity} shares × {formatCurrency(currentPrice)} per share
+                  </p>
+                  <p className={`text-sm mt-1 ${gainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    {gainLoss >= 0 ? '+' : ''}{formatCurrency(gainLoss)} ({gainLoss !== 0 && purchasePrice !== 0 ? 
+                      `${Math.round(gainLoss / (purchasePrice * shareQuantity) * 100)}%` : '0%'})
+                  </p>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-2"
+                    onClick={updateValueFromMarket}
+                  >
+                    Update Asset Value
+                  </Button>
+                </div>
 
-            <div className="flex justify-end gap-2">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => setLocation(`/asset-classes/${sharesAssetClass?.id}`)}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="shareQuantity"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Number of Shares*</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="0"
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="purchasePrice"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Purchase Price Per Share*</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="currentPrice"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Current Share Price*</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="purchaseDate"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Purchase Date</FormLabel>
+                        <DatePicker
+                          date={field.value as Date | undefined}
+                          setDate={field.onChange}
+                        />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="growthRate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Expected Annual Growth Rate (%)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          placeholder="7.0"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Expected annual growth rate for long-term projections
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </TabsContent>
+
+              <TabsContent value="dividends" className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="dividendYield"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Dividend Yield (%)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          {...field}
+                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Annual dividend as a percentage of the current share price
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="lastDividendAmount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Last Dividend Amount</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          The last dividend payment amount per share
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="lastDividendDate"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Last Dividend Date</FormLabel>
+                        <DatePicker
+                          date={field.value as Date | undefined}
+                          setDate={field.onChange}
+                        />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="rounded-md bg-muted p-4">
+                  <h3 className="font-medium mb-2">Estimated Annual Dividend Income</h3>
+                  <p className="text-xl font-bold">
+                    {formatCurrency((form.watch("dividendYield") || 0) / 100 * marketValue)}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Based on current market value and dividend yield
+                  </p>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="expenses" className="space-y-4">
+                <InvestmentExpenses
+                  expenses={investmentExpenses}
+                  onChange={handleExpensesChange}
+                  assetClass={investmentsAssetClass}
+                />
+              </TabsContent>
+            </Tabs>
+
+            <div className="flex justify-end space-x-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  if (investmentsAssetClass) {
+                    setLocation(`/asset-classes/${investmentsAssetClass.id}`);
+                  } else {
+                    setLocation("/dashboard");
+                  }
+                }}
               >
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
-                disabled={mutation.isPending}
-              >
-                {mutation.isPending ? "Saving..." : isEditing ? "Update Investment" : "Add Investment"}
+              <Button type="submit">
+                {isEditing ? "Update Investment" : "Add Investment"}
               </Button>
             </div>
           </form>
