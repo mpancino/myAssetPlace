@@ -13,7 +13,7 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BalanceHistory } from "./balance-history";
 import { TransactionCategories } from "./transaction-categories";
@@ -76,6 +76,31 @@ export function CashAccountForm({
   console.log("Default values passed to form:", defaultValues);
   console.log("All available asset classes:", assetClasses);
 
+  // Check if we have a classId in the URL parameters
+  useEffect(() => {
+    try {
+      // Get classId from URL if present
+      const url = window.location.href;
+      const searchParams = url.includes('?') ? url.split('?')[1] : '';
+      const params = new URLSearchParams(searchParams);
+      const classIdParam = params.get('classId');
+      
+      console.log("Cash account classId from URL:", classIdParam);
+      console.log("Full URL:", url);
+      console.log("Search parameters:", searchParams ? '?' + searchParams : 'None');
+      
+      // Store in localStorage for persistence
+      if (classIdParam) {
+        localStorage.setItem('selectedAssetClassId', classIdParam);
+      } else if (cashAssetClass?.id) {
+        // Fallback to the found cash asset class
+        localStorage.setItem('selectedAssetClassId', cashAssetClass.id.toString());
+      }
+    } catch (error) {
+      console.error("Error processing URL parameters:", error);
+    }
+  }, [cashAssetClass]);
+
   // Initialize assetClassId from defaultValues or cashAssetClass
   const initialAssetClassId = defaultValues?.assetClassId || cashAssetClass?.id;
   console.log("Initializing form with assetClassId:", initialAssetClassId);
@@ -105,19 +130,39 @@ export function CashAccountForm({
       console.log("Mutation executing with data:", data);
       
       try {
+        // Get the URL from localStorage if it was set during initialization
+        const savedClassId = localStorage.getItem('selectedAssetClassId');
+        if (savedClassId && !data.assetClassId) {
+          console.log("Using assetClassId from localStorage:", savedClassId);
+          data.assetClassId = parseInt(savedClassId);
+        }
+        
+        // Make sure assetClassId is set in data
+        if (!data.assetClassId && cashAssetClass?.id) {
+          console.log("Using assetClassId from cashAssetClass:", cashAssetClass.id);
+          data.assetClassId = cashAssetClass.id;
+        }
+        
+        // If we still don't have an assetClassId, use a default of 1 (typically Cash & Bank Accounts)
+        if (!data.assetClassId) {
+          console.log("No assetClassId found, using default of 1");
+          data.assetClassId = 1;
+        }
+        
         if (isEditing && assetId) {
           console.log("Updating existing cash account:", assetId);
           const res = await apiRequest("PATCH", `/api/assets/${assetId}`, data);
+          if (!res.ok) {
+            const errorText = await res.text();
+            console.error("API error response:", errorText);
+            throw new Error(`API error: ${res.status} ${errorText}`);
+          }
           const result = await res.json();
           console.log("Update response:", result);
           return result;
         } else {
           console.log("Creating new cash account with data:", data);
-          // Make sure we're sending a properly formed asset
-          if (!data.assetClassId) {
-            console.error("Missing assetClassId in form data!");
-            throw new Error("Asset class must be selected");
-          }
+          console.log("Asset class ID for submission:", data.assetClassId);
           
           const res = await apiRequest("POST", "/api/assets", data);
           if (!res.ok) {
@@ -155,31 +200,72 @@ export function CashAccountForm({
   });
 
   const onSubmit = (data: InsertCashAccount) => {
-    // Add balance history and transaction categories to the data
-    data.balanceHistory = balanceHistory;
-    data.transactionCategories = transactionCategories;
+    console.log("Form submitted with data:", data);
     
-    // Make sure we have an asset class ID - fallback to the cash asset class if none was set
-    if (!data.assetClassId && cashAssetClass) {
-      console.log("No assetClassId detected, using fallback cash asset class:", cashAssetClass.id);
-      data.assetClassId = cashAssetClass.id;
-    }
-    
-    // Add debugging
-    console.log("Submitting cash account data:", data);
-    
-    // Final validation check
-    if (!data.assetClassId) {
-      console.error("Missing assetClassId in form data - cannot submit!");
+    try {
+      // Deep clone the data to avoid reference issues
+      const submitData = JSON.parse(JSON.stringify(data));
+      
+      // Add balance history and transaction categories to the data
+      submitData.balanceHistory = balanceHistory;
+      submitData.transactionCategories = transactionCategories;
+
+      // Force the assetClassId to be the cash asset class ID
+      if (cashAssetClass?.id) {
+        console.log("Setting assetClassId to cash asset class:", cashAssetClass.id);
+        submitData.assetClassId = cashAssetClass.id;
+      } else if (!submitData.assetClassId) {
+        // If we can't get the cash asset class ID from the cashAssetClass object, try to set it from defaultValues
+        submitData.assetClassId = defaultValues?.assetClassId || 1;  // Fallback to 1 which is typically the Cash asset class ID
+        console.log("No cash asset class found, using fallback ID:", submitData.assetClassId);
+      }
+      
+      // Force numeric fields to be numbers, not strings
+      submitData.value = typeof submitData.value === 'string' ? parseFloat(submitData.value) : (submitData.value || 0);
+      submitData.interestRate = typeof submitData.interestRate === 'string' ? parseFloat(submitData.interestRate) : (submitData.interestRate || 0);
+      
+      // Force AssetHoldingTypeId to be a number
+      submitData.assetHoldingTypeId = typeof submitData.assetHoldingTypeId === 'string' ? 
+        parseInt(submitData.assetHoldingTypeId) : (submitData.assetHoldingTypeId || 1);
+      
+      // Add detailed debugging
+      console.log("Submitting cash account data:", submitData);
+      console.log("Asset class ID:", submitData.assetClassId);
+      console.log("Asset holding type ID:", submitData.assetHoldingTypeId);
+      
+      // Final validation check - very important
+      if (!submitData.assetClassId) {
+        console.error("CRITICAL ERROR: Missing assetClassId in form data - cannot submit!");
+        toast({
+          title: "Missing Asset Class",
+          description: "Please try again or contact support - asset class ID is missing.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Make sure name field is filled
+      if (!submitData.name?.trim()) {
+        console.error("Missing account name - cannot submit!");
+        toast({
+          title: "Missing Account Name",
+          description: "Please enter a name for your account.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Submit the form
+      console.log("All validation passed, submitting form");
+      mutation.mutate(submitData);
+    } catch (error) {
+      console.error("Error preparing form data:", error);
       toast({
-        title: "Missing Asset Class",
-        description: "Please try again or contact support - asset class ID is missing.",
+        title: "Form Error",
+        description: "An error occurred while preparing the form data. Please try again.",
         variant: "destructive",
       });
-      return;
     }
-    
-    mutation.mutate(data);
   };
 
   // Offset account linked loan selection
@@ -283,13 +369,11 @@ export function CashAccountForm({
                         step="0.01"
                         {...field}
                         // Ensure value is always a valid number
-                        value={isNaN(field.value) ? 0 : field.value}
+                        value={field.value === undefined || isNaN(field.value) ? 0 : field.value}
                         onChange={(e) => {
                           // Only update if we have a valid number
                           const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
-                          if (!isNaN(value)) {
-                            field.onChange(value);
-                          }
+                          field.onChange(isNaN(value) ? 0 : value);
                         }}
                       />
                     </FormControl>
@@ -311,13 +395,11 @@ export function CashAccountForm({
                         placeholder="e.g., 2.5"
                         {...field}
                         // Handle NaN values for interest rate
-                        value={isNaN(field.value) ? 0 : field.value}
+                        value={field.value === undefined || isNaN(field.value) ? 0 : field.value}
                         onChange={(e) => {
                           // Convert empty string to 0, otherwise parse as float
                           const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
-                          if (!isNaN(value)) {
-                            field.onChange(value);
-                          }
+                          field.onChange(isNaN(value) ? 0 : value);
                         }}
                       />
                     </FormControl>
