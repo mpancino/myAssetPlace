@@ -129,15 +129,36 @@ export default function AssetClassPage() {
 
   // Handle add asset button
   const handleAddAsset = () => {
+    if (!assetClass) return;
+    
+    console.log(`Adding asset for class ID: ${assetClass.id}, name: ${assetClass.name}`);
+    
     // Navigate to the appropriate add asset page based on asset class type
-    if (assetClass?.name?.toLowerCase() === 'real estate') {
-      setLocation(`/add-property/${classId}`);
-    } else if (assetClass?.name?.toLowerCase() === 'cash' || assetClass?.name?.toLowerCase() === 'bank accounts') {
-      setLocation(`/add-cash-account?classId=${classId}`);
-    } else if (assetClass?.name?.toLowerCase() === 'loans' || assetClass?.name?.toLowerCase() === 'debts') {
-      setLocation(`/add-loan?classId=${classId}`);
-    } else {
-      setLocation(`/add-asset?classId=${classId}`);
+    const lowerCaseName = assetClass.name?.toLowerCase() || '';
+    
+    // For Cash & Bank Accounts, we use a query parameter
+    if (lowerCaseName.includes('cash') || lowerCaseName.includes('bank')) {
+      setLocation(`/add-cash-account?classId=${assetClass.id}`);
+    } 
+    // For Property/Real Estate, we use a path parameter
+    else if (lowerCaseName.includes('property') || lowerCaseName.includes('real estate')) {
+      setLocation(`/add-property/${assetClass.id}`);
+    } 
+    // For Loans, we use a query parameter
+    else if (lowerCaseName.includes('loan') || lowerCaseName.includes('liabilit') || lowerCaseName.includes('debt')) {
+      setLocation(`/add-loan?classId=${assetClass.id}`);
+    }
+    // For Shares, we use a path parameter
+    else if (lowerCaseName.includes('share') || lowerCaseName.includes('stock') || lowerCaseName.includes('equit')) {
+      setLocation(`/add-share/${assetClass.id}`);
+    }
+    // For Stock Options
+    else if (lowerCaseName.includes('option')) {
+      setLocation(`/add-stock-option/${assetClass.id}`);
+    }
+    // For other asset types, redirect to the generic form with the classId parameter
+    else {
+      setLocation(`/add-asset?classId=${assetClass.id}`);
     }
   };
 
@@ -254,7 +275,12 @@ export default function AssetClassPage() {
                         <div className="flex flex-wrap gap-2">
                           {expenseCategories.map((category, index) => (
                             <Badge key={index} variant="outline">
-                              {typeof category === 'string' ? category : category.name}
+                              {typeof category === 'string' ? 
+                                category : 
+                                (typeof category === 'object' && category !== null && 'name' in category && typeof category.name === 'string') ? 
+                                  category.name : 
+                                  'Expense Category'
+                              }
                             </Badge>
                           ))}
                         </div>
