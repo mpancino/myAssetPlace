@@ -17,6 +17,7 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BalanceHistory } from "./balance-history";
 import { TransactionCategories } from "./transaction-categories";
+import { InterestCalculator } from "./interest-calculator";
 
 import {
   Form,
@@ -386,9 +387,10 @@ export function CashAccountForm({
 
             {/* Advanced Features Tabs */}
             <Tabs defaultValue="balance-history" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="balance-history">Balance History</TabsTrigger>
                 <TabsTrigger value="transaction-categories">Transaction Categories</TabsTrigger>
+                <TabsTrigger value="interest-calculator">Interest Calculator</TabsTrigger>
               </TabsList>
               <TabsContent value="balance-history" className="pt-4">
                 <BalanceHistory 
@@ -401,6 +403,12 @@ export function CashAccountForm({
                 <TransactionCategories 
                   categories={transactionCategories}
                   onChange={setTransactionCategories}
+                />
+              </TabsContent>
+              <TabsContent value="interest-calculator" className="pt-4">
+                <InterestCalculator 
+                  initialBalance={form.getValues("value")}
+                  interestRate={form.getValues("interestRate") || 0}
                 />
               </TabsContent>
             </Tabs>

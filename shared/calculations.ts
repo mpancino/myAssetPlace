@@ -227,3 +227,148 @@ export function calculateRequiredSavings(
   const annuityFactor = (Math.pow(1 + periodicRate, periods) - 1) / periodicRate;
   return amountNeededFromContributions / annuityFactor;
 }
+
+/**
+ * Calculate the interest earned on a savings account
+ * 
+ * @param principal Initial account balance
+ * @param rate Annual interest rate (as a decimal, e.g., 0.025 for 2.5%)
+ * @param months Number of months to calculate interest for
+ * @param compoundingFrequency How often interest is compounded ('daily', 'monthly', 'quarterly', 'annually')
+ * @param additionalDeposits Monthly additional deposits (default: 0)
+ * @returns Object containing final balance and interest earned
+ */
+export function calculateSavingsInterest(
+  principal: number,
+  rate: number,
+  months: number,
+  compoundingFrequency: 'daily' | 'monthly' | 'quarterly' | 'annually' = 'monthly',
+  additionalDeposits: number = 0
+): { finalBalance: number; interestEarned: number } {
+  // Convert annual rate to the appropriate periodic rate
+  let periodsPerYear: number;
+  switch (compoundingFrequency) {
+    case 'daily':
+      periodsPerYear = 365;
+      break;
+    case 'monthly':
+      periodsPerYear = 12;
+      break;
+    case 'quarterly':
+      periodsPerYear = 4;
+      break;
+    case 'annually':
+      periodsPerYear = 1;
+      break;
+    default:
+      periodsPerYear = 12; // Default to monthly
+  }
+
+  const periodicRate = rate / periodsPerYear;
+  const totalPeriods = (months / 12) * periodsPerYear;
+  
+  let balance = principal;
+  const monthlyToPeriodFactor = periodsPerYear / 12;
+  
+  // Simple calculation without additional deposits
+  if (additionalDeposits === 0) {
+    balance = principal * Math.pow(1 + periodicRate, totalPeriods);
+  } else {
+    // For accounts with regular deposits, calculate period by period
+    for (let i = 0; i < totalPeriods; i++) {
+      // Add interest for this period
+      balance = balance * (1 + periodicRate);
+      
+      // Add deposit if applicable (we need to adjust for different compounding frequencies)
+      if (i % monthlyToPeriodFactor < 1) {
+        balance += additionalDeposits;
+      }
+    }
+  }
+  
+  return {
+    finalBalance: balance,
+    interestEarned: balance - principal - (additionalDeposits * months)
+  };
+}
+
+/**
+ * Generate a savings projection with monthly details
+ * 
+ * @param principal Initial account balance
+ * @param rate Annual interest rate (as a decimal, e.g., 0.025 for 2.5%)
+ * @param months Number of months to project
+ * @param compoundingFrequency How often interest is compounded
+ * @param additionalDeposits Monthly additional deposits
+ * @returns Array of monthly projection data
+ */
+export function generateSavingsProjection(
+  principal: number,
+  rate: number,
+  months: number,
+  compoundingFrequency: 'daily' | 'monthly' | 'quarterly' | 'annually' = 'monthly',
+  additionalDeposits: number = 0
+): Array<{
+  month: number;
+  balance: number;
+  interestEarned: number;
+  totalInterest: number;
+  deposits: number;
+}> {
+  // Convert annual rate to the appropriate periodic rate
+  let periodsPerYear: number;
+  switch (compoundingFrequency) {
+    case 'daily':
+      periodsPerYear = 365;
+      break;
+    case 'monthly':
+      periodsPerYear = 12;
+      break;
+    case 'quarterly':
+      periodsPerYear = 4;
+      break;
+    case 'annually':
+      periodsPerYear = 1;
+      break;
+    default:
+      periodsPerYear = 12;
+  }
+
+  const periodicRate = rate / periodsPerYear;
+  const projections = [];
+  
+  let balance = principal;
+  let totalInterest = 0;
+  let totalDeposits = 0;
+  
+  // Calculate monthly values
+  for (let month = 1; month <= months; month++) {
+    let monthlyInterest = 0;
+    const periodsThisMonth = periodsPerYear / 12;
+    
+    // Simulate each compounding period within the month
+    for (let p = 0; p < periodsThisMonth; p++) {
+      const interestForPeriod = balance * periodicRate;
+      balance += interestForPeriod;
+      monthlyInterest += interestForPeriod;
+    }
+    
+    // Add monthly deposit at the end of the month
+    if (additionalDeposits > 0) {
+      balance += additionalDeposits;
+      totalDeposits += additionalDeposits;
+    }
+    
+    totalInterest += monthlyInterest;
+    
+    projections.push({
+      month,
+      balance,
+      interestEarned: monthlyInterest,
+      totalInterest,
+      deposits: totalDeposits
+    });
+  }
+  
+  return projections;
+}
