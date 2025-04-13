@@ -76,13 +76,17 @@ export function CashAccountForm({
   console.log("Default values passed to form:", defaultValues);
   console.log("All available asset classes:", assetClasses);
 
+  // Initialize assetClassId from defaultValues or cashAssetClass
+  const initialAssetClassId = defaultValues?.assetClassId || cashAssetClass?.id;
+  console.log("Initializing form with assetClassId:", initialAssetClassId);
+  
   const form = useForm<InsertCashAccount>({
     resolver: zodResolver(insertCashAccountSchema),
     defaultValues: {
       name: "",
       description: "",
       value: 0,
-      assetClassId: cashAssetClass?.id,
+      assetClassId: initialAssetClassId,
       assetHoldingTypeId: holdingTypes[0]?.id,
       institution: "",
       accountType: "savings",
@@ -278,7 +282,15 @@ export function CashAccountForm({
                         type="number"
                         step="0.01"
                         {...field}
-                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        // Ensure value is always a valid number
+                        value={isNaN(field.value) ? 0 : field.value}
+                        onChange={(e) => {
+                          // Only update if we have a valid number
+                          const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                          if (!isNaN(value)) {
+                            field.onChange(value);
+                          }
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -298,9 +310,15 @@ export function CashAccountForm({
                         step="0.01"
                         placeholder="e.g., 2.5"
                         {...field}
-                        onChange={(e) => 
-                          field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)
-                        }
+                        // Handle NaN values for interest rate
+                        value={isNaN(field.value) ? 0 : field.value}
+                        onChange={(e) => {
+                          // Convert empty string to 0, otherwise parse as float
+                          const value = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                          if (!isNaN(value)) {
+                            field.onChange(value);
+                          }
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -443,13 +461,22 @@ export function CashAccountForm({
               name="assetClassId"
               render={({ field }) => {
                 console.log("Asset class ID in hidden field:", field.value);
+                
+                // Convert to string to avoid NaN warnings
+                const idValue = field.value ? String(field.value) : 
+                               (cashAssetClass?.id ? String(cashAssetClass.id) : '');
+                
                 // Important: We need to use the onChange handler to ensure the value gets set in the form data
                 return (
                   <>
                     <input 
                       type="hidden" 
-                      value={field.value || cashAssetClass?.id || ''} 
-                      onChange={field.onChange}
+                      value={idValue}
+                      onChange={(e) => {
+                        // Convert back to number for the form data
+                        const numValue = e.target.value ? parseInt(e.target.value) : undefined;
+                        field.onChange(numValue);
+                      }}
                     />
                     <div className="text-xs text-muted-foreground">
                       Asset Class ID: {field.value || cashAssetClass?.id || 'Not set'}
