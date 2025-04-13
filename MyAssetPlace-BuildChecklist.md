@@ -106,6 +106,7 @@ Status indicators:
   - ✅ Basic mode simplified fields [REQ-033]
   - ✅ Advanced mode detailed fields [REQ-034]
   - ✅ Asset metrics update in real-time [REQ-035]
+  - ✅ Consistent asset card design across all asset types [REQ-218]
 
 - ⚠️ **Asset Classification System**
   - ✅ Asset class categorization [REQ-110]
@@ -268,6 +269,7 @@ Status indicators:
    - Fix TypeScript errors in share-form and stock-option-form components
 
 2. ⚠️ **Stabilize Core Features**
+   - ✅ Standardize asset card UI consistency with "View Details" labels [REQ-218]
    - Complete expense categories implementation for asset classes [REQ-065]
    - Standardize expense handling between PropertyExpenses and InvestmentExpenses components
    - Improve ExpenseContext API for consistent expense management

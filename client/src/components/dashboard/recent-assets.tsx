@@ -77,7 +77,7 @@ export default function RecentAssets({ assets }: RecentAssetsProps) {
                       <TableCell className="text-right">
                         <Link href={`/assets/${asset.id}`}>
                           <Button variant="link" className="text-primary-600 hover:text-primary-900">
-                            Edit
+                            View Details
                           </Button>
                         </Link>
                       </TableCell>
