@@ -96,6 +96,7 @@ export function EmploymentIncomeForm({
       bonusFixedAmount: defaultValues?.bonusFixedAmount || 0,
       bonusPercentage: defaultValues?.bonusPercentage || 0,
       bonusFrequency: defaultValues?.bonusFrequency || "annually",
+      bonusLikelihood: defaultValues?.bonusLikelihood || 80, // Default to 80% likelihood
       taxWithholdingRate: defaultValues?.taxWithholdingRate || 30,
       superContributionRate: defaultValues?.superContributionRate || 11,
       salaryGrowthRate: defaultValues?.salaryGrowthRate || 2.5,
@@ -113,6 +114,7 @@ export function EmploymentIncomeForm({
     const bonusFixedAmount = form.getValues("bonusFixedAmount") || 0;
     const bonusPercentage = form.getValues("bonusPercentage") || 0;
     const bonusFrequency = form.getValues("bonusFrequency");
+    const bonusLikelihood = form.getValues("bonusLikelihood") || 100; // Get bonus likelihood percentage
     
     // Calculate annual base salary
     let annualSalary = 0;
@@ -157,6 +159,9 @@ export function EmploymentIncomeForm({
       annualBonus += percentageBonus;
     }
     
+    // Apply bonus likelihood factor
+    annualBonus = annualBonus * (bonusLikelihood / 100);
+    
     return annualSalary + annualBonus;
   };
 
@@ -169,7 +174,8 @@ export function EmploymentIncomeForm({
         name?.includes("bonusType") ||
         name?.includes("bonusFixedAmount") ||
         name?.includes("bonusPercentage") ||
-        name?.includes("bonusFrequency")
+        name?.includes("bonusFrequency") ||
+        name?.includes("bonusLikelihood")
       ) {
         const annualIncome = calculateAnnualIncome();
         form.setValue("value", annualIncome);
@@ -668,32 +674,64 @@ export function EmploymentIncomeForm({
                   )}
                   
                   {form.watch("bonusType") !== "none" && (
-                    <FormField
-                      control={form.control}
-                      name="bonusFrequency"
-                      render={({ field }) => (
-                        <FormItem className="mt-4">
-                          <FormLabel>Bonus Frequency</FormLabel>
-                          <Select
-                            value={field.value}
-                            onValueChange={field.onChange}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select bonus frequency" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="monthly">Monthly</SelectItem>
-                              <SelectItem value="quarterly">Quarterly</SelectItem>
-                              <SelectItem value="annually">Annually</SelectItem>
-                              <SelectItem value="one-time">One-time</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <>
+                      <FormField
+                        control={form.control}
+                        name="bonusFrequency"
+                        render={({ field }) => (
+                          <FormItem className="mt-4">
+                            <FormLabel>Bonus Frequency</FormLabel>
+                            <Select
+                              value={field.value}
+                              onValueChange={field.onChange}
+                            >
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select bonus frequency" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="monthly">Monthly</SelectItem>
+                                <SelectItem value="quarterly">Quarterly</SelectItem>
+                                <SelectItem value="annually">Annually</SelectItem>
+                                <SelectItem value="one-time">One-time</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="bonusLikelihood"
+                        render={({ field }) => (
+                          <FormItem className="mt-4">
+                            <FormLabel>Bonus Likelihood (%)</FormLabel>
+                            <FormDescription>
+                              Estimated probability of receiving the full bonus amount
+                            </FormDescription>
+                            <div className="flex items-center">
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  step="1"
+                                  min="0"
+                                  max="100"
+                                  placeholder="80"
+                                  {...field}
+                                  onChange={(e) => {
+                                    field.onChange(parseFloat(e.target.value));
+                                  }}
+                                />
+                              </FormControl>
+                              <span className="ml-2">%</span>
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </>
                   )}
                 </div>
                 

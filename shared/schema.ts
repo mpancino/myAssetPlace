@@ -449,6 +449,7 @@ export const insertEmploymentIncomeSchema = insertAssetSchema.extend({
   bonusFixedAmount: z.number().min(0).optional(),
   bonusPercentage: z.number().min(0).max(100).optional(),
   bonusFrequency: z.enum(["monthly", "quarterly", "annually", "one-time"]).optional(),
+  bonusLikelihood: z.number().min(0).max(100).optional().default(100), // Percentage likelihood of receiving the full bonus
   
   // Tax and deductions
   taxWithholdingRate: z.number().min(0).max(100).optional(),
