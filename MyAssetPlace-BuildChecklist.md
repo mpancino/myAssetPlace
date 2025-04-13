@@ -168,9 +168,9 @@ Status indicators:
   - ✅ Transaction categories [REQ-149]
 
 - ⚠️ **Equity/Share Management**
-  - ⚠️ Stock/share data entry [REQ-151] - Basic implementation
-  - ❌ Purchase history [REQ-152]
-  - ⚠️ Dividend tracking [REQ-153] - Basic implementation without calculations
+  - ✅ Stock/share data entry [REQ-151] - Complete with supporting UI
+  - ⚠️ Purchase history [REQ-152] - Implemented schema and UI component, needs testing
+  - ✅ Dividend tracking [REQ-153] - Implemented with frequency options and yield calculation
   - ❌ Performance visualization [REQ-154]
   - ❌ Manual or API price updates [REQ-155]
 
@@ -272,7 +272,7 @@ Status indicators:
    - Standardize expense handling between PropertyExpenses and InvestmentExpenses components
    - Improve ExpenseContext API for consistent expense management
    - Improve security implementation (CSRF, cookies) [REQ-371, REQ-372]
-   - Complete Share Management features (purchase history, enhanced dividend tracking) [REQ-152, REQ-153]
+   - Finalize and test Share Management purchase history [REQ-152] - UI implementation already complete
    - Implement interest calculation for cash accounts [REQ-147]
 
 ### Medium Priority
