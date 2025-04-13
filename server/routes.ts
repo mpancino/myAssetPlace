@@ -14,7 +14,8 @@ import {
   updateSystemSettingsSchema, 
   users,
   assets,
-  assetClasses 
+  assetClasses,
+  transformTaxSettings
 } from "@shared/schema";
 import { z } from "zod";
 import { db } from "./db";
@@ -442,7 +443,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
             : JSON.stringify(req.body.taxSettings));
       }
       
-      const validatedData = insertAssetHoldingTypeSchema.partial().parse(req.body);
+      // Create a partial schema from the base schema, with the imported transformTaxSettings
+      const partialAssetHoldingTypeSchema = z.object({
+        name: z.string().min(2, "Name is required").optional(),
+        description: z.string().optional(),
+        countryId: z.coerce.number().int().positive("Country is required").optional(),
+        taxSettings: z.any().optional(),
+      }).transform(transformTaxSettings); // Uses the imported transform function
+      
+      // Use explicit typing for validatedData
+      const validatedData: {
+        name?: string;
+        description?: string;
+        countryId?: number;
+        taxSettings?: any;
+      } = partialAssetHoldingTypeSchema.parse(req.body);
       
       // Log after validation
       console.log('[ASSET_HOLDING_TYPE] After validation - taxSettings:', 
