@@ -33,7 +33,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Briefcase, Plus, Trash2, PlusCircle, Percent, DollarSign } from "lucide-react";
+import { Briefcase, Plus, Trash2, PlusCircle, Percent, DollarSign, Info } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -98,8 +98,7 @@ export function EmploymentIncomeForm({
       bonusPercentage: defaultValues?.bonusPercentage || 0,
       bonusFrequency: defaultValues?.bonusFrequency || "annually",
       bonusLikelihood: defaultValues?.bonusLikelihood || 80, // Default to 80% likelihood
-      taxWithholdingRate: defaultValues?.taxWithholdingRate || 30,
-      superContributionRate: defaultValues?.superContributionRate || 11,
+      // Tax fields removed - will be added in Phase 5 tax foundation
       salaryGrowthRate: defaultValues?.salaryGrowthRate || 2.5,
       salaryReviewFrequency: defaultValues?.salaryReviewFrequency || "annually",
       startDate: defaultValues?.startDate ? new Date(defaultValues.startDate) : undefined,
@@ -773,68 +772,21 @@ export function EmploymentIncomeForm({
           <TabsContent value="tax-deductions" className="space-y-6 mt-4">
             <Card>
               <CardHeader>
-                <CardTitle>Tax Withholding</CardTitle>
+                <CardTitle>Tax Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="taxWithholdingRate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tax Withholding Rate</FormLabel>
-                      <div className="flex items-center">
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            max="100"
-                            placeholder="0.00"
-                            {...field}
-                            onChange={(e) => {
-                              field.onChange(parseFloat(e.target.value));
-                            }}
-                          />
-                        </FormControl>
-                        <span className="ml-2">%</span>
-                      </div>
-                      <FormDescription>
-                        Estimated tax rate applied to your income
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="superContributionRate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Superannuation Contribution Rate</FormLabel>
-                      <div className="flex items-center">
-                        <FormControl>
-                          <Input
-                            type="number"
-                            step="0.01"
-                            min="0"
-                            max="100"
-                            placeholder="0.00"
-                            {...field}
-                            onChange={(e) => {
-                              field.onChange(parseFloat(e.target.value));
-                            }}
-                          />
-                        </FormControl>
-                        <span className="ml-2">%</span>
-                      </div>
-                      <FormDescription>
-                        Mandatory employer retirement contribution (Australia)
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="bg-muted/50 p-4 rounded-md text-center">
+                  <Info className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                  <h3 className="text-md font-medium mb-1">Tax Calculation Coming Soon</h3>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Tax calculations and withholding rates will be implemented as part of the
+                    Phase 5: Tax Foundation implementation.
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    This will include income tax calculations, retirement contributions, 
+                    and tax impact visualizations based on country-specific tax rules.
+                  </p>
+                </div>
               </CardContent>
             </Card>
             
@@ -1000,7 +952,8 @@ export function EmploymentIncomeForm({
                             placeholder="0.00"
                             {...field}
                             onChange={(e) => {
-                              field.onChange(parseFloat(e.target.value));
+                              const value = e.target.value === '' ? '' : parseFloat(e.target.value);
+                              field.onChange(isNaN(value) ? 0 : value);
                             }}
                           />
                         </FormControl>

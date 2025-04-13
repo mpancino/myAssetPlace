@@ -145,7 +145,7 @@ Status indicators:
 
 ## Phase 5: Tax Foundation
 - ❌ **Tax Framework**
-  - ❌ Income tax calculation [REQ-135, REQ-150]
+  - ❌ Income tax calculation [REQ-135, REQ-150] - Planned as part of Phase 5, placeholders added in UI
   - ❌ Capital gains tax calculation [REQ-136] 
   - ❌ Dividend tax calculation [REQ-137]
   - ❌ Tax impact visualization [REQ-138]
@@ -159,6 +159,10 @@ Status indicators:
   - ⚠️ Dividend tax rate configuration [REQ-100] - Schema exists but limited UI/functionality
   - ❌ Special tax treatment by holding type [REQ-062, REQ-143]
   - ❌ Tax projections incorporating administrator rules [REQ-102]
+  
+- ⚠️ **Employment Income Tax Integration**
+  - ⚠️ Employment Income tax withholding [REQ-300] - UI placeholders added, implementation planned for Phase 5
+  - ⚠️ Superannuation/retirement contributions [REQ-301] - UI placeholders added, implementation planned for Phase 5
 
 ## Phase 6: Cash & Equity Assets
 - ⚠️ **Cash & Bank Account Management**
@@ -313,7 +317,7 @@ Status indicators:
 |---|---|---|---|---|
 | DEF-001 | PropertyExpenses component displays "[object Object]" in category dropdown menu instead of category names | PropertyExpenses | High | 🔄 In Progress |
 | DEF-002 | TypeScript errors in asset-detail-page.tsx related to expense handling and property types | AssetDetailPage | High | ⏳ Not Started |
-| DEF-003 | NaN errors in numeric input fields when clearing values (particularly in bonusLikelihood field) | Employment Income Form | Medium | 🔄 In Progress |
+| DEF-003 | NaN errors in numeric input fields when clearing values (particularly in bonusLikelihood field) | Employment Income Form | Medium | ✅ Fixed |
 
 ## Implementation Notes
 1. We should NOT implement cryptocurrency or any asset classes not explicitly mentioned in the PDD
