@@ -255,6 +255,12 @@ export default function AddAssetPage() {
             setLocation(`/add-share/${selectedAssetClass.id}`);
             return; // Exit early
           }
+          else if (selectedAssetClass.id === 8) {
+            // Employment Income (ID 8) should always go to the employment income form
+            console.log(`Routing BY ID: Employment Income Form (/add-employment-income?classId=${selectedAssetClass.id}) for ID: 8`);
+            setLocation(`/add-employment-income?classId=${selectedAssetClass.id}`);
+            return; // Exit early
+          }
           
           // Then check asset class name-based routing for backward compatibility
           if (selectedAssetClass.name.toLowerCase() === 'real estate') {

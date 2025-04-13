@@ -1,0 +1,82 @@
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
+import { ArrowLeft, Briefcase } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { AssetClass, AssetHoldingType } from "@shared/schema";
+import { EmploymentIncomeForm } from "@/components/employment/employment-income-form";
+import MainLayout from "@/components/layout/main-layout";
+import { Loader2 } from "lucide-react";
+
+export default function AddEmploymentIncomePage() {
+  console.log("PAGE LOADED: AddEmploymentIncomePage - for Salary & Income");
+  
+  const [location, setLocation] = useLocation();
+  const params = new URLSearchParams(window.location.search);
+  const classId = params.get("classId");
+  
+  console.log("URL classId param:", classId);
+
+  // Fetch asset classes
+  const { 
+    data: assetClasses,
+    isLoading: isLoadingClasses
+  } = useQuery<AssetClass[]>({
+    queryKey: ['/api/asset-classes'],
+  });
+
+  // Fetch asset holding types
+  const { 
+    data: assetHoldingTypes,
+    isLoading: isLoadingTypes
+  } = useQuery<AssetHoldingType[]>({
+    queryKey: ['/api/asset-holding-types'],
+  });
+
+  // Handle the case when classId is not employment income
+  useEffect(() => {
+    if (assetClasses && classId) {
+      const selectedClass = assetClasses.find(c => c.id === parseInt(classId));
+      if (selectedClass && selectedClass.id !== 8) { // Employment Income is ID 8
+        console.log(`Selected class ${selectedClass.name} is not Employment Income. Redirecting...`);
+        setLocation("/add-asset");
+      }
+    }
+  }, [assetClasses, classId, setLocation]);
+
+  // Loading state
+  const isLoading = isLoadingClasses || isLoadingTypes;
+  
+  return (
+    <MainLayout>
+      <div className="mx-auto max-w-5xl px-4 py-4">
+        <div className="flex items-center mb-6">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="mr-2"
+            onClick={() => window.history.back()}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="flex items-center">
+            <Briefcase className="h-6 w-6 mr-2 text-muted-foreground" />
+            <h1 className="text-2xl font-bold">Add Employment Income</h1>
+          </div>
+        </div>
+
+        {isLoading ? (
+          <div className="flex justify-center items-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <EmploymentIncomeForm 
+            assetClasses={assetClasses} 
+            assetHoldingTypes={assetHoldingTypes}
+            defaultValues={{ assetClassId: 8 }} // Employment Income asset class ID
+          />
+        )}
+      </div>
+    </MainLayout>
+  );
+}
