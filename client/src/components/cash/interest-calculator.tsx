@@ -1,268 +1,282 @@
 import { useState, useEffect } from "react";
-import { calculateSavingsInterest, generateSavingsProjection } from "@shared/calculations";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { format, addMonths } from "date-fns";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  generateSavingsProjection,
+  calculateSavingsInterest
+} from "@shared/calculations";
+import { formatCurrency } from "@/lib/utils";
 import {
-  BarChart,
-  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
   ResponsiveContainer,
-  LineChart,
-  Line,
-  Area,
-  AreaChart,
-} from "recharts";
+  TooltipProps
+} from 'recharts';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
-type InterestCalculatorProps = {
+type CompoundingFrequency = 'daily' | 'monthly' | 'quarterly' | 'annually';
+
+interface InterestCalculatorProps {
   initialBalance: number;
-  interestRate: number;
-};
+  interestRate?: number;
+}
 
-type ProjectionData = {
-  month: number;
-  balance: number;
-  interestEarned: number;
-  totalInterest: number;
-  deposits: number;
-  date?: string;
-};
-
-export function InterestCalculator({ initialBalance, interestRate }: InterestCalculatorProps) {
-  const [balance, setBalance] = useState(initialBalance);
-  const [rate, setRate] = useState(interestRate / 100); // Convert from percentage to decimal
-  const [monthlyDeposit, setMonthlyDeposit] = useState(0);
-  const [projectionMonths, setProjectionMonths] = useState(12);
-  const [compoundingFrequency, setCompoundingFrequency] = useState<"daily" | "monthly" | "quarterly" | "annually">("monthly");
-  const [projectionData, setProjectionData] = useState<ProjectionData[]>([]);
-  const [summaryData, setSummaryData] = useState<{ finalBalance: number; interestEarned: number }>({
-    finalBalance: 0,
-    interestEarned: 0,
-  });
-
-  // Calculate interest whenever inputs change
+export function InterestCalculator({ initialBalance, interestRate = 0 }: InterestCalculatorProps) {
+  // State for calculator inputs
+  const [balance, setBalance] = useState(initialBalance || 0);
+  const [rate, setRate] = useState(interestRate || 0.02); // Default to 2%
+  const [months, setMonths] = useState(60); // Default to 5 years
+  const [monthlyDeposit, setMonthlyDeposit] = useState(100);
+  const [compoundingFrequency, setCompoundingFrequency] = useState<CompoundingFrequency>('monthly');
+  
+  // State for projection data
+  const [projectionData, setProjectionData] = useState<any[]>([]);
+  const [totalInterest, setTotalInterest] = useState(0);
+  const [finalBalance, setFinalBalance] = useState(0);
+  
+  // Calculate projections when inputs change
   useEffect(() => {
-    if (balance > 0) {
-      // Get summary data
-      const summary = calculateSavingsInterest(
-        balance, 
-        rate, 
-        projectionMonths, 
-        compoundingFrequency, 
-        monthlyDeposit
-      );
-      
-      setSummaryData(summary);
-      
-      // Generate detailed projection data
-      const projection = generateSavingsProjection(
-        balance,
-        rate,
-        projectionMonths,
-        compoundingFrequency,
-        monthlyDeposit
-      );
-      
-      // Add formatted dates to projection data
-      const today = new Date();
-      const projectionWithDates = projection.map(item => ({
-        ...item,
-        date: format(addMonths(today, item.month - 1), 'MMM yyyy')
-      }));
-      
-      setProjectionData(projectionWithDates);
-    }
-  }, [balance, rate, projectionMonths, compoundingFrequency, monthlyDeposit]);
-
+    // Generate projection data
+    const projection = generateSavingsProjection(
+      balance,
+      rate,
+      months,
+      compoundingFrequency,
+      monthlyDeposit
+    );
+    
+    // Calculate total interest
+    const { interestEarned, finalBalance } = calculateSavingsInterest(
+      balance,
+      rate,
+      months,
+      compoundingFrequency,
+      monthlyDeposit
+    );
+    
+    // Format data for chart
+    const chartData = projection.map((item, index) => ({
+      month: index,
+      balance: item.balance,
+      deposits: item.totalDeposits,
+      interest: item.totalInterest,
+    }));
+    
+    setProjectionData(chartData);
+    setTotalInterest(interestEarned);
+    setFinalBalance(finalBalance);
+  }, [balance, rate, months, compoundingFrequency, monthlyDeposit]);
+  
+  // Format tooltip values for chart
+  const formatTooltip = (value: number, name: string) => {
+    return [formatCurrency(value), name];
+  };
+  
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Interest Calculator</CardTitle>
-        <CardDescription>
-          Calculate potential interest earnings for this account
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="balance">Initial Balance</Label>
-              <Input
-                id="balance"
-                type="number"
-                value={balance}
-                onChange={(e) => setBalance(parseFloat(e.target.value) || 0)}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="interest-rate">Interest Rate (%)</Label>
-              <Input
-                id="interest-rate"
-                type="number"
-                step="0.01"
-                value={(rate * 100).toFixed(2)}
-                onChange={(e) => setRate(parseFloat(e.target.value) / 100 || 0)}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="monthly-deposit">Monthly Deposit</Label>
-              <Input
-                id="monthly-deposit"
-                type="number"
-                value={monthlyDeposit}
-                onChange={(e) => setMonthlyDeposit(parseFloat(e.target.value) || 0)}
-              />
-            </div>
-
-            <div>
-              <Label>Projection Period: {projectionMonths} months</Label>
-              <Slider
-                value={[projectionMonths]}
-                min={1}
-                max={120}
-                step={1}
-                onValueChange={(value) => setProjectionMonths(value[0])}
-                className="mt-2"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="compounding">Compounding Frequency</Label>
-              <Select
-                value={compoundingFrequency}
-                onValueChange={(value) => setCompoundingFrequency(value as any)}
-              >
-                <SelectTrigger id="compounding">
-                  <SelectValue placeholder="Select compounding frequency" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="daily">Daily</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                  <SelectItem value="quarterly">Quarterly</SelectItem>
-                  <SelectItem value="annually">Annually</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="p-4 bg-muted rounded-md">
-              <h4 className="font-medium mb-2">Summary</h4>
-              <p>
-                <span className="text-muted-foreground">Final Balance:</span>{" "}
-                <span className="font-semibold">{summaryData.finalBalance.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>
-              </p>
-              <p>
-                <span className="text-muted-foreground">Interest Earned:</span>{" "}
-                <span className="font-semibold">{summaryData.interestEarned.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>
-              </p>
-              {monthlyDeposit > 0 && (
-                <p>
-                  <span className="text-muted-foreground">Total Deposits:</span>{" "}
-                  <span className="font-semibold">{(monthlyDeposit * projectionMonths).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</span>
-                </p>
-              )}
-            </div>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="initial-balance">Initial Balance</Label>
+            <Input
+              id="initial-balance"
+              type="number"
+              value={balance}
+              onChange={(e) => setBalance(parseFloat(e.target.value) || 0)}
+              className="mt-1"
+            />
           </div>
-
-          <div className="space-y-4">
-            <Tabs defaultValue="chart">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="chart">Chart</TabsTrigger>
-                <TabsTrigger value="table">Table</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="chart" className="h-[320px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart
-                    data={projectionData}
-                    margin={{ top: 10, right: 30, left: 20, bottom: 30 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                      dataKey="date" 
-                      tick={{ fontSize: 12 }}
-                      angle={-45}
-                      textAnchor="end" 
-                      height={50}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 12 }}
-                      tickFormatter={(value) => 
-                        value >= 1000 
-                          ? `$${(value / 1000).toFixed(1)}k` 
-                          : `$${value}`
-                      }
-                    />
-                    <Tooltip 
-                      formatter={(value) => [`$${parseFloat(value as string).toFixed(2)}`, ""]}
-                    />
-                    <Legend />
-                    <Area
-                      type="monotone"
-                      dataKey="balance"
-                      name="Balance"
-                      stroke="#8884d8"
-                      fill="#8884d8"
-                      fillOpacity={0.3}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="totalInterest"
-                      name="Interest"
-                      stroke="#82ca9d"
-                      fill="#82ca9d"
-                      fillOpacity={0.3}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </TabsContent>
-              
-              <TabsContent value="table">
-                <div className="max-h-[320px] overflow-auto">
-                  <Table>
-                    <TableCaption>Projection over {projectionMonths} months</TableCaption>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Balance</TableHead>
-                        <TableHead>Monthly Interest</TableHead>
-                        <TableHead>Total Interest</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {projectionData.map((data) => (
-                        <TableRow key={data.month}>
-                          <TableCell className="font-medium">{data.date}</TableCell>
-                          <TableCell>
-                            {data.balance.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
-                          </TableCell>
-                          <TableCell>
-                            {data.interestEarned.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
-                          </TableCell>
-                          <TableCell>
-                            {data.totalInterest.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </TabsContent>
-            </Tabs>
+          
+          <div>
+            <Label htmlFor="interest-rate">Interest Rate (%)</Label>
+            <Input
+              id="interest-rate"
+              type="number"
+              value={rate * 100}
+              onChange={(e) => setRate(parseFloat(e.target.value) / 100 || 0)}
+              step="0.01"
+              className="mt-1"
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="monthly-deposit">Monthly Deposit</Label>
+            <Input
+              id="monthly-deposit"
+              type="number"
+              value={monthlyDeposit}
+              onChange={(e) => setMonthlyDeposit(parseFloat(e.target.value) || 0)}
+              className="mt-1"
+            />
+          </div>
+          
+          <div>
+            <Label>Time Period: {Math.floor(months / 12)} years {months % 12} months</Label>
+            <Slider
+              value={[months]}
+              min={1}
+              max={360} // Max 30 years
+              step={1}
+              onValueChange={(value) => setMonths(value[0])}
+              className="mt-2"
+            />
+          </div>
+          
+          <div>
+            <Label htmlFor="compounding">Compounding Frequency</Label>
+            <Select
+              value={compoundingFrequency}
+              onValueChange={(value) => setCompoundingFrequency(value as CompoundingFrequency)}
+            >
+              <SelectTrigger id="compounding" className="mt-1">
+                <SelectValue placeholder="Select frequency" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="daily">Daily</SelectItem>
+                <SelectItem value="monthly">Monthly</SelectItem>
+                <SelectItem value="quarterly">Quarterly</SelectItem>
+                <SelectItem value="annually">Annually</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
-      </CardContent>
-    </Card>
+        
+        <Card>
+          <CardContent className="p-4">
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="text-center">
+                <h3 className="text-sm font-medium text-muted-foreground">Total Interest</h3>
+                <p className="text-2xl font-bold">{formatCurrency(totalInterest)}</p>
+              </div>
+              <div className="text-center">
+                <h3 className="text-sm font-medium text-muted-foreground">Final Balance</h3>
+                <p className="text-2xl font-bold">{formatCurrency(finalBalance)}</p>
+              </div>
+              <div className="text-center">
+                <h3 className="text-sm font-medium text-muted-foreground">Total Deposits</h3>
+                <p className="text-xl font-semibold">{formatCurrency(balance + (monthlyDeposit * months))}</p>
+              </div>
+              <div className="text-center">
+                <h3 className="text-sm font-medium text-muted-foreground">Return on Investment</h3>
+                <p className="text-xl font-semibold">
+                  {((totalInterest / (balance + (monthlyDeposit * months))) * 100).toFixed(2)}%
+                </p>
+              </div>
+            </div>
+            
+            <div className="text-xs text-muted-foreground mt-2">
+              * Calculation based on {compoundingFrequency} compounding at {(rate * 100).toFixed(2)}%
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      
+      <Tabs defaultValue="chart" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="chart">Growth Chart</TabsTrigger>
+          <TabsTrigger value="table">Detailed Projection</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="chart" className="pt-4">
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={projectionData}
+                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="month" 
+                  label={{ value: 'Months', position: 'insideBottomRight', offset: -5 }} 
+                />
+                <YAxis 
+                  tickFormatter={(value) => formatCurrency(value, 0)} 
+                  label={{ value: 'Balance', angle: -90, position: 'insideLeft' }} 
+                />
+                <Tooltip 
+                  formatter={formatTooltip} 
+                  labelFormatter={(label) => `Month ${label}`} 
+                />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="balance" 
+                  name="Total Balance" 
+                  stroke="#8884d8" 
+                  activeDot={{ r: 8 }} 
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="deposits" 
+                  name="Total Deposits" 
+                  stroke="#82ca9d" 
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="interest" 
+                  name="Total Interest" 
+                  stroke="#ffc658" 
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="table" className="pt-4">
+          <div className="border rounded-md max-h-80 overflow-auto">
+            <Table>
+              <TableCaption>Projected Growth Over {Math.floor(months / 12)} Years {months % 12} Months</TableCaption>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Month</TableHead>
+                  <TableHead>Monthly Interest</TableHead>
+                  <TableHead>Deposit</TableHead>
+                  <TableHead>Total Interest</TableHead>
+                  <TableHead>Balance</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {projectionData.map((row, index) => (
+                  <TableRow key={index}>
+                    <TableCell>{index}</TableCell>
+                    <TableCell>
+                      {formatCurrency(index > 0 
+                        ? row.interest - projectionData[index - 1].interest 
+                        : row.interest)}
+                    </TableCell>
+                    <TableCell>{formatCurrency(monthlyDeposit)}</TableCell>
+                    <TableCell>{formatCurrency(row.interest)}</TableCell>
+                    <TableCell className="font-medium">{formatCurrency(row.balance)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }

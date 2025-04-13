@@ -88,9 +88,13 @@ export default function AddAssetPage() {
     description: z.string().optional(),
     assetClassId: z.number({ 
       required_error: "Please select an asset class" 
+    }).optional().refine(val => val !== undefined, {
+      message: "Please select an asset class"
     }),
     assetHoldingTypeId: z.number({ 
       required_error: "Please select a holding type" 
+    }).optional().refine(val => val !== undefined, {
+      message: "Please select a holding type"
     }),
     value: z.number().positive("Value must be positive"),
     purchaseDate: z.date().optional().nullable(),
@@ -274,7 +278,7 @@ export default function AddAssetPage() {
                     <FormItem>
                       <FormLabel>Asset Class*</FormLabel>
                       <Select 
-                        value={field.value?.toString()} 
+                        value={field.value !== undefined ? field.value.toString() : undefined} 
                         onValueChange={value => field.onChange(parseInt(value))}
                       >
                         <FormControl>
@@ -311,7 +315,7 @@ export default function AddAssetPage() {
                     <FormItem>
                       <FormLabel>Holding Type*</FormLabel>
                       <Select 
-                        value={field.value?.toString()} 
+                        value={field.value !== undefined ? field.value.toString() : undefined} 
                         onValueChange={value => field.onChange(parseInt(value))}
                       >
                         <FormControl>
