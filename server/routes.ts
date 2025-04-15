@@ -1198,6 +1198,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to update mortgage" });
     }
   });
+  
+  // Add PATCH endpoint for mortgages, which does the same as PUT
+  app.patch("/api/mortgages/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      const id = parseInt(req.params.id);
+      console.log("PATCH mortgage:", id, req.body);
+      
+      // Check if mortgage exists and user owns it
+      const mortgage = await storage.getMortgage(id);
+      if (!mortgage) {
+        return res.status(404).json({ message: "Mortgage not found" });
+      }
+      
+      if (mortgage.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to update this mortgage" });
+      }
+      
+      // Validate the data
+      const validatedData = insertMortgageSchema.partial().parse(req.body);
+      console.log("Validated mortgage data:", validatedData);
+      
+      // Update the mortgage
+      const updatedMortgage = await storage.updateMortgage(id, validatedData);
+      
+      // If securedAssetId has changed, update the relationship
+      if ('securedAssetId' in req.body && mortgage.securedAssetId !== req.body.securedAssetId) {
+        // First, unlink from current property if one exists
+        if (mortgage.securedAssetId) {
+          await storage.unlinkMortgageFromProperty(id);
+        }
+        
+        // Then link to new property if one is specified
+        if (req.body.securedAssetId) {
+          await storage.linkMortgageToProperty(id, req.body.securedAssetId);
+        }
+      }
+      
+      if (!updatedMortgage) {
+        return res.status(500).json({ message: "Failed to update mortgage" });
+      }
+      
+      console.log("Updated mortgage:", updatedMortgage);
+      res.json(updatedMortgage);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ errors: err.errors });
+      }
+      console.error("Error updating mortgage:", err);
+      res.status(500).json({ message: "Failed to update mortgage" });
+    }
+  });
 
   app.delete("/api/mortgages/:id", async (req, res) => {
     if (!req.isAuthenticated()) {

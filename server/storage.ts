@@ -466,12 +466,57 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateMortgage(id: number, mortgageData: Partial<Mortgage>): Promise<Mortgage | undefined> {
-    const [updatedMortgage] = await db
-      .update(mortgages)
-      .set(mortgageData)
-      .where(eq(mortgages.id, id))
-      .returning();
-    return updatedMortgage;
+    console.log("Storage: Updating mortgage", id, "with data:", mortgageData);
+    
+    // If value is provided, ensure it's negative for liabilities
+    if (mortgageData.value !== undefined && mortgageData.value > 0) {
+      mortgageData.value = -Math.abs(mortgageData.value);
+    }
+    
+    // If updating dates, recalculate remaining term
+    if (mortgageData.startDate || mortgageData.loanTerm) {
+      // Get current mortgage data
+      const currentMortgage = await this.getMortgage(id);
+      if (!currentMortgage) {
+        return undefined;
+      }
+      
+      // Use updated values or current values
+      const startDate = mortgageData.startDate || currentMortgage.startDate;
+      const loanTerm = mortgageData.loanTerm || currentMortgage.loanTerm;
+      
+      // Calculate the end date
+      const endDateObj = new Date(startDate);
+      endDateObj.setMonth(endDateObj.getMonth() + loanTerm);
+      
+      // Set the end date in the update data
+      mortgageData.endDate = endDateObj;
+      
+      // Calculate remaining term (in months)
+      const now = new Date();
+      const diffMonths = (endDateObj.getFullYear() - now.getFullYear()) * 12 + 
+                         (endDateObj.getMonth() - now.getMonth());
+      
+      mortgageData.remainingTerm = Math.max(0, diffMonths);
+    }
+    
+    // Perform the update
+    try {
+      const [updatedMortgage] = await db
+        .update(mortgages)
+        .set({
+          ...mortgageData,
+          updatedAt: new Date()
+        })
+        .where(eq(mortgages.id, id))
+        .returning();
+        
+      console.log("Storage: Mortgage updated successfully:", updatedMortgage);
+      return updatedMortgage;
+    } catch (error) {
+      console.error("Storage: Error updating mortgage:", error);
+      return undefined;
+    }
   }
 
   async deleteMortgage(id: number): Promise<boolean> {
