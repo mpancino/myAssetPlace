@@ -2338,6 +2338,73 @@ export default function AssetDetailPage() {
                 )}
               </TabsContent>
               
+              {/* Mortgage Tab - Dedicated tab for property mortgage details */}
+              <TabsContent value="mortgage" className="space-y-4 pt-4">
+                {asset && selectedClass?.name?.toLowerCase() === "real estate" && (
+                  <div className="space-y-6">
+                    {/* Debug info for mortgage display conditions */}
+                    {console.log("Mortgage rendering condition:", {
+                      isEditing,
+                      hasMortgage: asset.hasMortgage,
+                      shouldRender: !isEditing && asset.hasMortgage,
+                      mortgagesCount: propertyMortgages?.length,
+                      isLoadingMortgages
+                    })}
+                    
+                    {/* Property Summary */}
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="flex items-center">
+                          <Home className="mr-2 h-4 w-4" /> Property Summary
+                        </CardTitle>
+                        <CardDescription>
+                          {asset.name} - {formatCurrency(asset.value || 0)}
+                        </CardDescription>
+                      </CardHeader>
+                    </Card>
+
+                    {/* Mortgage Details - Now directly shown in this tab */}
+                    {isLoadingMortgages ? (
+                      <Card>
+                        <CardContent className="p-8 flex flex-col items-center justify-center">
+                          <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+                          <p>Loading mortgage information...</p>
+                        </CardContent>
+                      </Card>
+                    ) : propertyMortgages && propertyMortgages.length > 0 ? (
+                      <div>
+                        {/* This will display the list of mortgages */}
+                        {propertyMortgages.map((mortgage) => (
+                          <div key={mortgage.id} className="mb-4">
+                            <MortgageDetails
+                              property={asset}
+                              mortgages={[mortgage]}
+                              isLoading={false}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="flex items-center">
+                            <Building className="mr-2 h-4 w-4" /> No Mortgage Assigned
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-center p-6">
+                            <Home className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                            <p className="text-muted-foreground">
+                              This property doesn't have any associated mortgages. It may be owned outright, or you can add mortgage information by editing the property.
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                )}
+              </TabsContent>
+              
               {/* Expenses Tab - Dedicated tab for property and investment expenses */}
               <TabsContent value="expenses" className="space-y-4 pt-4">
                 {/* Real Estate Expenses */}
