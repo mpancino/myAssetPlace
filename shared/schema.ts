@@ -89,6 +89,56 @@ export const assetClassesRelations = relations(assetClasses, ({ many }) => ({
   assets: many(assets),
 }));
 
+// Mortgages - New separate table for mortgages
+export const mortgages = pgTable("mortgages", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }).notNull(),
+  value: real("value").notNull(), // Current balance, treated as a negative value (liability)
+  
+  // Loan-specific fields
+  lender: text("lender").notNull(),
+  originalAmount: real("original_amount").notNull(),
+  interestRate: real("interest_rate").notNull(),
+  interestRateType: text("interest_rate_type").notNull(), // fixed, variable, interest-only
+  loanTerm: integer("loan_term").notNull(), // in months
+  remainingTerm: integer("remaining_term"), // calculated field, in months
+  paymentFrequency: text("payment_frequency").notNull(), // weekly, fortnightly, monthly, etc.
+  paymentAmount: real("payment_amount"), // calculated or provided
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date"), // calculated field
+  
+  // Relationship field for secured assets
+  securedAssetId: integer("secured_asset_id").references(() => assets.id, { onDelete: "set null" }),
+  loanPurpose: text("loan_purpose"), // mortgage, investment, personal, etc.
+  
+  // Additional mortgage-specific fields
+  isFixedRatePeriod: boolean("is_fixed_rate_period").default(false),
+  fixedRateEndDate: date("fixed_rate_end_date"),
+  variableRateAfterFixed: real("variable_rate_after_fixed"),
+  isInterestOnly: boolean("is_interest_only").default(false),
+  interestOnlyPeriod: integer("interest_only_period"), // in months
+  
+  // Offset accounts are now linked in the assets table via offsetLinkedLoanId
+  
+  // System fields
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const mortgagesRelations = relations(mortgages, ({ one, many }) => ({
+  user: one(users, {
+    fields: [mortgages.userId],
+    references: [users.id],
+  }),
+  securedAsset: one(assets, {
+    fields: [mortgages.securedAssetId],
+    references: [assets.id],
+  }),
+  offsetAccounts: many(assets, { relationName: "offsetAccounts" }),
+}));
+
 // Assets
 export const assets = pgTable("assets", {
   id: serial("id").primaryKey(),
@@ -143,8 +193,12 @@ export const assets = pgTable("assets", {
   vacancyRate: real("vacancy_rate"), // percent of time property is vacant
   propertyExpenses: json("property_expenses"), // e.g., strata, council rates, insurance, maintenance
   investmentExpenses: json("investment_expenses"), // e.g., management fees, brokerage fees, etc.
+  
+  // New bidirectional relationship fields
+  linkedMortgageId: integer("linked_mortgage_id").references(() => mortgages.id, { onDelete: "set null" }),
+  
+  // Legacy mortgage fields - to be migrated and then removed
   mortgageId: integer("mortgage_id"), // link to associated mortgage (if any)
-  // Property mortgage fields (to store mortgage info directly on property)
   hasMortgage: boolean("has_mortgage").default(false),
   mortgageAmount: real("mortgage_amount"),
   mortgageInterestRate: real("mortgage_interest_rate"),
@@ -153,6 +207,7 @@ export const assets = pgTable("assets", {
   mortgageLender: text("mortgage_lender"),
   mortgageType: text("mortgage_type"), // fixed, variable
   mortgagePaymentFrequency: text("mortgage_payment_frequency"), // weekly, fortnightly, monthly
+  
   // Share/Stock specific fields
   ticker: text("ticker"), // Stock ticker symbol
   exchange: text("exchange"), // Stock exchange
@@ -198,6 +253,13 @@ export const assetsRelations = relations(assets, ({ one, many }) => ({
     fields: [assets.offsetLinkedLoanId],
     references: [assets.id],
   }),
+  // New bidirectional relationship with mortgages
+  linkedMortgage: one(mortgages, {
+    fields: [assets.linkedMortgageId],
+    references: [mortgages.id],
+  }),
+  // Relation for properties securing mortgages
+  securingMortgages: many(mortgages, { relationName: "securedAsset" }),
 }));
 
 // Subscription Plans
@@ -348,6 +410,31 @@ export const insertLoanSchema = insertAssetSchema.extend({
   startDate: z.date(),
   originalLoanAmount: z.number().min(0, "Original loan amount must be greater than 0").max(1000000000, "Loan amount cannot exceed 1 billion"),
 });
+
+export const insertMortgageSchema = createInsertSchema(mortgages)
+  .omit({
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+  })
+  .extend({
+    value: z.number().max(0, "Mortgage value must be non-positive as it's a liability").min(-1000000000, "Mortgage value must be greater than -1 billion"),
+    lender: z.string().min(1, "Mortgage lender is required"),
+    originalAmount: z.number().min(0, "Original amount must be greater than 0").max(1000000000, "Original amount cannot exceed 1 billion"),
+    interestRate: z.number().min(0, "Interest rate must be non-negative").max(100, "Interest rate cannot exceed 100%"),
+    interestRateType: z.enum(["fixed", "variable", "interest-only"]),
+    loanTerm: z.number().min(1, "Loan term must be at least 1 month").max(1200, "Loan term cannot exceed 1200 months (100 years)"),
+    paymentFrequency: z.enum(["weekly", "fortnightly", "monthly", "quarterly", "annually"]),
+    paymentAmount: z.number().min(0, "Payment amount must be greater than 0").max(1000000000, "Payment amount cannot exceed 1 billion").optional(),
+    startDate: z.date(),
+    securedAssetId: z.number().optional(),
+    loanPurpose: z.enum(["mortgage", "investment", "personal", "other"]).optional(),
+    isFixedRatePeriod: z.boolean().default(false).optional(),
+    fixedRateEndDate: z.date().optional(),
+    variableRateAfterFixed: z.number().min(0).max(100).optional(),
+    isInterestOnly: z.boolean().default(false).optional(),
+    interestOnlyPeriod: z.number().min(0).max(1200).optional(),
+  });
 
 export const insertPropertySchema = insertAssetSchema.extend({
   propertyType: z.enum(["residential", "commercial", "industrial", "land", "rural", "other"]),
@@ -557,6 +644,9 @@ export type InsertProperty = z.infer<typeof insertPropertySchema>;
 export type InsertShare = z.infer<typeof insertShareSchema>;
 export type InsertStockOption = z.infer<typeof insertStockOptionSchema>;
 export type InsertEmploymentIncome = z.infer<typeof insertEmploymentIncomeSchema>;
+
+export type Mortgage = typeof mortgages.$inferSelect;
+export type InsertMortgage = z.infer<typeof insertMortgageSchema>;
 
 // Expense category definition for administrators
 export type ExpenseCategory = {
