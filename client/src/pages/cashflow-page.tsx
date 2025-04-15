@@ -301,19 +301,9 @@ export default function CashflowPage() {
           monthlyPayment = asset.paymentAmount / 12;
         }
         
-        // Interest expenses - extract from asset using same formula that's used in UI components
-        let monthlyInterest = 0;
-        if (asset.interestRate && asset.value) {
-          // Use the same formula as in the property card
-          monthlyInterest = (asset.interestRate / 100) * asset.value / 12;
-        } else if (asset.mortgageInterestRate && asset.mortgageAmount) {
-          // For property mortgages that have their own fields
-          monthlyInterest = (asset.mortgageInterestRate / 100) * asset.mortgageAmount / 12;  
-        } else {
-          // Fallback to estimate if no interest rate data is available
-          const estimatedInterestRate = 5; // 5% as default
-          monthlyInterest = (estimatedInterestRate / 100) * (asset.value || asset.paymentAmount * 12) / 12;
-        }
+        // Use the utility function to get the interest expense, ensuring consistency
+        // across the application without recalculating
+        const monthlyInterest = calculateMonthlyInterestExpense(asset);
         
         // Add interest expense to interest category
         categories["Interest Expenses"] += monthlyInterest;
@@ -736,17 +726,10 @@ export default function CashflowPage() {
                             }
                             
                             // If we have interest rate information, show payment split
-                            // First determine if we have interest rate data from any source
-                            let monthlyInterest = 0;
-                            if (asset.interestRate && asset.value) {
-                              // Standard loan interest calculation
-                              monthlyInterest = (asset.interestRate / 100) * asset.value / 12;
-                            } else if (asset.mortgageInterestRate && asset.mortgageAmount) {
-                              // Property mortgage interest calculation
-                              monthlyInterest = (asset.mortgageInterestRate / 100) * asset.mortgageAmount / 12;
-                            }
+                            // Get interest expense from utility function to ensure consistency
+                            const monthlyInterest = calculateMonthlyInterestExpense(asset);
                               
-                            // If we have valid interest data
+                            // If we have interest data
                             if (monthlyInterest > 0) {
                               const monthlyPrincipal = monthlyPayment - monthlyInterest;
                               
@@ -772,11 +755,10 @@ export default function CashflowPage() {
                                 </>
                               );
                             } else {
-                              // If no interest rate data, estimate interest using a default rate of 5%
-                              // We do this to ensure consistency in categorizing interest as an expense
-                              const estimatedInterestRate = 5; // 5% as a default interest rate
-                              // Calculate using same formula as property card for consistency
-                              const monthlyInterest = (estimatedInterestRate / 100) * (asset.value || asset.paymentAmount * 12) / 12;
+                              // This section should actually never be reached since calculateMonthlyInterestExpense 
+                              // already handles cases with no explicit interest rate by using an estimate
+                              // But we'll keep this as a fallback just in case
+                              const monthlyInterest = calculateMonthlyInterestExpense(asset);
                               const monthlyPrincipal = monthlyPayment - monthlyInterest;
                               
                               return (

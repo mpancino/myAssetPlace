@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Pencil, Trash2, MapPin, Home, Building, DollarSign, BedDouble, Bath, Car, CreditCard } from "lucide-react";
 import { useLocation } from "wouter";
 import { formatCurrency } from "@/lib/utils";
+import { calculateMonthlyInterestExpense } from "@/lib/expense-utils";
 import { PropertyExpense } from "@shared/schema";
 import { calculateLoanPayment } from "@shared/calculations";
 
@@ -117,7 +118,10 @@ export function PropertyCard({
                 <div className="flex justify-between">
                   <div className="text-sm text-muted-foreground">Interest Expenses</div>
                   <div className="font-medium text-amber-600">
-                    {formatCurrency(mortgageAmount * (mortgageInterestRate / 100) / 12)}/month
+                    {formatCurrency(calculateMonthlyInterestExpense({
+                      mortgageInterestRate,
+                      mortgageAmount
+                    }))}/month
                   </div>
                 </div>
               )}
