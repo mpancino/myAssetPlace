@@ -32,42 +32,52 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { formatCurrency } from "@/lib/utils";
-import { Asset } from "@shared/schema";
+import { Asset, Mortgage } from "@shared/schema";
 import { calculateLoanPayment, calculatePrincipalAndInterest, generateAmortizationSchedule } from "@shared/calculations";
-
-// Define property with mortgage fields
-interface PropertyWithMortgage extends Asset {
-  hasMortgage: boolean;
-  mortgageAmount: number | null;
-  mortgageInterestRate: number | null;
-  mortgageTerm: number | null;
-  mortgageStartDate: string | null;
-  mortgageLender: string | null;
-  mortgageType: string | null;
-  mortgagePaymentFrequency: string | null;
-}
+import { Loader2 } from "lucide-react";
 
 interface MortgageDetailsProps {
   property: Asset;
+  mortgages?: Mortgage[];
+  isLoading?: boolean;
 }
 
-export function MortgageDetails({ property }: MortgageDetailsProps) {
+export function MortgageDetails({ property, mortgages = [], isLoading = false }: MortgageDetailsProps) {
   const [showAmortizationTable, setShowAmortizationTable] = useState(false);
   const [page, setPage] = useState(1);
   const pageSize = 12; // Show 1 year of payments
   
-  // Cast property to PropertyWithMortgage type to access mortgage fields
-  const propertyWithMortgage = property as PropertyWithMortgage;
+  // First check if the mortgage data is still loading
+  if (isLoading) {
+    return (
+      <Card className="col-span-1 md:col-span-2">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Building className="mr-2 h-4 w-4" /> Mortgage Information
+          </CardTitle>
+          <CardDescription>Loading mortgage details...</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center p-6">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
   
-  // Extract mortgage details from property
-  const mortgageAmount = propertyWithMortgage.mortgageAmount || 0;
-  const interestRate = propertyWithMortgage.mortgageInterestRate || 0;
-  const termInMonths = propertyWithMortgage.mortgageTerm || 0;
+  // Get the primary mortgage (should be only one for now, but could be multiple in the future)
+  const mortgage = mortgages.length > 0 ? mortgages[0] : null;
+  
+  // Extract mortgage details 
+  const mortgageAmount = mortgage ? mortgage.originalAmount : 0;
+  const interestRate = mortgage ? mortgage.interestRate : 0;
+  const termInMonths = mortgage ? mortgage.termMonths : 0;
   const termInYears = termInMonths / 12;
-  const startDate = propertyWithMortgage.mortgageStartDate || property.purchaseDate;
+  const startDate = mortgage ? mortgage.startDate : property.purchaseDate;
   
   // Check if mortgage exists
-  const hasMortgage = mortgageAmount > 0 && interestRate > 0 && termInMonths > 0;
+  const hasMortgage = mortgage !== null && mortgageAmount > 0 && interestRate > 0 && termInMonths > 0;
   
   if (!hasMortgage) {
     return (

@@ -255,7 +255,7 @@ export async function createDemoAssets(userId: number): Promise<Asset[]> {
         loanTerm: 360, // 30 years in months
         paymentFrequency: "monthly",
         lender: "Home Loans Inc",
-        mortgageType: "variable",
+        interestRateType: "variable", // Fixed field name to match schema
         startDate: new Date("2015-06-20").toISOString(),
         originalAmount: 280000,
         securedAssetId: primaryResidenceId,

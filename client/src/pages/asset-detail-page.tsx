@@ -322,6 +322,12 @@ export default function AssetDetailPage() {
     refetchOnWindowFocus: true, // Refetch when the window regains focus
   });
   
+  // Fetch the associated mortgages for real estate properties
+  const { data: propertyMortgages = [], isLoading: isLoadingMortgages } = useQuery({
+    queryKey: [`/api/properties/${assetId}/mortgages`],
+    enabled: !!assetId && !!asset && asset.assetClassId === 3, // Only for real estate assets
+  });
+  
   // Fetch asset classes
   const { data: assetClasses = [] } = useQuery<AssetClass[]>({
     queryKey: ["/api/asset-classes"],
@@ -2245,7 +2251,7 @@ export default function AssetDetailPage() {
                     
                     {/* Mortgage Details - Only shown when not editing */}
                     {!isEditing && asset.hasMortgage && (
-                      <MortgageDetails property={asset} />
+                      <MortgageDetails property={asset} mortgages={propertyMortgages} isLoading={isLoadingMortgages} />
                     )}
                     
                     {/* Property Expenses Section - moved to dedicated tab */}
