@@ -84,7 +84,8 @@ export function MortgageDetails({ property, mortgages = [], isLoading = false }:
       originalAmount: mortgage.originalAmount,
       interestRate: mortgage.interestRate,
       termMonths: mortgage.termMonths,
-      startDate: mortgage.startDate
+      startDate: mortgage.startDate,
+      interestRateType: mortgage.interestRateType
     });
   }
   

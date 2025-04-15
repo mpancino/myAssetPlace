@@ -2265,7 +2265,7 @@ export default function AssetDetailPage() {
                       mortgagesCount: propertyMortgages?.length,
                       isLoadingMortgages
                     })}
-                    {!isEditing && asset.hasMortgage && (
+                    {!isEditing && (asset.hasMortgage || propertyMortgages?.length > 0) && (
                       <MortgageDetails 
                         property={asset} 
                         mortgages={propertyMortgages} 
