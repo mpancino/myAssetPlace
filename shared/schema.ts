@@ -109,8 +109,9 @@ export const mortgages = pgTable("mortgages", {
   startDate: date("start_date").notNull(),
   endDate: date("end_date"), // calculated field
   
-  // Relationship field for secured assets
+  // Relationship fields
   securedAssetId: integer("secured_asset_id").references(() => assets.id, { onDelete: "set null" }),
+  assetHoldingTypeId: integer("asset_holding_type_id").references(() => assetHoldingTypes.id).default(1), // Default to Personal
   loanPurpose: text("loan_purpose"), // mortgage, investment, personal, etc.
   
   // Additional mortgage-specific fields
@@ -131,6 +132,10 @@ export const mortgagesRelations = relations(mortgages, ({ one, many }) => ({
   user: one(users, {
     fields: [mortgages.userId],
     references: [users.id],
+  }),
+  assetHoldingType: one(assetHoldingTypes, {
+    fields: [mortgages.assetHoldingTypeId],
+    references: [assetHoldingTypes.id],
   }),
   securedAsset: one(assets, {
     fields: [mortgages.securedAssetId],
@@ -428,6 +433,7 @@ export const insertMortgageSchema = createInsertSchema(mortgages)
     paymentAmount: z.number().min(0, "Payment amount must be greater than 0").max(1000000000, "Payment amount cannot exceed 1 billion").optional(),
     startDate: z.date(),
     securedAssetId: z.number().optional(),
+    assetHoldingTypeId: z.number().default(1), // Default to Personal (id=1)
     loanPurpose: z.enum(["mortgage", "investment", "personal", "other"]).optional(),
     isFixedRatePeriod: z.boolean().default(false).optional(),
     fixedRateEndDate: z.date().optional(),
