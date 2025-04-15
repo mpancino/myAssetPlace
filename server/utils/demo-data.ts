@@ -257,7 +257,7 @@ export async function createDemoAssets(userId: number): Promise<Asset[]> {
         lender: "Home Loans Inc",
         mortgageType: "variable",
         startDate: new Date("2015-06-20").toISOString(),
-        originalLoanAmount: 280000,
+        originalAmount: 280000,
         securedAssetId: primaryResidenceId,
         isLiability: true
       };
@@ -283,7 +283,7 @@ export async function createDemoAssets(userId: number): Promise<Asset[]> {
         lender: "Westpac Bank",
         mortgageType: "variable",
         startDate: new Date("2018-09-15").toISOString(),
-        originalLoanAmount: 250000,
+        originalAmount: 250000,
         securedAssetId: investmentPropertyId,
         isLiability: true
       };
