@@ -214,8 +214,8 @@ export function MortgageDetails({ property }: MortgageDetailsProps) {
                 </div>
                 
                 <div>
-                  <div className="text-muted-foreground text-xs mb-1">Interest</div>
-                  <div className="font-medium">
+                  <div className="text-muted-foreground text-xs mb-1">Interest Expenses</div>
+                  <div className="font-medium text-amber-600">
                     {formatCurrency(currentPaymentBreakdown.interest)}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">

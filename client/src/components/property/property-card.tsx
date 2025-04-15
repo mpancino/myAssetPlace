@@ -29,6 +29,7 @@ export function PropertyCard({
   // Handle possible snake_case vs camelCase inconsistency
   const hasMortgage = property.hasMortgage || (property as any).has_mortgage;
   const mortgageAmount = property.mortgageAmount || (property as any).mortgage_amount;
+  const mortgageInterestRate = property.mortgageInterestRate || (property as any).mortgage_interest_rate;
   
   // Format rental income to monthly basis
   const formatRentalIncome = () => {
@@ -110,6 +111,16 @@ export function PropertyCard({
                   {formatCurrency(mortgageAmount || 0)}
                 </div>
               </div>
+              
+              {/* Show interest expense if we have an interest rate */}
+              {mortgageInterestRate && mortgageAmount > 0 && (
+                <div className="flex justify-between">
+                  <div className="text-sm text-muted-foreground">Interest Expenses</div>
+                  <div className="font-medium text-amber-600">
+                    {formatCurrency(mortgageAmount * (mortgageInterestRate / 100) / 12)}/month
+                  </div>
+                </div>
+              )}
               
               <div className="flex justify-between">
                 <div className="text-sm text-muted-foreground">Equity</div>

@@ -175,7 +175,7 @@ export default function CashflowPage() {
         });
       }
       
-      // Loan payments
+      // Loan payments including interest expenses
       if (asset.isLiability && asset.paymentAmount) {
         // Convert to monthly based on frequency
         let monthlyAmount = asset.paymentAmount;
@@ -188,6 +188,9 @@ export default function CashflowPage() {
         } else if (asset.paymentFrequency === "annually") {
           monthlyAmount = asset.paymentAmount / 12;
         }
+        
+        // We already include interest expenses in the payment amount
+        // The breakdown by category happens in getExpenseCategories()
         total += monthlyAmount;
       }
     });
