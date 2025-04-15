@@ -113,8 +113,24 @@ export function MortgageDetails({ property, mortgages = [], isLoading = false }:
   // Function to navigate to the mortgage edit page in the Loans area
   const handleEditMortgage = () => {
     if (mortgage && mortgage.id) {
-      // Navigate to the edit loan page with the mortgage ID
-      navigate(`/edit-loan/${mortgage.id}`);
+      // First check if we have an associated asset for this mortgage
+      // This API call gets the loan asset associated with this mortgage
+      fetch(`/api/mortgages/${mortgage.id}/asset`)
+        .then(response => {
+          if (response.ok) {
+            return response.json();
+          }
+          throw new Error("Failed to get loan asset ID");
+        })
+        .then(asset => {
+          // Navigate to the edit loan page with the asset ID
+          navigate(`/edit-loan/${asset.id}`);
+        })
+        .catch(error => {
+          console.error("Error finding loan asset for mortgage:", error);
+          // Fallback to viewing the loans asset class
+          navigate(`/asset-classes/2`);
+        });
     }
   };
   

@@ -1043,6 +1043,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // New endpoint to get the loan asset associated with a mortgage
+  app.get("/api/mortgages/:id/asset", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      const mortgageId = parseInt(req.params.id);
+      const mortgage = await storage.getMortgage(mortgageId);
+      
+      if (!mortgage) {
+        return res.status(404).json({ message: "Mortgage not found" });
+      }
+      
+      // Check if user owns the mortgage
+      if (mortgage.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to view this mortgage" });
+      }
+      
+      // Find the matching loan asset, searching by name and properties
+      const allAssets = await storage.listAssets(req.user.id);
+      
+      // Find loan assets that match this mortgage (should have mortgage-specific properties)
+      const loanAsset = allAssets.find(asset => 
+        asset.isLiability === true && 
+        (
+          // Match by names, amounts, or mortgage relationships
+          (asset.name === mortgage.name || asset.name === `Loan for ${mortgage.name}`) || 
+          (asset.description && asset.description.includes(mortgage.name)) ||
+          ('mortgageId' in asset && (asset as any).mortgageId === mortgage.id) ||
+          ('originalLoanAmount' in asset && (asset as any).originalLoanAmount === mortgage.originalAmount)
+        )
+      );
+      
+      if (!loanAsset) {
+        return res.status(404).json({ message: "No loan asset found for this mortgage" });
+      }
+      
+      res.json(loanAsset);
+    } catch (err) {
+      console.error("Error finding loan asset for mortgage:", err);
+      res.status(500).json({ message: "Failed to find loan asset" });
+    }
+  });
+
   app.get("/api/properties/:id/mortgages", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });
