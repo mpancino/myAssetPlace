@@ -2258,6 +2258,13 @@ export default function AssetDetailPage() {
                     </Card>
                     
                     {/* Mortgage Details - Only shown when not editing */}
+                    {console.log("Mortgage rendering condition:", {
+                      isEditing,
+                      hasMortgage: asset.hasMortgage,
+                      shouldRender: !isEditing && asset.hasMortgage,
+                      mortgagesCount: propertyMortgages?.length,
+                      isLoadingMortgages
+                    })}
                     {!isEditing && asset.hasMortgage && (
                       <MortgageDetails 
                         property={asset} 
