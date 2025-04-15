@@ -66,8 +66,27 @@ export function MortgageDetails({ property, mortgages = [], isLoading = false }:
     );
   }
   
+  // Add debug logging for the mortgage data
+  console.log("MortgageDetails component received:", {
+    propertyId: property.id,
+    mortgages: mortgages,
+    mortgagesCount: mortgages.length,
+    isLoading: isLoading
+  });
+  
   // Get the primary mortgage (should be only one for now, but could be multiple in the future)
   const mortgage = mortgages.length > 0 ? mortgages[0] : null;
+  
+  // Debug log the mortgage details
+  if (mortgage) {
+    console.log("Primary mortgage details:", {
+      id: mortgage.id,
+      originalAmount: mortgage.originalAmount,
+      interestRate: mortgage.interestRate,
+      termMonths: mortgage.termMonths,
+      startDate: mortgage.startDate
+    });
+  }
   
   // Extract mortgage details 
   const mortgageAmount = mortgage ? mortgage.originalAmount : 0;

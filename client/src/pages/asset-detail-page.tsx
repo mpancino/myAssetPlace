@@ -48,7 +48,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
-import { AssetClass, AssetHoldingType, Asset } from "@shared/schema";
+import { AssetClass, AssetHoldingType, Asset, Mortgage } from "@shared/schema";
 import { OffsetAccountSection } from "@/components/loans/offset-account-section";
 import { calculateLoanPayment, calculatePrincipalAndInterest } from "@shared/calculations";
 import { formatCurrency } from "@/lib/utils";
@@ -327,6 +327,14 @@ export default function AssetDetailPage() {
     queryKey: [`/api/properties/${assetId}/mortgages`],
     enabled: !!assetId && !!asset && asset.assetClassId === 3, // Only for real estate assets
   });
+  
+  // Debug log the property mortgages
+  useEffect(() => {
+    if (propertyMortgages && propertyMortgages.length > 0) {
+      console.log("Property mortgages loaded:", propertyMortgages);
+      console.log("First mortgage details:", propertyMortgages[0]);
+    }
+  }, [propertyMortgages]);
   
   // Fetch asset classes
   const { data: assetClasses = [] } = useQuery<AssetClass[]>({
@@ -2251,7 +2259,11 @@ export default function AssetDetailPage() {
                     
                     {/* Mortgage Details - Only shown when not editing */}
                     {!isEditing && asset.hasMortgage && (
-                      <MortgageDetails property={asset} mortgages={propertyMortgages} isLoading={isLoadingMortgages} />
+                      <MortgageDetails 
+                        property={asset} 
+                        mortgages={propertyMortgages} 
+                        isLoading={isLoadingMortgages} 
+                      />
                     )}
                     
                     {/* Property Expenses Section - moved to dedicated tab */}
