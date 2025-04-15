@@ -142,6 +142,32 @@ export function getExpenseCount(expenses: Record<string, any> | null | undefined
 }
 
 /**
+ * Calculate the monthly interest expense for a loan or mortgage
+ * This provides a consistent calculation across the application
+ */
+export function calculateMonthlyInterestExpense(asset: any): number {
+  // If we have a mortgage with its own interest rate and amount
+  if (asset.mortgageInterestRate && asset.mortgageAmount) {
+    return (asset.mortgageInterestRate / 100) * asset.mortgageAmount / 12;
+  }
+  
+  // If we have a loan with interest rate and value
+  if (asset.interestRate && asset.value) {
+    return (asset.interestRate / 100) * asset.value / 12;
+  }
+  
+  // Fallback to an estimation if no interest data is available
+  if (asset.isLiability && asset.paymentAmount) {
+    // Use a default rate of 5% for estimation purposes
+    const estimatedInterestRate = 5;
+    return (estimatedInterestRate / 100) * (asset.value || asset.paymentAmount * 12) / 12;
+  }
+  
+  // No interest expense
+  return 0;
+}
+
+/**
  * Convert from component format (category, description) to page format (categoryId, name)
  * This adapter is used when sending data from InvestmentExpenses component to the asset detail page
  */

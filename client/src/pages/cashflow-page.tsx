@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
+import { calculateMonthlyInterestExpense } from "@/lib/expense-utils";
 import LoadingSpinner from "@/components/ui/loading-spinner";
 import { PlusCircle, ArrowDownUp, TrendingUp, Download } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
