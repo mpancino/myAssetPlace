@@ -467,17 +467,8 @@ export const insertPropertySchema = insertAssetSchema.extend({
     annualTotal: z.number()
   })).optional(),
   
-  // Mortgage fields
-  hasMortgage: z.boolean().default(false),
-  mortgageAmount: z.number().min(0).optional(),
-  mortgageInterestRate: z.number().min(0).max(100).optional(),
-  mortgageTerm: z.number().min(1).max(1200).optional(), // In months (100 years max)
-  mortgageStartDate: z.date().optional(),
-  mortgageLender: z.string().optional(),
-  mortgageType: z.enum(["fixed", "variable"]).optional(),
-  mortgagePaymentFrequency: z.enum(["weekly", "fortnightly", "monthly"]).optional(),
-  
-  mortgageId: z.number().optional(),
+  // Property location data
+  mortgageId: z.number().optional(), // Keeping for backward compatibility with existing records
   longitude: z.number().optional(),
   latitude: z.number().optional(),
   // Override the purchaseDate from insertAssetSchema to accept Date objects

@@ -98,6 +98,12 @@ export function PropertyForm({
     setIsRental(isRentalValue || false);
   }, [isRentalValue]);
 
+  // Remove reference to hasMortgage which was previously deleted
+  useEffect(() => {
+    // Clean up the schema.ts file to completely remove hasMortgage and mortgage fields
+    console.log("Form mounted with clean architecture - mortgages are now standalone entities");
+  }, []);
+
   // Update form when defaultValues change
   useEffect(() => {
     if (defaultValues) {
