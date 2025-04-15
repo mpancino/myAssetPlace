@@ -120,7 +120,8 @@ export function LoanForm({
           securedAssetId: data.securedAssetId
         };
         
-        const res = await apiRequest("PUT", `/api/mortgages/${assetId}`, mortgageData);
+        console.log("Updating mortgage: ", assetId, mortgageData);
+        const res = await apiRequest("PATCH", `/api/mortgages/${assetId}`, mortgageData);
         return await res.json();
       }
       // Case 2: Editing a regular loan/asset
@@ -148,7 +149,8 @@ export function LoanForm({
           securedAssetId: data.securedAssetId
         };
         
-        const res = await apiRequest("PUT", `/api/mortgages/${mortgageId}`, mortgageData);
+        console.log("Updating mortgage directly:", mortgageId, mortgageData);
+        const res = await apiRequest("PATCH", `/api/mortgages/${mortgageId}`, mortgageData);
         return await res.json();
       } 
       // Case 4: Creating a new loan/asset
@@ -162,9 +164,18 @@ export function LoanForm({
       // Invalidate all potentially affected queries
       queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
       
-      // Also invalidate mortgage data if we're editing a mortgage
-      if (mortgageId) {
+      // More aggressive cache invalidation for mortgages
+      if (mortgageId || isMortgage || (assetId && assetId < 100)) {
+        // Invalidate all mortgage-related data
         queryClient.invalidateQueries({ queryKey: ["/api/mortgages"] });
+        
+        // Invalidate specific mortgage
+        if (assetId) {
+          queryClient.invalidateQueries({ queryKey: [`/api/mortgages/${assetId}`] });
+        }
+        if (mortgageId) {
+          queryClient.invalidateQueries({ queryKey: [`/api/mortgages/${mortgageId}`] });
+        }
         
         // Invalidate the property's mortgage list if we have a secured asset
         if (loan.securedAssetId) {
@@ -172,6 +183,12 @@ export function LoanForm({
             queryKey: [`/api/properties/${loan.securedAssetId}/mortgages`] 
           });
         }
+        
+        // Invalidate all properties since mortgage updates affect property calculations
+        queryClient.invalidateQueries({ queryKey: ["/api/properties"] });
+        
+        // Force refresh assets list since mortgage changes affect balance calculations
+        queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
       }
       
       // Show success toast
