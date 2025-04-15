@@ -83,7 +83,7 @@ export function MortgageDetails({ property, mortgages = [], isLoading = false }:
       id: mortgage.id,
       originalAmount: mortgage.originalAmount,
       interestRate: mortgage.interestRate,
-      termMonths: mortgage.termMonths,
+      loanTerm: mortgage.loanTerm, // Field name in DB is loanTerm, not termMonths
       startDate: mortgage.startDate,
       interestRateType: mortgage.interestRateType
     });
@@ -92,7 +92,7 @@ export function MortgageDetails({ property, mortgages = [], isLoading = false }:
   // Extract mortgage details 
   const mortgageAmount = mortgage ? mortgage.originalAmount : 0;
   const interestRate = mortgage ? mortgage.interestRate : 0;
-  const termInMonths = mortgage ? mortgage.termMonths : 0;
+  const termInMonths = mortgage ? mortgage.loanTerm : 0; // Changed from termMonths to loanTerm
   const termInYears = termInMonths / 12;
   const startDate = mortgage ? mortgage.startDate : property.purchaseDate;
   

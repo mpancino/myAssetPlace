@@ -1287,6 +1287,7 @@ export default function AssetDetailPage() {
                 {selectedClass?.name?.toLowerCase() === "real estate" && (
                   <>
                     <TabsTrigger value="property">Property Info</TabsTrigger>
+                    <TabsTrigger value="mortgage">Mortgage</TabsTrigger>
                     <TabsTrigger value="expenses">Expenses</TabsTrigger>
                   </>
                 )}
@@ -1953,6 +1954,27 @@ export default function AssetDetailPage() {
               <TabsContent value="property" className="space-y-4 pt-4">
                 {asset && selectedClass?.name?.toLowerCase() === "real estate" && asset && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Link to Mortgage Tab */}
+                    {!isEditing && propertyMortgages?.length > 0 && (
+                      <Card className="col-span-1 md:col-span-2 mb-4">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="flex items-center">
+                            <Building className="mr-2 h-4 w-4" /> Mortgage Information
+                          </CardTitle>
+                          <CardDescription>
+                            This property has {propertyMortgages.length} associated mortgage(s).
+                            <Button 
+                              variant="link" 
+                              className="p-0 h-auto text-primary"
+                              onClick={() => setActiveTab("mortgage")}
+                            >
+                              View the mortgage tab for details
+                            </Button>
+                          </CardDescription>
+                        </CardHeader>
+                      </Card>
+                    )}
+                    
                     {/* Mortgage Information Card - Only shown when editing */}
                     {isEditing && (
                       <Card className="col-span-1 md:col-span-2">
