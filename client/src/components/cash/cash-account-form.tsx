@@ -153,64 +153,64 @@ export function CashAccountForm({
   // Create or update mutation
   const mutation = useMutation({
     mutationFn: async (data: InsertCashAccount) => {
-      console.log("Mutation executing with data:", data);
+      logInfo("form", "Mutation executing with data:", data);
       
       try {
         // Get the URL from localStorage if it was set during initialization
         const savedClassId = localStorage.getItem('selectedAssetClassId');
         if (savedClassId && !data.assetClassId) {
-          console.log("Using assetClassId from localStorage:", savedClassId);
+          logInfo("form", "Using assetClassId from localStorage:", savedClassId);
           data.assetClassId = parseInt(savedClassId);
         }
         
         // Make sure assetClassId is set in data
         if (!data.assetClassId && cashAssetClass?.id) {
-          console.log("Using assetClassId from cashAssetClass:", cashAssetClass.id);
+          logInfo("form", "Using assetClassId from cashAssetClass:", cashAssetClass.id);
           data.assetClassId = cashAssetClass.id;
         }
         
         // If we still don't have an assetClassId, use a default of 1 (typically Cash & Bank Accounts)
         if (!data.assetClassId) {
-          console.log("No assetClassId found, using default of 1");
+          logInfo("form", "No assetClassId found, using default of 1");
           data.assetClassId = 1;
         }
         
         if (isEditing && assetId) {
-          console.log("Updating existing cash account:", assetId);
+          logInfo("form", "Updating existing cash account:", assetId);
           const res = await apiRequest("PATCH", `/api/assets/${assetId}`, data);
           if (!res.ok) {
             const errorText = await res.text();
-            console.error("API error response:", errorText);
+            logError("form", "API error response:", errorText);
             throw new Error(`API error: ${res.status} ${errorText}`);
           }
           const result = await res.json();
-          console.log("Update response:", result);
+          logInfo("form", "Update response:", result);
           return result;
         } else {
-          console.log("Creating new cash account with data:", data);
-          console.log("Asset class ID for submission:", data.assetClassId);
+          logInfo("form", "Creating new cash account with data:", data);
+          logInfo("form", "Asset class ID for submission:", data.assetClassId);
           
           const res = await apiRequest("POST", "/api/assets", data);
           if (!res.ok) {
             const errorText = await res.text();
-            console.error("API error response:", errorText);
+            logError("form", "API error response:", errorText);
             throw new Error(`API error: ${res.status} ${errorText}`);
           }
           
           const result = await res.json();
-          console.log("Create response:", result);
+          logInfo("form", "Create response:", result);
           return result;
         }
       } catch (err) {
-        console.error("API request error:", err);
+        logError("form", "API request error:", err);
         throw err;
       }
     },
     onMutate: (data) => {
-      console.log("onMutate called with data:", data);
+      logInfo("form", "onMutate called with data:", data);
     },
     onSuccess: (data) => {
-      console.log("Mutation succeeded:", data);
+      logInfo("form", "Mutation succeeded:", data);
       queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
       toast({
         title: `Cash account ${isEditing ? "updated" : "created"} successfully`,
@@ -219,7 +219,7 @@ export function CashAccountForm({
       setLocation("/asset-classes/" + cashAssetClass?.id);
     },
     onError: (error: Error) => {
-      console.error("Mutation error:", error);
+      logError("form", "Mutation error:", error);
       toast({
         title: "Error",
         description: `Failed to ${isEditing ? "update" : "create"} cash account: ${error.message}`,
@@ -227,15 +227,15 @@ export function CashAccountForm({
       });
     },
     onSettled: (data, error) => {
-      console.log("onSettled called with data:", data);
+      logInfo("form", "onSettled called with data:", data);
       if (error) {
-        console.error("onSettled error:", error);
+        logError("form", "onSettled error:", error);
       }
     },
   });
 
   const onSubmit = (data: InsertCashAccount) => {
-    console.log("Form submitted with data:", data);
+    logInfo("form", "Form submitted with data:", data);
     
     try {
       // Deep clone the data to avoid reference issues
@@ -247,12 +247,12 @@ export function CashAccountForm({
 
       // Force the assetClassId to be the cash asset class ID
       if (cashAssetClass?.id) {
-        console.log("Setting assetClassId to cash asset class:", cashAssetClass.id);
+        logInfo("form", "Setting assetClassId to cash asset class:", cashAssetClass.id);
         submitData.assetClassId = cashAssetClass.id;
       } else if (!submitData.assetClassId) {
         // If we can't get the cash asset class ID from the cashAssetClass object, try to set it from defaultValues
         submitData.assetClassId = defaultValues?.assetClassId || 1;  // Fallback to 1 which is typically the Cash asset class ID
-        console.log("No cash asset class found, using fallback ID:", submitData.assetClassId);
+        logInfo("form", "No cash asset class found, using fallback ID:", submitData.assetClassId);
       }
       
       // Force numeric fields to be numbers, not strings
@@ -273,13 +273,13 @@ export function CashAccountForm({
       submitData.propertyExpenses = submitData.propertyExpenses || {};
       
       // Add detailed debugging
-      console.log("Submitting cash account data:", submitData);
-      console.log("Asset class ID:", submitData.assetClassId);
-      console.log("Asset holding type ID:", submitData.assetHoldingTypeId);
+      logInfo("form", "Submitting cash account data:", submitData);
+      logInfo("form", "Asset class ID:", submitData.assetClassId);
+      logInfo("form", "Asset holding type ID:", submitData.assetHoldingTypeId);
       
       // Final validation check - very important
       if (!submitData.assetClassId) {
-        console.error("CRITICAL ERROR: Missing assetClassId in form data - cannot submit!");
+        logError("form", "CRITICAL ERROR: Missing assetClassId in form data - cannot submit!");
         toast({
           title: "Missing Asset Class",
           description: "Please try again or contact support - asset class ID is missing.",
@@ -290,7 +290,7 @@ export function CashAccountForm({
       
       // Make sure name field is filled
       if (!submitData.name?.trim()) {
-        console.error("Missing account name - cannot submit!");
+        logError("form", "Missing account name - cannot submit!");
         toast({
           title: "Missing Account Name",
           description: "Please enter a name for your account.",
@@ -300,18 +300,18 @@ export function CashAccountForm({
       }
       
       // Submit the form directly without using mutation
-      console.log("All validation passed, attempting direct API call");
+      logInfo("form", "All validation passed, attempting direct API call");
       
       // Use native fetch instead of the mutation to bypass any TanStack issues
       (async () => {
         try {
-          console.log("Starting direct API submission");
+          logInfo("form", "Starting direct API submission");
           const url = isEditing && assetId 
             ? `/api/assets/${assetId}`
             : "/api/assets";
           
           const method = isEditing && assetId ? "PATCH" : "POST";
-          console.log(`Making direct ${method} request to ${url}`);
+          logInfo("form", `Making direct ${method} request to ${url}`);
           
           const response = await fetch(url, {
             method: method,
@@ -321,11 +321,11 @@ export function CashAccountForm({
             body: JSON.stringify(submitData),
           });
           
-          console.log("API response status:", response.status);
+          logInfo("form", "API response status:", response.status);
           
           if (!response.ok) {
             const errorText = await response.text();
-            console.error("API error response:", errorText);
+            logError("form", "API error response:", errorText);
             toast({
               title: "Error",
               description: `Failed to ${isEditing ? "update" : "create"} cash account: ${errorText}`,
@@ -335,7 +335,7 @@ export function CashAccountForm({
           }
           
           const result = await response.json();
-          console.log("Success response:", result);
+          logInfo("form", "Success response:", result);
           
           toast({
             title: `Cash account ${isEditing ? "updated" : "created"} successfully`,
@@ -346,7 +346,7 @@ export function CashAccountForm({
           queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
           setLocation("/asset-classes/" + cashAssetClass?.id);
         } catch (err) {
-          console.error("Direct API submission error:", err);
+          logError("form", "Direct API submission error:", err);
           toast({
             title: "Error",
             description: `An error occurred: ${err instanceof Error ? err.message : String(err)}`,
@@ -356,10 +356,10 @@ export function CashAccountForm({
       })();
       
       // Also try the mutation as a fallback approach
-      console.log("Also trying mutation as fallback");
+      logInfo("form", "Also trying mutation as fallback");
       mutation.mutate(submitData);
     } catch (error) {
-      console.error("Error preparing form data:", error);
+      logError("form", "Error preparing form data:", error);
       toast({
         title: "Form Error",
         description: "An error occurred while preparing the form data. Please try again.",
@@ -384,27 +384,27 @@ export function CashAccountForm({
       <CardContent>
         <Form {...form}>
           <form onSubmit={(e) => {
-            console.log("Form submit event triggered");
+            logInfo("form", "Form submit event triggered");
             // Prevent the default form behavior just to debug
             e.preventDefault();
             
             // Capture form values for debugging
             const formValues = form.getValues();
-            console.log("Current form values:", formValues);
+            logInfo("form", "Current form values:", formValues);
             
             // Validate if we have all required fields
-            console.log("Name field:", formValues.name);
-            console.log("Institution field:", formValues.institution);
-            console.log("Value field:", formValues.value);
-            console.log("AssetClassId field:", formValues.assetClassId);
-            console.log("AssetHoldingTypeId field:", formValues.assetHoldingTypeId);
+            logInfo("form", "Name field:", formValues.name);
+            logInfo("form", "Institution field:", formValues.institution);
+            logInfo("form", "Value field:", formValues.value);
+            logInfo("form", "AssetClassId field:", formValues.assetClassId);
+            logInfo("form", "AssetHoldingTypeId field:", formValues.assetHoldingTypeId);
             
             // Check for form validation errors
-            console.log("Form state:", form.formState);
-            console.log("Form errors:", form.formState.errors);
+            logInfo("form", "Form state:", form.formState);
+            logInfo("form", "Form errors:", form.formState.errors);
             
             // Now manually call the submit handler
-            console.log("Calling onSubmit handler manually");
+            logInfo("form", "Calling onSubmit handler manually");
             onSubmit(formValues);
           }} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -665,7 +665,7 @@ export function CashAccountForm({
               control={form.control}
               name="assetClassId"
               render={({ field }) => {
-                console.log("Asset class ID in hidden field:", field.value);
+                logInfo("form", "Asset class ID in hidden field:", field.value);
                 
                 // Convert to string to avoid NaN warnings
                 const idValue = field.value ? String(field.value) : 
@@ -731,9 +731,9 @@ export function CashAccountForm({
                 type="submit" 
                 disabled={mutation.isPending}
                 onClick={() => {
-                  console.log("Submit button clicked directly");
-                  console.log("Form state at button click:", form.formState);
-                  console.log("Form values at button click:", form.getValues());
+                  logInfo("form", "Submit button clicked directly");
+                  logInfo("form", "Form state at button click:", form.formState);
+                  logInfo("form", "Form values at button click:", form.getValues());
                 }}
               >
                 {mutation.isPending ? "Saving..." : isEditing ? "Update Account" : "Add Account"}
