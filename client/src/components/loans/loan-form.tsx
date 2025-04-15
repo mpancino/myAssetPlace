@@ -118,7 +118,7 @@ export function LoanForm({
           loanTerm: data.loanTerm,
           paymentFrequency: data.paymentFrequency,
           paymentAmount: data.paymentAmount,
-          startDate: data.startDate instanceof Date ? data.startDate : new Date(data.startDate), // Ensure date is in proper format
+          startDate: data.startDate instanceof Date ? data.startDate : (data.startDate ? new Date(data.startDate as string) : new Date()), // Ensure date is in proper format
           securedAssetId: data.securedAssetId
         };
         
@@ -148,7 +148,7 @@ export function LoanForm({
           loanTerm: data.loanTerm,
           paymentFrequency: data.paymentFrequency,
           paymentAmount: data.paymentAmount,
-          startDate: data.startDate instanceof Date ? data.startDate : new Date(data.startDate), // Ensure date is in proper format
+          startDate: data.startDate instanceof Date ? data.startDate : (data.startDate ? new Date(data.startDate as string) : new Date()), // Ensure date is in proper format
           securedAssetId: data.securedAssetId
         };
         
@@ -233,7 +233,7 @@ export function LoanForm({
     });
     
     // Ensure current value (balance) is negative for liabilities
-    if (data.value > 0) {
+    if (typeof data.value === 'number' && data.value > 0) {
       data.value = -Math.abs(data.value);
     }
     
