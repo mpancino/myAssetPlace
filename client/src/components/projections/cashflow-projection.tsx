@@ -49,7 +49,7 @@ export default function CashflowProjection({ projections, period }: CashflowProj
           height={60}
         />
         <YAxis 
-          tickFormatter={(value) => formatCurrency(value, true)}
+          tickFormatter={(value) => formatCurrency(value)}
           width={80}
         />
         <Tooltip 

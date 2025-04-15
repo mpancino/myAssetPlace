@@ -355,7 +355,7 @@ export default function ProjectionsPage() {
                 <CardHeader>
                   <CardTitle>Projection Summary</CardTitle>
                   <CardDescription>
-                    {config.inflationAdjusted ? 'Values adjusted for inflation' : 'Nominal values (not adjusted for inflation)'}
+                    {config.inflationRate > 0 ? `Values adjusted for inflation (${config.inflationRate}%)` : 'Nominal values (no inflation adjustment)'}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

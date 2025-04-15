@@ -49,7 +49,7 @@ export default function ProjectionChart({ projections, period }: ProjectionChart
           height={60}
         />
         <YAxis 
-          tickFormatter={(value) => formatCurrency(value, true)}
+          tickFormatter={(value) => formatCurrency(value)}
           width={80}
         />
         <Tooltip 
