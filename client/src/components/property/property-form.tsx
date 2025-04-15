@@ -356,7 +356,7 @@ export function PropertyForm({
               Property Address
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className={formSpacing.section}>
             <FormField
               control={form.control}
               name="address"
@@ -441,7 +441,7 @@ export function PropertyForm({
               Property Details
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className={formSpacing.section}>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <FormField
                 control={form.control}
@@ -567,7 +567,7 @@ export function PropertyForm({
               Rental Information
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className={formSpacing.section}>
             <FormField
               control={form.control}
               name="isRental"
@@ -680,7 +680,7 @@ export function PropertyForm({
               Mortgage Information
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className={formSpacing.section}>
             <FormField
               control={form.control}
               name="hasMortgage"
