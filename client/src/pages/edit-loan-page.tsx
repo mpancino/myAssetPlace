@@ -42,13 +42,16 @@ export default function EditLoanPage() {
     enabled: !!user
   });
 
-  // Fetch the loan data
+  // Determine if this is a mortgage by ID range (based on observed ID patterns in the system)
+  const isMortgageByIdRange = loanId && loanId < 100;
+  
+  // Fetch the loan data - handle both regular loans and mortgages
   const {
     data: loan,
     isLoading: loanLoading,
     error: loanError
   } = useQuery<Asset>({
-    queryKey: [`/api/assets/${loanId}`],
+    queryKey: [isMortgageByIdRange ? `/api/mortgages/${loanId}` : `/api/assets/${loanId}`],
     enabled: !!loanId && !!user,
   });
 

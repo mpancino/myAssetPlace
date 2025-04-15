@@ -326,7 +326,7 @@ export default function AssetClassPage() {
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <dt className="text-sm text-muted-foreground font-medium">
-                    {assetClass.name === "Loans & Liabilities" ? "Total Liabilities" : "Total Assets"}
+                    TOTAL {assetClass.name === "Loans & Liabilities" ? "LIABILITIES" : "ASSETS"}
                   </dt>
                   <dd className="text-2xl font-semibold">{assets?.length || 0}</dd>
                 </div>
