@@ -56,7 +56,11 @@ export default function EditLoanPage() {
   });
 
   // Determine if this is a mortgage by checking mortgage specific fields
-  const isMortgage = loan && ('securedAssetId' in loan || loan.loanProvider);
+  const isMortgage = loan && ('securedAssetId' in loan || (loan as any).loanProvider);
+  
+  // Set up mortgage ID and asset ID for the form
+  const mortgageId = isMortgageByIdRange && loanId ? loanId : undefined;
+  const assetId = isMortgageByIdRange || !loanId ? undefined : loanId;
 
   // Handle when a loan is successfully updated
   const handleLoanUpdated = (updatedLoan: Asset) => {
@@ -192,7 +196,9 @@ export default function EditLoanPage() {
                 holdingTypes={holdingTypes}
                 defaultValues={getFormDefaults()}
                 isEditing={true}
-                assetId={loan.id}
+                assetId={assetId}
+                mortgageId={mortgageId}
+                isMortgage={!!isMortgage}
                 onSuccess={handleLoanUpdated}
               />
             ) : (
