@@ -1,0 +1,192 @@
+import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useLocation, useParams } from "wouter";
+import MainLayout from "@/components/layout/main-layout";
+import { useAuth } from "@/hooks/use-auth";
+import { LoanForm } from "@/components/loans/loan-form";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AssetClass, AssetHoldingType, Asset, InsertLoan } from "@shared/schema";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Check, Building } from "lucide-react";
+import { logError } from "@/lib/logger";
+
+export default function EditLoanPage() {
+  const { user } = useAuth();
+  const [, setLocation] = useLocation();
+  const [success, setSuccess] = useState(false);
+  const [updatedLoan, setUpdatedLoan] = useState<Asset | null>(null);
+  const params = useParams();
+  const loanId = params.id ? parseInt(params.id) : null;
+  
+  useEffect(() => {
+    if (!user) {
+      setLocation("/auth");
+    }
+  }, [user, setLocation]);
+
+  // Fetch asset classes
+  const { 
+    data: assetClasses, 
+    isLoading: assetClassesLoading 
+  } = useQuery<AssetClass[]>({ 
+    queryKey: ['/api/asset-classes'],
+    enabled: !!user
+  });
+
+  // Fetch holding types
+  const { 
+    data: holdingTypes, 
+    isLoading: holdingTypesLoading 
+  } = useQuery<AssetHoldingType[]>({ 
+    queryKey: ['/api/asset-holding-types'],
+    enabled: !!user
+  });
+
+  // Fetch the loan data
+  const {
+    data: loan,
+    isLoading: loanLoading,
+    error: loanError
+  } = useQuery<Asset>({
+    queryKey: [`/api/assets/${loanId}`],
+    enabled: !!loanId && !!user,
+  });
+
+  // Determine if this is a mortgage
+  const isMortgage = loan?.securedAssetId !== null && loan?.securedAssetId !== undefined;
+
+  // Handle when a loan is successfully updated
+  const handleLoanUpdated = (updatedLoan: Asset) => {
+    setUpdatedLoan(updatedLoan);
+    setSuccess(true);
+  };
+
+  // Handle success with redirect
+  useEffect(() => {
+    if (success && updatedLoan) {
+      const timer = setTimeout(() => {
+        // Find the loan asset class for redirection
+        if (assetClasses) {
+          const loansAssetClass = assetClasses.find(
+            (assetClass) => 
+              assetClass.name.toLowerCase().includes("loan") || 
+              assetClass.name.toLowerCase().includes("debt") ||
+              assetClass.name.toLowerCase().includes("liability")
+          );
+          setLocation(`/asset-classes/${loansAssetClass?.id || ''}`);
+        }
+      }, 2000); // 2 second delay
+      
+      return () => clearTimeout(timer);
+    }
+  }, [success, updatedLoan, assetClasses, setLocation]);
+  
+  // Special handling for redirect if this is a mortgage
+  useEffect(() => {
+    if (success && updatedLoan && isMortgage && loan?.securedAssetId) {
+      const timer = setTimeout(() => {
+        // Redirect back to the property details
+        setLocation(`/assets/${loan.securedAssetId}`);
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [success, updatedLoan, isMortgage, loan?.securedAssetId, setLocation]);
+
+  // Convert loan data to form default values
+  const getFormDefaults = (): Partial<InsertLoan> | undefined => {
+    if (!loan) return undefined;
+
+    return {
+      name: loan.name,
+      description: loan.description || "",
+      value: loan.value,
+      assetClassId: loan.assetClassId,
+      assetHoldingTypeId: loan.assetHoldingTypeId,
+      isLiability: true as const,
+      loanProvider: loan.loanProvider || "",
+      interestRate: loan.interestRate || 0,
+      interestRateType: (loan.interestRateType as "fixed" | "variable") || "variable",
+      loanTerm: loan.loanTerm || 0,
+      paymentFrequency: (loan.paymentFrequency as "weekly" | "fortnightly" | "monthly" | "quarterly" | "annually") || "monthly",
+      paymentAmount: loan.paymentAmount || 0,
+      startDate: loan.startDate ? new Date(loan.startDate) : new Date(),
+      originalLoanAmount: loan.originalAmount || 0,
+      securedAssetId: loan.securedAssetId
+    };
+  };
+
+  // Determine if the page is still loading
+  const isLoading = assetClassesLoading || holdingTypesLoading || loanLoading;
+
+  // Handle errors
+  if (loanError) {
+    logError("Error loading loan data", loanError);
+  }
+
+  return (
+    <MainLayout>
+      <div className="container mx-auto py-8">
+        {success && updatedLoan ? (
+          <>
+            <h1 className="text-3xl font-bold mb-8">
+              {isMortgage ? "Mortgage Updated" : "Loan Updated"}
+            </h1>
+            <Card className="max-w-2xl mx-auto">
+              <CardHeader>
+                <CardTitle className="text-center">Success!</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col items-center text-center space-y-4">
+                <div className="bg-green-100 dark:bg-green-900 rounded-full p-4 mb-4">
+                  <Check className="h-12 w-12 text-green-600 dark:text-green-400" />
+                </div>
+                <p className="text-xl font-medium">
+                  Your {isMortgage ? "mortgage" : "loan"} '{updatedLoan.name}' has been updated successfully!
+                </p>
+                <p>
+                  {isMortgage && loan?.securedAssetId 
+                    ? "Redirecting you back to the property details..." 
+                    : "Redirecting you to the loans overview..."}
+                </p>
+              </CardContent>
+            </Card>
+          </>
+        ) : (
+          <>
+            <h1 className="text-3xl font-bold mb-8 flex items-center">
+              {isMortgage ? (
+                <>
+                  <Building className="mr-2 h-6 w-6" /> 
+                  Edit Mortgage
+                </>
+              ) : (
+                "Edit Loan"
+              )}
+            </h1>
+            
+            {isLoading ? (
+              <div className="space-y-4">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+              </div>
+            ) : loan && assetClasses && holdingTypes ? (
+              <LoanForm 
+                assetClasses={assetClasses}
+                holdingTypes={holdingTypes}
+                defaultValues={getFormDefaults()}
+                isEditing={true}
+                assetId={loan.id}
+                onSuccess={handleLoanUpdated}
+              />
+            ) : (
+              <div>Error loading loan data</div>
+            )}
+          </>
+        )}
+      </div>
+    </MainLayout>
+  );
+}
