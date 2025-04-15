@@ -23,6 +23,7 @@ import AssetDetailPage from "@/pages/asset-detail-page";
 import BalanceSheetPage from "@/pages/balance-sheet-page";
 import ExpenseGeneratorPage from "@/pages/expense-generator-page";
 import ProjectionsPage from "@/pages/projections-page";
+import ProjectionsAssetFilterPage from "@/pages/projections-asset-filter-page";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { AuthProvider } from "@/hooks/use-auth";
 import { SubscriptionProvider } from "@/hooks/use-subscription";
@@ -64,6 +65,7 @@ function Router() {
       <ProtectedRoute path="/balance-sheet" component={BalanceSheetPage} />
       <ProtectedRoute path="/expense-generator" component={ExpenseGeneratorPage} />
       <ProtectedRoute path="/projections" component={ProjectionsPage} />
+      <ProtectedRoute path="/projections/asset-filter" component={ProjectionsAssetFilterPage} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
