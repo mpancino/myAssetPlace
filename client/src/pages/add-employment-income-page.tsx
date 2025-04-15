@@ -6,16 +6,17 @@ import { Button } from "@/components/ui/button";
 import { AssetClass, AssetHoldingType } from "@shared/schema";
 import { EmploymentIncomeForm } from "@/components/employment/employment-income-form";
 import MainLayout from "@/components/layout/main-layout";
-import { Loader2 } from "lucide-react";
+import { CardLoading } from "@/components/ui/loading-state";
+import { logInfo } from "@/lib/logger";
 
 export default function AddEmploymentIncomePage() {
-  console.log("PAGE LOADED: AddEmploymentIncomePage - for Salary & Income");
+  logInfo("navigation", "AddEmploymentIncomePage loaded - for Salary & Income");
   
   const [location, setLocation] = useLocation();
   const params = new URLSearchParams(window.location.search);
   const classId = params.get("classId");
   
-  console.log("URL classId param:", classId);
+  logInfo("navigation", `URL classId param: ${classId}`);
 
   // Fetch asset classes
   const { 
@@ -66,8 +67,8 @@ export default function AddEmploymentIncomePage() {
         </div>
 
         {isLoading ? (
-          <div className="flex justify-center items-center h-64">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <div className="h-64">
+            <CardLoading message="Loading form..." />
           </div>
         ) : (
           <EmploymentIncomeForm 
