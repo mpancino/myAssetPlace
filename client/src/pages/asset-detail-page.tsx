@@ -1317,6 +1317,15 @@ export default function AssetDetailPage() {
                             </div>
                           </div>
                           
+                          {asset?.hasMortgage && asset?.mortgageInterestRate && asset?.mortgageAmount && (
+                            <div>
+                              <div className="text-sm text-muted-foreground mb-1">Monthly Interest Expense</div>
+                              <div className="text-xl font-semibold text-amber-600">
+                                {formatCurrency((asset.mortgageInterestRate / 100) * (asset.mortgageAmount) / 12)}
+                              </div>
+                            </div>
+                          )}
+                          
                           <div>
                             <div className="text-sm text-muted-foreground mb-1">Loan-to-Value Ratio</div>
                             <div className="text-xl font-semibold">
