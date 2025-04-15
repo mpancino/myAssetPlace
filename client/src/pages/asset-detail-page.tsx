@@ -50,7 +50,7 @@ import { z } from "zod";
 import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
 import { AssetClass, AssetHoldingType, Asset } from "@shared/schema";
 import { OffsetAccountSection } from "@/components/loans/offset-account-section";
-import { calculateLoanPayment } from "@shared/calculations";
+import { calculateLoanPayment, calculatePrincipalAndInterest } from "@shared/calculations";
 import { formatCurrency } from "@/lib/utils";
 import { 
   AlertDialog,
@@ -1380,6 +1380,26 @@ export default function AssetDetailPage() {
                                     asset.mortgageTerm / 12
                                   )
                                 ) : "Not available"}
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <div className="text-sm text-muted-foreground mb-1">Monthly Interest</div>
+                            <div className="text-base font-medium text-amber-600">
+                              {asset?.mortgageAmount && asset?.mortgageInterestRate && asset?.mortgageTerm ?
+                                (() => {
+                                  const monthlyPayment = calculateLoanPayment(
+                                    asset.mortgageAmount,
+                                    asset.mortgageInterestRate / 100,
+                                    asset.mortgageTerm / 12
+                                  );
+                                  const { interest } = calculatePrincipalAndInterest(
+                                    asset.mortgageAmount,
+                                    asset.mortgageInterestRate / 100,
+                                    monthlyPayment
+                                  );
+                                  return formatCurrency(interest);
+                                })() : "Not available"}
                             </div>
                           </div>
                           
