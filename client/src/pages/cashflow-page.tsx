@@ -236,16 +236,17 @@ export default function CashflowPage() {
         });
       }
       
-      // First check for any interest expenses (regardless of isLiability flag)
-      // since interest is always a liability
+      // Get interest expense from utility function
+      // This also ensures isLiability flag is set for any asset with interest
       const monthlyInterest = calculateMonthlyInterestExpense(asset);
+      
+      // Add interest expense to the appropriate category
       if (monthlyInterest > 0) {
-        // Add interest expense to interest category
         categories["Interest Expenses"] += monthlyInterest;
       }
       
-      // Then handle loan payments, separating principal from interest
-      if (asset.paymentAmount) {
+      // Handle loan payments, separating principal from interest
+      if (asset.isLiability && asset.paymentAmount) {
         let monthlyPayment = asset.paymentAmount;
         if (asset.paymentFrequency === "weekly") {
           monthlyPayment = asset.paymentAmount * 52 / 12;
@@ -257,24 +258,14 @@ export default function CashflowPage() {
           monthlyPayment = asset.paymentAmount / 12;
         }
         
-        // If we have interest, calculate principal as payment minus interest
-        // Interest is already added to categories above
-        if (monthlyInterest > 0) {
-          const principalPayment = monthlyPayment - monthlyInterest;
-          
-          // Categorize principal portion of mortgage vs other loans
-          if (asset.propertyType) {
-            categories["Mortgage Payments"] += principalPayment;
-          } else {
-            categories["Other Loan Payments"] += principalPayment;
-          }
+        // Calculate principal portion (payment minus interest)
+        const principalPayment = monthlyPayment - monthlyInterest;
+        
+        // Categorize principal portion of mortgage vs other loans
+        if (asset.propertyType) {
+          categories["Mortgage Payments"] += principalPayment;
         } else {
-          // If no interest, the full payment goes to principal
-          if (asset.propertyType) {
-            categories["Mortgage Payments"] += monthlyPayment;
-          } else {
-            categories["Other Loan Payments"] += monthlyPayment;
-          }
+          categories["Other Loan Payments"] += principalPayment;
         }
       }
     });
@@ -670,12 +661,13 @@ export default function CashflowPage() {
                             ));
                           }
                           
-                          // Interest expenses (regardless of isLiability flag)
-                          // Get interest expense from utility function to ensure consistency
+                          // Interest expenses
+                          // Get interest expense from utility function
+                          // This also ensures the isLiability flag is set for any asset with interest
                           const monthlyInterest = calculateMonthlyInterestExpense(asset);
                           
                           // If we have interest data and payment data, show payment split
-                          if (monthlyInterest > 0 && asset.paymentAmount) {
+                          if (asset.isLiability && monthlyInterest > 0 && asset.paymentAmount) {
                             // Convert payment to monthly if needed
                             let monthlyPayment = asset.paymentAmount;
                             if (asset.paymentFrequency === "weekly") {
@@ -714,7 +706,7 @@ export default function CashflowPage() {
                           }
                           
                           // Show just interest expense if we have interest but no payment data
-                          if (monthlyInterest > 0) {
+                          if (asset.isLiability && monthlyInterest > 0 && !asset.paymentAmount) {
                             return (
                               <TableRow key={`interest-only-${asset.id}`}>
                                 <TableCell className="font-medium">{asset.name}</TableCell>

@@ -150,24 +150,32 @@ export function getExpenseCount(expenses: Record<string, any> | null | undefined
  * consistency between the cashflow page, property details, and loan information.
  * The cashflow page will only sum expenses from assets using this function and will NOT recalculate them.
  * 
+ * IMPORTANT UPDATE: Interest is ALWAYS a liability, regardless of the isLiability flag.
+ * This function now enforces this by setting the isLiability flag to true if the asset has interest.
+ * 
  * @param asset The asset object containing loan/mortgage data
  * @returns The monthly interest expense amount in currency units
  */
 export function calculateMonthlyInterestExpense(asset: any): number {
   // If we have a mortgage with its own interest rate and amount
-  // Note: Interest is always a liability, so we don't check isLiability flag for mortgages
   if (asset.mortgageInterestRate && asset.mortgageAmount) {
+    // Set isLiability flag since interest is always a liability
+    if (asset.isLiability !== true) {
+      asset.isLiability = true;
+    }
     return (asset.mortgageInterestRate / 100) * asset.mortgageAmount / 12;
   }
   
   // If we have a loan with interest rate and value
-  // Note: Interest is always a liability, so we don't check isLiability flag for loans with interest rates
   if (asset.interestRate && asset.value) {
+    // Set isLiability flag since interest is always a liability
+    if (asset.isLiability !== true) {
+      asset.isLiability = true;
+    }
     return (asset.interestRate / 100) * asset.value / 12;
   }
   
   // Fallback to an estimation if there's a payment amount but no explicit interest data
-  // Here we do check isLiability since we're making an assumption
   if (asset.isLiability && asset.paymentAmount) {
     // Use a default rate of 5% for estimation purposes
     const estimatedInterestRate = 5;
