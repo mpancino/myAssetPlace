@@ -150,7 +150,8 @@ export function LoanForm({
           paymentFrequency: data.paymentFrequency,
           paymentAmount: data.paymentAmount,
           startDate: data.startDate instanceof Date ? data.startDate : (data.startDate ? new Date(data.startDate as string) : new Date()), // Ensure date is in proper format
-          securedAssetId: data.securedAssetId
+          securedAssetId: data.securedAssetId,
+          assetHoldingTypeId: data.assetHoldingTypeId // Include asset holding type
         };
         
         console.log("Updating mortgage directly:", mortgageId, mortgageData);
