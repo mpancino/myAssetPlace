@@ -630,6 +630,50 @@ export type VestingScheduleEntry = {
   isVested: boolean;
 };
 
+// Projection types for financial forecasting
+
+export type ProjectionPeriod = 'annually' | '5-years' | '10-years' | '20-years' | '30-years' | 'retirement';
+
+export type ProjectionScenario = 'low' | 'medium' | 'high' | 'custom';
+
+export type ProjectionConfig = {
+  inflationRate: number;
+  growthRateScenario: ProjectionScenario;
+  includeIncome: boolean;
+  includeExpenses: boolean;
+  period: ProjectionPeriod;
+  reinvestIncome: boolean;
+  yearsToProject: number;
+  enabledAssetClasses: number[];
+  enabledAssetHoldingTypes: number[];
+  includeHiddenAssets: boolean;
+  excludeLiabilities: boolean;
+  calculateAfterTax: boolean;
+};
+
+export type ProjectionResult = {
+  totalAssetValue: number[];
+  totalLiabilityValue: number[];
+  netWorth: number[];
+  assetBreakdown: {
+    assetClassId: number;
+    assetClass: string;
+    values: number[];
+  }[];
+  holdingTypeBreakdown: {
+    holdingTypeId: number;
+    holdingType: string;
+    values: number[];
+  }[];
+  cashflow: {
+    totalIncome: number[];
+    totalExpenses: number[];
+    netCashflow: number[];
+  };
+  dates: string[];
+  inflationAdjusted: boolean;
+};
+
 export type SubscriptionPlan = typeof subscriptionPlans.$inferSelect;
 export type InsertSubscriptionPlan = z.infer<typeof insertSubscriptionPlanSchema>;
 

@@ -185,8 +185,8 @@ Status indicators:
   - ❌ User-defined categorization [REQ-159]
 
 ## Phase 7: Financial Projections
-- ❌ **Projection Engine**
-  - ❌ Multi-year financial projections [REQ-036, REQ-160, REQ-178]
+- ⚠️ **Projection Engine**
+  - ⚠️ Multi-year financial projections [REQ-036, REQ-160, REQ-178] - Updating schema, implementing calculation foundations
   - ❌ Asset selection for projections [REQ-036, REQ-164]
   - ❌ Basic mode with simplified projections [REQ-038, REQ-160, REQ-162]
   - ❌ Advanced mode with adjustable parameters [REQ-039, REQ-161, REQ-163]
@@ -200,9 +200,9 @@ Status indicators:
   - ❌ Projection summary charts [REQ-176, REQ-177]
   - ❌ Future net worth dashboard tiles [REQ-179]
 
-- ❌ **Projection Scenarios**
-  - ❌ Low/medium/high growth scenarios [REQ-161]
-  - ❌ Inflation adjustment options [REQ-162, REQ-163]
+- ⚠️ **Projection Scenarios**
+  - ⚠️ Low/medium/high growth scenarios [REQ-161] - Added inflation rate defaults to schema
+  - ⚠️ Inflation adjustment options [REQ-162, REQ-163] - Added inflation rate defaults to schema
   - ❌ Income reinvestment options [REQ-163]
   - ❌ Asset-specific growth rate customization [REQ-164]
   - ❌ Retirement planning scenarios [REQ-165]
