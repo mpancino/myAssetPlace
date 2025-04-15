@@ -236,8 +236,16 @@ export default function CashflowPage() {
         });
       }
       
-      // Loan payments, breaking them into principal and interest
-      if (asset.isLiability && asset.paymentAmount) {
+      // First check for any interest expenses (regardless of isLiability flag)
+      // since interest is always a liability
+      const monthlyInterest = calculateMonthlyInterestExpense(asset);
+      if (monthlyInterest > 0) {
+        // Add interest expense to interest category
+        categories["Interest Expenses"] += monthlyInterest;
+      }
+      
+      // Then handle loan payments, separating principal from interest
+      if (asset.paymentAmount) {
         let monthlyPayment = asset.paymentAmount;
         if (asset.paymentFrequency === "weekly") {
           monthlyPayment = asset.paymentAmount * 52 / 12;
@@ -249,21 +257,24 @@ export default function CashflowPage() {
           monthlyPayment = asset.paymentAmount / 12;
         }
         
-        // Use the utility function to get the interest expense, ensuring consistency
-        // across the application without recalculating
-        const monthlyInterest = calculateMonthlyInterestExpense(asset);
-        
-        // Add interest expense to interest category
-        categories["Interest Expenses"] += monthlyInterest;
-        
-        // Principal payment is total payment minus interest
-        const principalPayment = monthlyPayment - monthlyInterest;
-        
-        // Categorize principal portion of mortgage vs other loans
-        if (asset.propertyType) {
-          categories["Mortgage Payments"] += principalPayment;
+        // If we have interest, calculate principal as payment minus interest
+        // Interest is already added to categories above
+        if (monthlyInterest > 0) {
+          const principalPayment = monthlyPayment - monthlyInterest;
+          
+          // Categorize principal portion of mortgage vs other loans
+          if (asset.propertyType) {
+            categories["Mortgage Payments"] += principalPayment;
+          } else {
+            categories["Other Loan Payments"] += principalPayment;
+          }
         } else {
-          categories["Other Loan Payments"] += principalPayment;
+          // If no interest, the full payment goes to principal
+          if (asset.propertyType) {
+            categories["Mortgage Payments"] += monthlyPayment;
+          } else {
+            categories["Other Loan Payments"] += monthlyPayment;
+          }
         }
       }
     });
@@ -659,9 +670,13 @@ export default function CashflowPage() {
                             ));
                           }
                           
-                          // Loan payments
-                          if (asset.isLiability && asset.paymentAmount) {
-                            // Convert to monthly if needed
+                          // Interest expenses (regardless of isLiability flag)
+                          // Get interest expense from utility function to ensure consistency
+                          const monthlyInterest = calculateMonthlyInterestExpense(asset);
+                          
+                          // If we have interest data and payment data, show payment split
+                          if (monthlyInterest > 0 && asset.paymentAmount) {
+                            // Convert payment to monthly if needed
                             let monthlyPayment = asset.paymentAmount;
                             if (asset.paymentFrequency === "weekly") {
                               monthlyPayment = asset.paymentAmount * 52 / 12;
@@ -673,16 +688,10 @@ export default function CashflowPage() {
                               monthlyPayment = asset.paymentAmount / 12;
                             }
                             
-                            // If we have interest rate information, show payment split
-                            // Get interest expense from utility function to ensure consistency
-                            const monthlyInterest = calculateMonthlyInterestExpense(asset);
-                              
-                            // If we have interest data
-                            if (monthlyInterest > 0) {
-                              const monthlyPrincipal = monthlyPayment - monthlyInterest;
-                              
-                              // Return both interest and principal rows
-                              return (
+                            const monthlyPrincipal = monthlyPayment - monthlyInterest;
+                            
+                            // Return both interest and principal rows
+                            return (
                                 <>
                                   <TableRow key={`loan-principal-${asset.id}`}>
                                     <TableCell className="font-medium">{asset.name}</TableCell>
@@ -702,34 +711,9 @@ export default function CashflowPage() {
                                   </TableRow>
                                 </>
                               );
-                            } else {
-                              // This section should actually never be reached since calculateMonthlyInterestExpense 
-                              // already handles cases with no explicit interest rate by using an estimate
-                              // But we'll keep this as a fallback just in case
-                              const monthlyInterest = calculateMonthlyInterestExpense(asset);
-                              const monthlyPrincipal = monthlyPayment - monthlyInterest;
-                              
-                              return (
-                                <>
-                                  <TableRow key={`loan-principal-est-${asset.id}`}>
-                                    <TableCell className="font-medium">{asset.name}</TableCell>
-                                    <TableCell>Principal Payment (Est.)</TableCell>
-                                    <TableCell>{asset.propertyType ? "Mortgage" : "Other Loan"}</TableCell>
-                                    <TableCell>{asset.paymentFrequency}</TableCell>
-                                    <TableCell className="text-right">{formatCurrency(monthlyPrincipal)}</TableCell>
-                                    <TableCell className="text-right">{formatCurrency(scaleAmount(monthlyPrincipal))}</TableCell>
-                                  </TableRow>
-                                  <TableRow key={`loan-interest-est-${asset.id}`}>
-                                    <TableCell className="font-medium">{asset.name}</TableCell>
-                                    <TableCell>Interest Expenses (Est.)</TableCell>
-                                    <TableCell>{asset.propertyType ? "Mortgage" : "Other Loan"}</TableCell>
-                                    <TableCell>Monthly</TableCell>
-                                    <TableCell className="text-right">{formatCurrency(monthlyInterest)}</TableCell>
-                                    <TableCell className="text-right">{formatCurrency(scaleAmount(monthlyInterest))}</TableCell>
-                                  </TableRow>
-                                </>
-                              );
-                            }
+                            // Removed else block since we've already checked for monthlyInterest > 0
+                            // The utility function calculateMonthlyInterestExpense already handles
+                            // estimating interest when no explicit rate is available
                           }
                           
                           return null;

@@ -155,16 +155,19 @@ export function getExpenseCount(expenses: Record<string, any> | null | undefined
  */
 export function calculateMonthlyInterestExpense(asset: any): number {
   // If we have a mortgage with its own interest rate and amount
+  // Note: Interest is always a liability, so we don't check isLiability flag for mortgages
   if (asset.mortgageInterestRate && asset.mortgageAmount) {
     return (asset.mortgageInterestRate / 100) * asset.mortgageAmount / 12;
   }
   
   // If we have a loan with interest rate and value
+  // Note: Interest is always a liability, so we don't check isLiability flag for loans with interest rates
   if (asset.interestRate && asset.value) {
     return (asset.interestRate / 100) * asset.value / 12;
   }
   
-  // Fallback to an estimation if no interest data is available
+  // Fallback to an estimation if there's a payment amount but no explicit interest data
+  // Here we do check isLiability since we're making an assumption
   if (asset.isLiability && asset.paymentAmount) {
     // Use a default rate of 5% for estimation purposes
     const estimatedInterestRate = 5;
