@@ -325,7 +325,9 @@ export default function AssetClassPage() {
             <CardContent>
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <dt className="text-sm text-muted-foreground">Total Assets</dt>
+                  <dt className="text-sm text-muted-foreground">
+                    {assetClass.name === "Loans & Liabilities" ? "Total Liabilities" : "Total Assets"}
+                  </dt>
                   <dd className="text-2xl font-semibold">{assets?.length || 0}</dd>
                 </div>
                 <div>
@@ -394,7 +396,12 @@ export default function AssetClassPage() {
           </Card>
         </div>
 
-        <h2 className="text-2xl font-bold mb-4">Your {assetClass.name} Assets</h2>
+        <h2 className="text-2xl font-bold mb-4">
+          {assetClass.name === "Loans & Liabilities" 
+            ? "Your Loans & Mortgages" 
+            : `Your ${assetClass.name} Assets`
+          }
+        </h2>
 
         {assetsLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -534,9 +541,18 @@ export default function AssetClassPage() {
         ) : (
           <Card className="text-center py-12">
             <CardContent>
-              <p className="text-lg mb-4">You don't have any {assetClass?.name?.toLowerCase() || 'such'} assets yet.</p>
+              <p className="text-lg mb-4">
+                {assetClass.name === "Loans & Liabilities" 
+                  ? "You don't have any loans or mortgages yet."
+                  : `You don't have any ${assetClass?.name?.toLowerCase() || 'such'} assets yet.`
+                }
+              </p>
               <Button onClick={handleAddAsset}>
-                <PlusCircle className="mr-2 h-5 w-5" /> Add Your First {assetClass?.name || 'Asset'}
+                <PlusCircle className="mr-2 h-5 w-5" /> 
+                {assetClass.name === "Loans & Liabilities"
+                  ? "Add Your First Loan or Mortgage"
+                  : `Add Your First ${assetClass?.name || 'Asset'}`
+                }
               </Button>
             </CardContent>
           </Card>
