@@ -5,6 +5,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import {
   Table,
@@ -24,6 +25,8 @@ import {
   ChevronRight,
   Clock,
   DollarSign,
+  Edit,
+  ExternalLink,
   Home,
   Landmark,
   PieChart,
@@ -35,6 +38,7 @@ import { formatCurrency } from "@/lib/utils";
 import { Asset, Mortgage } from "@shared/schema";
 import { calculateLoanPayment, calculatePrincipalAndInterest, generateAmortizationSchedule } from "@shared/calculations";
 import { Loader2 } from "lucide-react";
+import { useLocation } from "wouter";
 
 interface MortgageDetailsProps {
   property: Asset;
@@ -46,6 +50,7 @@ export function MortgageDetails({ property, mortgages = [], isLoading = false }:
   const [showAmortizationTable, setShowAmortizationTable] = useState(false);
   const [page, setPage] = useState(1);
   const pageSize = 12; // Show 1 year of payments
+  const [, navigate] = useLocation();
   
   // First check if the mortgage data is still loading
   if (isLoading) {
@@ -99,6 +104,26 @@ export function MortgageDetails({ property, mortgages = [], isLoading = false }:
   // Check if mortgage exists
   const hasMortgage = mortgage !== null && mortgageAmount > 0 && interestRate > 0 && termInMonths > 0;
   
+  // Function to navigate to add a new mortgage
+  const handleAddNewMortgage = () => {
+    // Navigate to add loan page with pre-filled values for a mortgage on this property
+    navigate(`/add-loan?type=mortgage&securedAssetId=${property.id}`);
+  };
+  
+  // Function to navigate to the mortgage edit page
+  const handleEditMortgage = () => {
+    if (mortgage && mortgage.id) {
+      navigate(`/asset-classes/2/edit/${mortgage.id}`);
+    }
+  };
+  
+  // Function to view in Loans & Liabilities
+  const handleViewInLoans = () => {
+    if (mortgage && mortgage.id) {
+      navigate(`/asset-classes/2`);
+    }
+  };
+  
   if (!hasMortgage) {
     return (
       <Card className="col-span-1 md:col-span-2">
@@ -110,10 +135,14 @@ export function MortgageDetails({ property, mortgages = [], isLoading = false }:
         </CardHeader>
         <CardContent>
           <div className="text-center p-6">
-            <Home className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">
-              This property doesn't have mortgage details. It may be owned outright, or you can add mortgage information by editing the property.
+            <Building className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground mb-6">
+              This property doesn't have mortgage details. It may be owned outright, or you can add a mortgage to track financing information.
             </p>
+            <Button onClick={handleAddNewMortgage} className="mx-auto">
+              <Edit className="mr-2 h-4 w-4" />
+              Add Mortgage
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -173,11 +202,33 @@ export function MortgageDetails({ property, mortgages = [], isLoading = false }:
   
   return (
     <Card className="col-span-1 md:col-span-2">
-      <CardHeader>
-        <CardTitle className="flex items-center">
-          <Building className="mr-2 h-4 w-4" /> Mortgage Information
-        </CardTitle>
-        <CardDescription>View mortgage details and amortization schedule</CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <div>
+          <CardTitle className="flex items-center">
+            <Building className="mr-2 h-4 w-4" /> Mortgage Information
+          </CardTitle>
+          <CardDescription>View mortgage details and amortization schedule</CardDescription>
+        </div>
+        <div className="flex space-x-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="h-8 px-2 lg:px-3"
+            onClick={handleViewInLoans}
+          >
+            <ExternalLink className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">View in Loans</span>
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="h-8 px-2 lg:px-3"
+            onClick={handleEditMortgage}
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Edit Mortgage</span>
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
