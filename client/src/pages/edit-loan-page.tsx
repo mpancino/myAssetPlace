@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AssetClass, AssetHoldingType, Asset, InsertLoan } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, Building } from "lucide-react";
-import { logError } from "@/lib/logger";
+import { logError as loggerError } from "@/lib/logger";
 
 export default function EditLoanPage() {
   const { user } = useAuth();
@@ -52,8 +52,8 @@ export default function EditLoanPage() {
     enabled: !!loanId && !!user,
   });
 
-  // Determine if this is a mortgage
-  const isMortgage = loan?.securedAssetId !== null && loan?.securedAssetId !== undefined;
+  // Determine if this is a mortgage by checking mortgage specific fields
+  const isMortgage = loan && ('securedAssetId' in loan || loan.loanProvider);
 
   // Handle when a loan is successfully updated
   const handleLoanUpdated = (updatedLoan: Asset) => {
@@ -83,19 +83,25 @@ export default function EditLoanPage() {
   
   // Special handling for redirect if this is a mortgage
   useEffect(() => {
-    if (success && updatedLoan && isMortgage && loan?.securedAssetId) {
-      const timer = setTimeout(() => {
-        // Redirect back to the property details
-        setLocation(`/assets/${loan.securedAssetId}`);
-      }, 2000);
-      
-      return () => clearTimeout(timer);
+    if (success && updatedLoan && isMortgage) {
+      const securedAssetId = (loan as any).securedAssetId;
+      if (securedAssetId) {
+        const timer = setTimeout(() => {
+          // Redirect back to the property details
+          setLocation(`/assets/${securedAssetId}`);
+        }, 2000);
+        
+        return () => clearTimeout(timer);
+      }
     }
-  }, [success, updatedLoan, isMortgage, loan?.securedAssetId, setLocation]);
+  }, [success, updatedLoan, isMortgage, loan, setLocation]);
 
   // Convert loan data to form default values
   const getFormDefaults = (): Partial<InsertLoan> | undefined => {
     if (!loan) return undefined;
+
+    // Use type assertion to access potential fields
+    const loanData = loan as any;
 
     return {
       name: loan.name,
@@ -104,15 +110,15 @@ export default function EditLoanPage() {
       assetClassId: loan.assetClassId,
       assetHoldingTypeId: loan.assetHoldingTypeId,
       isLiability: true as const,
-      loanProvider: loan.loanProvider || "",
-      interestRate: loan.interestRate || 0,
-      interestRateType: (loan.interestRateType as "fixed" | "variable") || "variable",
-      loanTerm: loan.loanTerm || 0,
-      paymentFrequency: (loan.paymentFrequency as "weekly" | "fortnightly" | "monthly" | "quarterly" | "annually") || "monthly",
-      paymentAmount: loan.paymentAmount || 0,
-      startDate: loan.startDate ? new Date(loan.startDate) : new Date(),
-      originalLoanAmount: loan.originalAmount || 0,
-      securedAssetId: loan.securedAssetId
+      loanProvider: loanData.loanProvider || "",
+      interestRate: loanData.interestRate || 0,
+      interestRateType: (loanData.interestRateType as "fixed" | "variable") || "variable",
+      loanTerm: loanData.loanTerm || 0,
+      paymentFrequency: (loanData.paymentFrequency as "weekly" | "fortnightly" | "monthly" | "quarterly" | "annually") || "monthly",
+      paymentAmount: loanData.paymentAmount || 0,
+      startDate: loanData.startDate ? new Date(loanData.startDate) : new Date(),
+      originalLoanAmount: loanData.originalLoanAmount || 0,
+      securedAssetId: loanData.securedAssetId
     };
   };
 
@@ -121,7 +127,7 @@ export default function EditLoanPage() {
 
   // Handle errors
   if (loanError) {
-    logError("Error loading loan data", loanError);
+    loggerError({ message: "Error loading loan data", error: loanError });
   }
 
   return (
@@ -144,7 +150,7 @@ export default function EditLoanPage() {
                   Your {isMortgage ? "mortgage" : "loan"} '{updatedLoan.name}' has been updated successfully!
                 </p>
                 <p>
-                  {isMortgage && loan?.securedAssetId 
+                  {isMortgage && (loan as any)?.securedAssetId 
                     ? "Redirecting you back to the property details..." 
                     : "Redirecting you to the loans overview..."}
                 </p>
