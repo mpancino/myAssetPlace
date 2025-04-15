@@ -5,6 +5,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
+import { logError, logInfo } from "@/lib/logger";
+import { formSpacing } from "@/lib/form-utils";
 
 import {
   Form,
@@ -127,12 +129,24 @@ export function LoanForm({
   });
 
   const onSubmit = (data: InsertLoan) => {
+    logInfo("form", "Submitting loan form", { 
+      action: isEditing ? "update" : "create",
+      loanName: data.name
+    });
+    
     // Ensure current value (balance) is negative for liabilities
     if (data.value > 0) {
       data.value = -Math.abs(data.value);
     }
     
-    mutation.mutate(data);
+    try {
+      mutation.mutate(data);
+    } catch (error) {
+      logError("form", "Error submitting loan form", { 
+        action: isEditing ? "update" : "create",
+        error
+      });
+    }
   };
 
   // Show success message after successful submission
@@ -158,9 +172,9 @@ export function LoanForm({
       <CardHeader>
         <CardTitle>{isEditing ? "Edit Loan" : "Add Loan"}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className={formSpacing.section}>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className={formSpacing.container}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}

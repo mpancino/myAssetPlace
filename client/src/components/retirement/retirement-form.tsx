@@ -7,6 +7,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AssetClass, AssetHoldingType, InsertAsset } from "@shared/schema";
+import { logError, logInfo } from "@/lib/logger";
+import { formSpacing } from "@/lib/form-utils";
 
 import {
   Card,
