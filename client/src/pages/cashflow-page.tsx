@@ -244,7 +244,7 @@ export default function CashflowPage() {
       "Mortgage Payments": 0,
       "Property Expenses": 0,
       "Investment Fees": 0,
-      "Loan Interest": 0,
+      "Interest Expenses": 0, // Renamed to be consistent with other expense categories 
       "Other Loan Payments": 0,
       "Other Expenses": 0,
     };
@@ -304,7 +304,7 @@ export default function CashflowPage() {
           const monthlyInterest = annualInterest / 12;
           
           // Add interest expense to interest category
-          categories["Loan Interest"] += monthlyInterest;
+          categories["Interest Expenses"] += monthlyInterest;
           
           // Principal payment is total payment minus interest
           const principalPayment = monthlyAmount - monthlyInterest;
@@ -323,7 +323,7 @@ export default function CashflowPage() {
           const monthlyInterest = annualInterest / 12;
           
           // Add estimated interest expense to interest category
-          categories["Loan Interest"] += monthlyInterest;
+          categories["Interest Expenses"] += monthlyInterest;
           
           // Principal payment is total payment minus interest
           const principalPayment = monthlyAmount - monthlyInterest;
@@ -763,7 +763,7 @@ export default function CashflowPage() {
                                   </TableRow>
                                   <TableRow key={`loan-interest-${asset.id}`}>
                                     <TableCell className="font-medium">{asset.name}</TableCell>
-                                    <TableCell>Interest Expense</TableCell>
+                                    <TableCell>Interest Expenses</TableCell>
                                     <TableCell>{asset.propertyType ? "Mortgage" : "Other Loan"}</TableCell>
                                     <TableCell>Monthly</TableCell>
                                     <TableCell className="text-right">{formatCurrency(monthlyInterest)}</TableCell>
@@ -791,7 +791,7 @@ export default function CashflowPage() {
                                   </TableRow>
                                   <TableRow key={`loan-interest-est-${asset.id}`}>
                                     <TableCell className="font-medium">{asset.name}</TableCell>
-                                    <TableCell>Interest Expense (Est.)</TableCell>
+                                    <TableCell>Interest Expenses (Est.)</TableCell>
                                     <TableCell>{asset.propertyType ? "Mortgage" : "Other Loan"}</TableCell>
                                     <TableCell>Monthly</TableCell>
                                     <TableCell className="text-right">{formatCurrency(monthlyInterest)}</TableCell>
