@@ -334,7 +334,7 @@ export function MortgageDetails({ property, mortgages = [], isLoading = false }:
                 
                 <div className="pt-2 border-t border-border">
                   <div className="text-muted-foreground text-xs mb-1">Total Cost of Loan</div>
-                  <div className="font-medium">{formatCurrency(totalPayments)}</div>
+                  <div className="font-medium">{formatCurrency(totalPayments, '$', false)}</div>
                   <div className="text-xs text-muted-foreground mt-1">
                     {((totalInterest / mortgageAmount) * 100).toFixed(1)}% paid as interest expenses
                   </div>
@@ -369,10 +369,10 @@ export function MortgageDetails({ property, mortgages = [], isLoading = false }:
                   {currentPageData.map((payment, index) => (
                     <TableRow key={`payment-${(page - 1) * pageSize + index + 1}`}>
                       <TableCell>{(page - 1) * pageSize + index + 1}</TableCell>
-                      <TableCell>{formatCurrency(payment.payment)}</TableCell>
-                      <TableCell>{formatCurrency(payment.principal)}</TableCell>
-                      <TableCell>{formatCurrency(payment.interest)}</TableCell>
-                      <TableCell>{formatCurrency(payment.balance)}</TableCell>
+                      <TableCell>{formatCurrency(payment.payment, '$', false)}</TableCell>
+                      <TableCell>{formatCurrency(payment.principal, '$', false)}</TableCell>
+                      <TableCell>{formatCurrency(payment.interest, '$', false)}</TableCell>
+                      <TableCell>{formatCurrency(payment.balance, '$', false)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

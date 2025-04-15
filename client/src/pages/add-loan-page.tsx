@@ -112,16 +112,17 @@ export default function AddLoanPage() {
       return {
         name: defaultName,
         assetClassId: loansAssetClass?.id,
-        isLiability: true,
+        isLiability: true as const, // Use const assertion for literal types
         securedAssetId: securedAsset.id,
         loanProvider: "",
         interestRate: 4.5, // Default interest rate
-        interestRateType: "fixed",
+        interestRateType: "fixed" as const, // Use const assertion for enum values
         loanTerm: 360, // 30 years in months
-        paymentFrequency: "monthly",
+        paymentFrequency: "monthly" as const, // Use const assertion for enum values
         originalLoanAmount: securedAsset.value * 0.8, // Default to 80% LTV
         value: -(securedAsset.value * 0.8), // Stored as negative for liabilities
-        description: `Mortgage secured by ${securedAsset.name}`
+        description: `Mortgage secured by ${securedAsset.name}`,
+        startDate: new Date() // Required field in InsertLoan
       };
     }
     
