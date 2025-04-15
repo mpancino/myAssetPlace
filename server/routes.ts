@@ -1207,7 +1207,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     try {
       const id = parseInt(req.params.id);
-      console.log("PATCH mortgage REQUEST:", id, JSON.stringify(req.body, null, 2));
+      console.log("DEBUG: PATCH mortgage REQUEST:", id, JSON.stringify(req.body, null, 2));
       
       // Check if mortgage exists and user owns it
       const mortgage = await storage.getMortgage(id);
@@ -1216,16 +1216,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Mortgage not found" });
       }
       
-      console.log("ORIGINAL mortgage:", JSON.stringify(mortgage, null, 2));
+      console.log("DEBUG: ORIGINAL mortgage:", JSON.stringify(mortgage, null, 2));
       
       if (mortgage.userId !== req.user.id) {
         console.log(`User ${req.user.id} not authorized to update mortgage ${id} owned by ${mortgage.userId}`);
         return res.status(403).json({ message: "Not authorized to update this mortgage" });
       }
       
+      // Check for empty update
+      if (Object.keys(req.body).length === 0) {
+        console.log("DEBUG: Empty update detected - no fields to update");
+        return res.status(400).json({ message: "No fields to update" });
+      }
+      
+      console.log("DEBUG: Attempting to validate with insertMortgageSchema.partial()");
+      
       // Validate the data
       const validatedData = insertMortgageSchema.partial().parse(req.body);
-      console.log("Validated mortgage data:", JSON.stringify(validatedData, null, 2));
+      console.log("DEBUG: Validated mortgage data:", JSON.stringify(validatedData, null, 2));
+      
+      // Check if validatedData is empty (meaning all fields were rejected by validation)
+      if (Object.keys(validatedData).length === 0) {
+        console.log("DEBUG: No fields passed validation - all fields were filtered out");
+        return res.status(400).json({ message: "No valid fields to update" });
+      }
       
       // Deep copy the mortgage to detect changes
       const originalMortgage = JSON.parse(JSON.stringify(mortgage));

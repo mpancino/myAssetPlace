@@ -100,11 +100,13 @@ export function LoanForm({
       // Determine if this is likely a mortgage by ID range or explicit flag
       const isMortgageEndpoint = isMortgage || (assetId && assetId < 100);
       console.log("Using mortgage endpoint:", isMortgageEndpoint, "for ID:", assetId || mortgageId);
+      console.log("FORM DATA BEING SUBMITTED:", JSON.stringify(data, null, 2));
       
       // Case 1: Editing an existing asset that's actually a mortgage
       if (isEditing && assetId && isMortgageEndpoint) {
         console.log("Editing mortgage via assets endpoint:", assetId);
-        // Convert loan form data to mortgage update format - ensuring field names match DB schema
+        // Convert loan form data to mortgage update format - ensuring field names match DB schema exactly
+        // IMPORTANT: These field mappings must match the DB schema or updates will fail
         const mortgageData = {
           name: data.name,
           description: data.description,
@@ -116,7 +118,7 @@ export function LoanForm({
           loanTerm: data.loanTerm,
           paymentFrequency: data.paymentFrequency,
           paymentAmount: data.paymentAmount,
-          startDate: data.startDate,
+          startDate: data.startDate instanceof Date ? data.startDate : new Date(data.startDate), // Ensure date is in proper format
           securedAssetId: data.securedAssetId
         };
         
@@ -134,6 +136,7 @@ export function LoanForm({
       else if (isEditing && mortgageId) {
         console.log("Editing mortgage directly:", mortgageId);
         // Convert loan form data to mortgage update format - ensuring field names match DB schema exactly
+        // IMPORTANT: These field mappings must match the DB schema or updates will fail
         const mortgageData = {
           name: data.name,
           description: data.description,
@@ -145,7 +148,7 @@ export function LoanForm({
           loanTerm: data.loanTerm,
           paymentFrequency: data.paymentFrequency,
           paymentAmount: data.paymentAmount,
-          startDate: data.startDate,
+          startDate: data.startDate instanceof Date ? data.startDate : new Date(data.startDate), // Ensure date is in proper format
           securedAssetId: data.securedAssetId
         };
         
