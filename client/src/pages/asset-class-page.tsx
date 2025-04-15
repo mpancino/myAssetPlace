@@ -87,7 +87,12 @@ export default function AssetClassPage() {
     if (assetClass?.name === "Loans & Liabilities" || parseInt(classId) === 2) {
       return mortgages.map((mortgage) => {
         // Create an asset-like object from mortgage data
-        const assetFromMortgage: Partial<Asset> & { hasMortgage?: boolean; mortgageId?: number } = {
+        const assetFromMortgage: Partial<Asset> & { 
+          hasMortgage?: boolean; 
+          mortgageId?: number;
+          securedAssetId?: number;
+          lender?: string;
+        } = {
           id: mortgage.id + 10000, // Prefix with 10000 to avoid ID conflicts
           name: mortgage.name,
           description: mortgage.description || '',
@@ -97,6 +102,7 @@ export default function AssetClassPage() {
           value: mortgage.value,
           isLiability: true,
           loanProvider: mortgage.lender,
+          lender: mortgage.lender, // Add lender separately for direct access
           interestRate: mortgage.interestRate,
           interestRateType: mortgage.interestRateType,
           loanTerm: mortgage.loanTerm,
@@ -106,7 +112,8 @@ export default function AssetClassPage() {
           endDate: mortgage.endDate,
           originalLoanAmount: mortgage.originalAmount,
           hasMortgage: true, // Using standard property
-          mortgageId: mortgage.id // Store the original mortgage ID
+          mortgageId: mortgage.id, // Store the original mortgage ID
+          securedAssetId: mortgage.securedAssetId // Add the secured asset ID for linking to property
         };
         return assetFromMortgage as unknown as Asset;
       });
@@ -430,6 +437,11 @@ export default function AssetClassPage() {
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <CardTitle className="text-xl">{asset.name}</CardTitle>
+                      {(asset as any).mortgageId && (
+                        <Badge variant="outline" className="ml-2 bg-blue-100">
+                          Mortgage
+                        </Badge>
+                      )}
                       {asset.isHidden && (
                         <Badge variant="outline" className="ml-2">
                           Hidden
@@ -463,17 +475,57 @@ export default function AssetClassPage() {
                           <p>{new Date(asset.purchaseDate).toLocaleDateString()}</p>
                         </div>
                       )}
+                      
+                      {/* Show mortgage-specific fields if this is a mortgage */}
+                      {(asset as any).mortgageId && (
+                        <>
+                          <div>
+                            <span className="text-sm text-muted-foreground">Lender:</span>
+                            <p>{asset.loanProvider || (asset as any).lender}</p>
+                          </div>
+                          <div>
+                            <span className="text-sm text-muted-foreground">Interest Rate:</span>
+                            <p>{asset.interestRate}% ({asset.interestRateType})</p>
+                          </div>
+                          <div>
+                            <span className="text-sm text-muted-foreground">Loan Term:</span>
+                            <p>{asset.loanTerm || 0} months ({Math.round((asset.loanTerm || 0)/12)} years)</p>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </CardContent>
                   <Separator />
-                  <CardFooter className="flex justify-end pt-4">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => setLocation(`/assets/${asset.id}`)}
-                    >
-                      View Details <ArrowRight className="ml-1 h-4 w-4" />
-                    </Button>
+                  <CardFooter className="flex justify-between pt-4">
+                    {/* For mortgages, show an Edit button instead of View Details */}
+                    {(asset as any).mortgageId ? (
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setLocation(`/edit-loan/${(asset as any).mortgageId}`)}
+                        >
+                          <Edit className="mr-1 h-4 w-4" /> Edit Mortgage
+                        </Button>
+                        {(asset as any).securedAssetId && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setLocation(`/assets/${(asset as any).securedAssetId}`)}
+                          >
+                            <Home className="mr-1 h-4 w-4" /> View Property
+                          </Button>
+                        )}
+                      </div>
+                    ) : (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setLocation(`/assets/${asset.id}`)}
+                      >
+                        View Details <ArrowRight className="ml-1 h-4 w-4" />
+                      </Button>
+                    )}
                   </CardFooter>
                 </Card>
               );
