@@ -28,11 +28,12 @@ const shareFormSchema = insertShareSchema.extend({
   // Add additional validations or fields as needed
   sharesQuantity: z.number().int().positive("Number of shares must be positive"),
   lastDividendAmount: z.number().min(0, "Dividend amount must be at least 0").optional(),
-  lastDividendDate: z.date().optional().nullable(),
 });
 
+// Infer the type from the schema
 type ShareFormValues = z.infer<typeof shareFormSchema>;
 
+// Component props interface
 interface ShareFormProps {
   assetClasses: AssetClass[];
   holdingTypes: AssetHoldingType[];
@@ -188,7 +189,7 @@ export function ShareForm({
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className={formSpacing.container}>
             <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="mb-4">
                 <TabsTrigger value="details">Details</TabsTrigger>
@@ -197,7 +198,7 @@ export function ShareForm({
                 <TabsTrigger value="expenses">Expenses</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="details" className="space-y-4">
+              <TabsContent value="details" className={formSpacing.section}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -317,7 +318,7 @@ export function ShareForm({
                 />
               </TabsContent>
 
-              <TabsContent value="valuation" className="space-y-4">
+              <TabsContent value="valuation" className={formSpacing.section}>
                 <div className="rounded-md bg-muted p-4 mb-4">
                   <h3 className="font-medium mb-2">Current Market Value</h3>
                   <p className="text-xl font-bold">{formatCurrency(marketValue)}</p>
@@ -441,7 +442,7 @@ export function ShareForm({
                 />
               </TabsContent>
 
-              <TabsContent value="dividends" className="space-y-4">
+              <TabsContent value="dividends" className={formSpacing.section}>
                 <FormField
                   control={form.control}
                   name="dividendYield"
@@ -516,7 +517,7 @@ export function ShareForm({
                 </div>
               </TabsContent>
 
-              <TabsContent value="expenses" className="space-y-4">
+              <TabsContent value="expenses" className={formSpacing.section}>
                 <InvestmentExpenses
                   expenses={investmentExpenses}
                   onChange={handleExpensesChange}
@@ -525,7 +526,7 @@ export function ShareForm({
               </TabsContent>
             </Tabs>
 
-            <div className="flex justify-end space-x-2">
+            <div className={formSpacing.buttonGroup}>
               <Button
                 type="button"
                 variant="outline"
