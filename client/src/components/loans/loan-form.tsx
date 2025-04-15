@@ -209,8 +209,12 @@ export function LoanForm({
           <div className="bg-green-100 dark:bg-green-900 rounded-full p-4 mb-4">
             <Check className="h-12 w-12 text-green-600 dark:text-green-400" />
           </div>
-          <p className="text-xl font-medium">Your loan has been {isEditing ? "updated" : "created"} successfully!</p>
-          <p>Redirecting you to the loans overview...</p>
+          <p className="text-xl font-medium">Your {isMortgage ? "mortgage" : "loan"} has been {isEditing ? "updated" : "created"} successfully!</p>
+          <p>
+            {isMortgage && form.getValues("securedAssetId") 
+              ? "Redirecting you back to the property details..." 
+              : "Redirecting you to the loans overview..."}
+          </p>
         </CardContent>
       </Card>
     );
@@ -219,7 +223,12 @@ export function LoanForm({
   return (
     <Card className="max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle>{isEditing ? "Edit Loan" : "Add Loan"}</CardTitle>
+        <CardTitle>
+          {isEditing 
+            ? (isMortgage ? "Edit Mortgage" : "Edit Loan") 
+            : (isMortgage ? "Add Mortgage" : "Add Loan")
+          }
+        </CardTitle>
       </CardHeader>
       <CardContent className={formSpacing.section}>
         <Form {...form}>
@@ -230,7 +239,7 @@ export function LoanForm({
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Loan Name*</FormLabel>
+                    <FormLabel>{isMortgage ? "Mortgage Name*" : "Loan Name*"}</FormLabel>
                     <FormControl>
                       <Input placeholder="e.g., Personal Loan" {...field} />
                     </FormControl>
@@ -244,7 +253,7 @@ export function LoanForm({
                 name="loanProvider"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Loan Provider*</FormLabel>
+                    <FormLabel>{isMortgage ? "Mortgage Lender*" : "Loan Provider*"}</FormLabel>
                     <FormControl>
                       <Input placeholder="e.g., ABC Bank" {...field} />
                     </FormControl>
@@ -258,7 +267,7 @@ export function LoanForm({
                 name="originalLoanAmount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Original Loan Amount*</FormLabel>
+                    <FormLabel>{isMortgage ? "Original Mortgage Amount*" : "Original Loan Amount*"}</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -344,7 +353,7 @@ export function LoanForm({
                 name="loanTerm"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Loan Term (months)*</FormLabel>
+                    <FormLabel>{isMortgage ? "Mortgage Term (months)*" : "Loan Term (months)*"}</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -480,7 +489,7 @@ export function LoanForm({
                   <FormLabel>Description</FormLabel>
                   <FormControl>
                     <Input 
-                      placeholder="Optional notes about this loan" 
+                      placeholder={`Optional notes about this ${isMortgage ? "mortgage" : "loan"}`} 
                       {...field} 
                       value={field.value || ''} 
                     />
@@ -502,7 +511,12 @@ export function LoanForm({
                 type="submit" 
                 disabled={mutation.isPending}
               >
-                {mutation.isPending ? "Saving..." : isEditing ? "Update Loan" : "Add Loan"}
+                {mutation.isPending 
+                  ? "Saving..." 
+                  : isEditing 
+                    ? (isMortgage ? "Update Mortgage" : "Update Loan") 
+                    : (isMortgage ? "Add Mortgage" : "Add Loan")
+                }
               </Button>
             </div>
           </form>
