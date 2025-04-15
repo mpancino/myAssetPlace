@@ -135,68 +135,12 @@ export default function CashflowPage() {
     return total;
   };
   
-  // Calculate total monthly expenses from all assets
+  // Calculate total monthly expenses from all assets by SUMMING existing expenses
+  // - We don't recalculate expense values here, just collect and aggregate them
   const calculateTotalExpenses = () => {
-    let total = 0;
-    
-    expenseAssets.forEach((asset: Asset) => {
-      // Property expenses
-      if (asset.propertyExpenses) {
-        Object.values(asset.propertyExpenses).forEach((expense: any) => {
-          // Convert to monthly based on frequency
-          let monthlyAmount = expense.amount;
-          if (expense.frequency === "weekly") {
-            monthlyAmount = expense.amount * 52 / 12;
-          } else if (expense.frequency === "fortnightly") {
-            monthlyAmount = expense.amount * 26 / 12;
-          } else if (expense.frequency === "quarterly") {
-            monthlyAmount = expense.amount / 3;
-          } else if (expense.frequency === "annually") {
-            monthlyAmount = expense.amount / 12;
-          }
-          total += monthlyAmount;
-        });
-      }
-      
-      // Investment expenses
-      if (asset.investmentExpenses) {
-        Object.values(asset.investmentExpenses).forEach((expense: any) => {
-          // Convert to monthly based on frequency
-          let monthlyAmount = expense.amount;
-          if (expense.frequency === "weekly") {
-            monthlyAmount = expense.amount * 52 / 12;
-          } else if (expense.frequency === "fortnightly") {
-            monthlyAmount = expense.amount * 26 / 12;
-          } else if (expense.frequency === "quarterly") {
-            monthlyAmount = expense.amount / 3;
-          } else if (expense.frequency === "annually") {
-            monthlyAmount = expense.amount / 12;
-          }
-          total += monthlyAmount;
-        });
-      }
-      
-      // Loan payments including interest expenses
-      if (asset.isLiability && asset.paymentAmount) {
-        // Convert to monthly based on frequency
-        let monthlyAmount = asset.paymentAmount;
-        if (asset.paymentFrequency === "weekly") {
-          monthlyAmount = asset.paymentAmount * 52 / 12;
-        } else if (asset.paymentFrequency === "fortnightly") {
-          monthlyAmount = asset.paymentAmount * 26 / 12;
-        } else if (asset.paymentFrequency === "quarterly") {
-          monthlyAmount = asset.paymentAmount / 3;
-        } else if (asset.paymentFrequency === "annually") {
-          monthlyAmount = asset.paymentAmount / 12;
-        }
-        
-        // We already include interest expenses in the payment amount
-        // The breakdown by category happens in getExpenseCategories()
-        total += monthlyAmount;
-      }
-    });
-    
-    return total;
+    const categories = getExpenseCategories();
+    // Sum all the expense category amounts to get the total monthly expenses
+    return categories.reduce((total, cat) => total + cat.amount, 0);
   };
   
   const getIncomeCategories = () => {
@@ -243,7 +187,11 @@ export default function CashflowPage() {
       .map(([category, amount]) => ({ category, amount }));
   };
   
+  // This function extracts and categorizes expenses from assets across the application
+  // It collects expenses directly from the various assets rather than recalculating them
+  // This ensures the cashflow page just sums up expenses that are already calculated elsewhere
   const getExpenseCategories = () => {
+    // Initialize expense categories for accumulation
     const categories: Record<string, number> = {
       "Mortgage Payments": 0,
       "Property Expenses": 0,

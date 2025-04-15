@@ -143,7 +143,15 @@ export function getExpenseCount(expenses: Record<string, any> | null | undefined
 
 /**
  * Calculate the monthly interest expense for a loan or mortgage
- * This provides a consistent calculation across the application
+ * 
+ * !! IMPORTANT !!
+ * This is the authoritative source for interest expense calculations in myAssetPlace.
+ * This function MUST be used wherever interest expenses are displayed to ensure 
+ * consistency between the cashflow page, property details, and loan information.
+ * The cashflow page will only sum expenses from assets using this function and will NOT recalculate them.
+ * 
+ * @param asset The asset object containing loan/mortgage data
+ * @returns The monthly interest expense amount in currency units
  */
 export function calculateMonthlyInterestExpense(asset: any): number {
   // If we have a mortgage with its own interest rate and amount
