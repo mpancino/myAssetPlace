@@ -30,6 +30,8 @@ import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { PropertyExpenses } from "@/components/property/property-expenses";
+import { logInfo, logError } from "@/lib/logger";
+import { formSpacing } from "@/lib/form-utils";
 
 interface PropertyFormProps {
   onSubmit: (data: InsertProperty) => void;
@@ -128,12 +130,13 @@ export function PropertyForm({
   }, [defaultValues, form, assetClassId, realEstateClass?.id]);
 
   const handleSubmit = (data: InsertProperty) => {
+    logInfo("Form submitted with data", { component: "PropertyForm" });
     onSubmit(data);
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className={formSpacing.container}>
         {/* Basic Information */}
         <Card>
           <CardHeader>
