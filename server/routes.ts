@@ -16,8 +16,11 @@ import {
   assets,
   assetClasses,
   transformTaxSettings,
-  type AssetHoldingType
+  type AssetHoldingType,
+  type ProjectionConfig,
+  type ProjectionResult
 } from "@shared/schema";
+import { generateProjections, defaultBasicProjectionConfig } from "@shared/projections";
 import { z } from "zod";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
@@ -1396,6 +1399,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(fullSubscription);
     } catch (err) {
       res.status(500).json({ message: "Failed to upgrade subscription" });
+    }
+  });
+
+  // Financial Projections API
+  app.post("/api/projections/generate", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      // Get projection configuration from request body
+      const projectionConfig = req.body as ProjectionConfig;
+      
+      // Get system settings for default values
+      const settings = await storage.getSystemSettings();
+      
+      // Validate and set default config values if needed
+      const config: ProjectionConfig = {
+        ...defaultBasicProjectionConfig(settings),
+        ...projectionConfig
+      };
+      
+      // Get user's assets
+      const userAssets = await storage.listAssets(req.user.id);
+      
+      if (!userAssets || userAssets.length === 0) {
+        return res.status(404).json({ message: "No assets found" });
+      }
+      
+      // Get asset classes and holding types for reference
+      const assetClassList = await storage.listAssetClasses();
+      const holdingTypesList = await storage.listAssetHoldingTypes();
+      
+      // Convert to required format (map of id -> object)
+      const assetClasses: Record<number, typeof assetClassList[0]> = {};
+      const holdingTypes: Record<number, typeof holdingTypesList[0]> = {};
+      
+      assetClassList.forEach(ac => { assetClasses[ac.id] = ac; });
+      holdingTypesList.forEach(ht => { holdingTypes[ht.id] = ht; });
+      
+      // Generate projections
+      const projections = generateProjections(
+        userAssets,
+        assetClasses,
+        holdingTypes,
+        config
+      );
+      
+      return res.json(projections);
+    } catch (error) {
+      console.error("Error generating projections:", error);
+      return res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to generate projections" 
+      });
+    }
+  });
+
+  // Get default projection configuration
+  app.get("/api/projections/config", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      // Get system settings
+      const settings = await storage.getSystemSettings();
+      
+      // Get user to determine mode
+      const user = await storage.getUser(req.user.id);
+      
+      // Create appropriate default config
+      let config = defaultBasicProjectionConfig(settings);
+      
+      // If user is in advanced mode, adjust config
+      if (user && user.preferredMode === 'advanced') {
+        config.yearsToProject = settings.defaultAdvancedModeYears ?? 30;
+        config.period = '30-years';
+        config.calculateAfterTax = true;
+      }
+      
+      return res.json(config);
+    } catch (error) {
+      console.error("Error getting projection config:", error);
+      return res.status(500).json({ 
+        message: error instanceof Error ? error.message : "Failed to get projection configuration" 
+      });
     }
   });
 
