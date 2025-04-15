@@ -1207,27 +1207,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     try {
       const id = parseInt(req.params.id);
-      console.log("PATCH mortgage:", id, req.body);
+      console.log("PATCH mortgage REQUEST:", id, JSON.stringify(req.body, null, 2));
       
       // Check if mortgage exists and user owns it
       const mortgage = await storage.getMortgage(id);
       if (!mortgage) {
+        console.log(`Mortgage with ID ${id} not found`);
         return res.status(404).json({ message: "Mortgage not found" });
       }
       
+      console.log("ORIGINAL mortgage:", JSON.stringify(mortgage, null, 2));
+      
       if (mortgage.userId !== req.user.id) {
+        console.log(`User ${req.user.id} not authorized to update mortgage ${id} owned by ${mortgage.userId}`);
         return res.status(403).json({ message: "Not authorized to update this mortgage" });
       }
       
       // Validate the data
       const validatedData = insertMortgageSchema.partial().parse(req.body);
-      console.log("Validated mortgage data:", validatedData);
+      console.log("Validated mortgage data:", JSON.stringify(validatedData, null, 2));
+      
+      // Deep copy the mortgage to detect changes
+      const originalMortgage = JSON.parse(JSON.stringify(mortgage));
       
       // Update the mortgage
       const updatedMortgage = await storage.updateMortgage(id, validatedData);
       
+      if (!updatedMortgage) {
+        console.log("Failed to update mortgage - storage returned undefined");
+        return res.status(500).json({ message: "Failed to update mortgage" });
+      }
+      
+      console.log("Updated mortgage from storage:", JSON.stringify(updatedMortgage, null, 2));
+      
+      // Detect what changed
+      const changes = [];
+      for (const key in validatedData) {
+        if (JSON.stringify(originalMortgage[key]) !== JSON.stringify(updatedMortgage[key])) {
+          changes.push({
+            field: key,
+            from: originalMortgage[key],
+            to: updatedMortgage[key]
+          });
+        }
+      }
+      console.log("Detected changes:", JSON.stringify(changes, null, 2));
+      
       // If securedAssetId has changed, update the relationship
       if ('securedAssetId' in req.body && mortgage.securedAssetId !== req.body.securedAssetId) {
+        console.log(`Updating securedAssetId relationship from ${mortgage.securedAssetId} to ${req.body.securedAssetId}`);
         // First, unlink from current property if one exists
         if (mortgage.securedAssetId) {
           await storage.unlinkMortgageFromProperty(id);
@@ -1239,14 +1267,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      if (!updatedMortgage) {
-        return res.status(500).json({ message: "Failed to update mortgage" });
-      }
+      // Fetch the mortgage one more time to ensure we have the latest data
+      const finalMortgage = await storage.getMortgage(id);
+      console.log("Final mortgage state:", JSON.stringify(finalMortgage, null, 2));
       
-      console.log("Updated mortgage:", updatedMortgage);
-      res.json(updatedMortgage);
+      res.json(finalMortgage || updatedMortgage);
     } catch (err) {
       if (err instanceof z.ZodError) {
+        console.log("Validation error:", err.errors);
         return res.status(400).json({ errors: err.errors });
       }
       console.error("Error updating mortgage:", err);
