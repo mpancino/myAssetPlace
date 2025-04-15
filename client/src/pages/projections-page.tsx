@@ -390,13 +390,16 @@ export default function ProjectionsPage() {
               {/* Projection Charts */}
               <Card>
                 <CardHeader>
+                  <h3 className="text-lg font-medium">Projection Charts</h3>
+                </CardHeader>
+                <CardContent>
                   <Tabs 
                     defaultValue="overview" 
                     value={activeTab} 
                     onValueChange={setActiveTab}
                     className="w-full"
                   >
-                    <TabsList className="grid grid-cols-3">
+                    <TabsList className="grid grid-cols-3 mb-4">
                       <TabsTrigger value="overview">
                         <LineChart className="h-4 w-4 mr-2" /> 
                         Net Worth
@@ -410,26 +413,24 @@ export default function ProjectionsPage() {
                         Cashflow
                       </TabsTrigger>
                     </TabsList>
+                    <TabsContent value="overview" className="h-[400px]">
+                      <ProjectionChart 
+                        projections={projections} 
+                        period={config.period}
+                      />
+                    </TabsContent>
+                    <TabsContent value="breakdown" className="h-[400px]">
+                      <AssetClassBreakdown 
+                        projections={projections}
+                      />
+                    </TabsContent>
+                    <TabsContent value="cashflow" className="h-[400px]">
+                      <CashflowProjection 
+                        projections={projections} 
+                        period={config.period}
+                      />
+                    </TabsContent>
                   </Tabs>
-                </CardHeader>
-                <CardContent>
-                  <TabsContent value="overview" className="h-[400px]">
-                    <ProjectionChart 
-                      projections={projections} 
-                      period={config.period}
-                    />
-                  </TabsContent>
-                  <TabsContent value="breakdown" className="h-[400px]">
-                    <AssetClassBreakdown 
-                      projections={projections}
-                    />
-                  </TabsContent>
-                  <TabsContent value="cashflow" className="h-[400px]">
-                    <CashflowProjection 
-                      projections={projections} 
-                      period={config.period}
-                    />
-                  </TabsContent>
                 </CardContent>
               </Card>
             </>
