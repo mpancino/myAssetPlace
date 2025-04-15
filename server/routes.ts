@@ -1003,6 +1003,227 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Mortgage routes
+  app.get("/api/mortgages", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      const mortgages = await storage.listMortgages(req.user.id);
+      res.json(mortgages);
+    } catch (err) {
+      console.error("Error fetching mortgages:", err);
+      res.status(500).json({ message: "Failed to fetch mortgages" });
+    }
+  });
+
+  app.get("/api/mortgages/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      const id = parseInt(req.params.id);
+      const mortgage = await storage.getMortgage(id);
+      
+      if (!mortgage) {
+        return res.status(404).json({ message: "Mortgage not found" });
+      }
+      
+      // Check if user owns the mortgage
+      if (mortgage.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to view this mortgage" });
+      }
+      
+      res.json(mortgage);
+    } catch (err) {
+      console.error("Error fetching mortgage:", err);
+      res.status(500).json({ message: "Failed to fetch mortgage" });
+    }
+  });
+
+  app.get("/api/properties/:id/mortgages", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      const propertyId = parseInt(req.params.id);
+      
+      // Check if property exists and user owns it
+      const property = await storage.getAsset(propertyId);
+      if (!property) {
+        return res.status(404).json({ message: "Property not found" });
+      }
+      
+      if (property.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to view mortgages for this property" });
+      }
+      
+      // Get mortgages secured by this property
+      const mortgages = await storage.getMortgagesBySecuredAsset(propertyId);
+      res.json(mortgages);
+    } catch (err) {
+      console.error("Error fetching property mortgages:", err);
+      res.status(500).json({ message: "Failed to fetch property mortgages" });
+    }
+  });
+
+  app.post("/api/mortgages", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      // Add the user ID to the mortgage data
+      const mortgageData = {
+        ...req.body,
+        userId: req.user.id
+      };
+      
+      // Validate the data
+      const validatedData = insertMortgageSchema.parse(mortgageData);
+      
+      // Create the mortgage
+      const mortgage = await storage.createMortgage(validatedData);
+      
+      // If a secured asset (property) is specified, link them
+      if (mortgage.securedAssetId) {
+        await storage.linkMortgageToProperty(mortgage.id, mortgage.securedAssetId);
+      }
+      
+      res.status(201).json(mortgage);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ errors: err.errors });
+      }
+      console.error("Error creating mortgage:", err);
+      res.status(500).json({ message: "Failed to create mortgage" });
+    }
+  });
+
+  app.put("/api/mortgages/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Check if mortgage exists and user owns it
+      const mortgage = await storage.getMortgage(id);
+      if (!mortgage) {
+        return res.status(404).json({ message: "Mortgage not found" });
+      }
+      
+      if (mortgage.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to update this mortgage" });
+      }
+      
+      // Validate the data
+      const validatedData = insertMortgageSchema.partial().parse(req.body);
+      
+      // Update the mortgage
+      const updatedMortgage = await storage.updateMortgage(id, validatedData);
+      
+      // If securedAssetId has changed, update the relationship
+      if ('securedAssetId' in req.body && mortgage.securedAssetId !== req.body.securedAssetId) {
+        // First, unlink from current property if one exists
+        if (mortgage.securedAssetId) {
+          await storage.unlinkMortgageFromProperty(id);
+        }
+        
+        // Then link to new property if one is specified
+        if (req.body.securedAssetId) {
+          await storage.linkMortgageToProperty(id, req.body.securedAssetId);
+        }
+      }
+      
+      if (!updatedMortgage) {
+        return res.status(500).json({ message: "Failed to update mortgage" });
+      }
+      
+      res.json(updatedMortgage);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        return res.status(400).json({ errors: err.errors });
+      }
+      console.error("Error updating mortgage:", err);
+      res.status(500).json({ message: "Failed to update mortgage" });
+    }
+  });
+
+  app.delete("/api/mortgages/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      const id = parseInt(req.params.id);
+      const mortgage = await storage.getMortgage(id);
+      
+      if (!mortgage) {
+        return res.status(404).json({ message: "Mortgage not found" });
+      }
+      
+      // Check if user owns the mortgage
+      if (mortgage.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to delete this mortgage" });
+      }
+      
+      const success = await storage.deleteMortgage(id);
+      if (success) {
+        res.status(200).json({ message: "Mortgage deleted successfully" });
+      } else {
+        res.status(500).json({ message: "Failed to delete mortgage" });
+      }
+      
+    } catch (err) {
+      console.error("Error deleting mortgage:", err);
+      res.status(500).json({ message: "Failed to delete mortgage" });
+    }
+  });
+
+  // Migration endpoint: Convert property mortgage data to separate mortgage entity
+  app.post("/api/properties/:id/migrate-mortgage", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      const propertyId = parseInt(req.params.id);
+      
+      // Check if property exists and user owns it
+      const property = await storage.getAsset(propertyId);
+      if (!property) {
+        return res.status(404).json({ message: "Property not found" });
+      }
+      
+      if (property.userId !== req.user.id) {
+        return res.status(403).json({ message: "Not authorized to migrate mortgage for this property" });
+      }
+      
+      // Check if property has mortgage data to migrate
+      if (!property.hasMortgage) {
+        return res.status(400).json({ message: "Property does not have mortgage data to migrate" });
+      }
+      
+      // Perform the migration
+      const result = await storage.migratePropertyMortgageData(propertyId);
+      
+      if (!result) {
+        return res.status(500).json({ message: "Failed to migrate mortgage data" });
+      }
+      
+      // Return the migrated data
+      res.json(result);
+    } catch (err) {
+      console.error("Error migrating property mortgage data:", err);
+      res.status(500).json({ message: "Failed to migrate mortgage data" });
+    }
+  });
+
   // Offset Account Routes
   
   // Link a cash account as an offset account to a loan
