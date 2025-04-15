@@ -27,7 +27,8 @@ import {
   Calendar, 
   Car,
   CheckCircle2,
-  CreditCard, 
+  CreditCard,
+  Home, 
   Database,
   DollarSign, 
   Edit, 
@@ -2355,7 +2356,7 @@ export default function AssetDetailPage() {
                     <Card>
                       <CardHeader className="pb-2">
                         <CardTitle className="flex items-center">
-                          <Home className="mr-2 h-4 w-4" /> Property Summary
+                          <Building className="mr-2 h-4 w-4" /> Property Summary
                         </CardTitle>
                         <CardDescription>
                           {asset.name} - {formatCurrency(asset.value || 0)}
@@ -2393,7 +2394,7 @@ export default function AssetDetailPage() {
                         </CardHeader>
                         <CardContent>
                           <div className="text-center p-6">
-                            <Home className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                            <Building className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                             <p className="text-muted-foreground">
                               This property doesn't have any associated mortgages. It may be owned outright, or you can add mortgage information by editing the property.
                             </p>
