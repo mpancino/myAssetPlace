@@ -747,9 +747,8 @@ export default function CashflowPage() {
                             
                             // If we have interest rate information, show payment split
                             if (asset.interestRate && asset.value) {
-                              // Calculate monthly interest and principal
-                              const annualInterest = (asset.interestRate / 100) * asset.value;
-                              const monthlyInterest = annualInterest / 12;
+                              // Calculate monthly interest and principal - using same formula as property card
+                              const monthlyInterest = (asset.interestRate / 100) * asset.value / 12;
                               const monthlyPrincipal = monthlyPayment - monthlyInterest;
                               
                               // Return both interest and principal rows
@@ -777,8 +776,8 @@ export default function CashflowPage() {
                               // If no interest rate data, estimate interest using a default rate of 5%
                               // We do this to ensure consistency in categorizing interest as an expense
                               const estimatedInterestRate = 5; // 5% as a default interest rate
-                              const annualInterest = (estimatedInterestRate / 100) * (asset.value || asset.paymentAmount * 12);
-                              const monthlyInterest = annualInterest / 12;
+                              // Calculate using same formula as property card for consistency
+                              const monthlyInterest = (estimatedInterestRate / 100) * (asset.value || asset.paymentAmount * 12) / 12;
                               const monthlyPrincipal = monthlyPayment - monthlyInterest;
                               
                               return (
