@@ -711,9 +711,20 @@ export default function CashflowPage() {
                                   </TableRow>
                                 </>
                               );
-                            // Removed else block since we've already checked for monthlyInterest > 0
-                            // The utility function calculateMonthlyInterestExpense already handles
-                            // estimating interest when no explicit rate is available
+                          }
+                          
+                          // Show just interest expense if we have interest but no payment data
+                          if (monthlyInterest > 0) {
+                            return (
+                              <TableRow key={`interest-only-${asset.id}`}>
+                                <TableCell className="font-medium">{asset.name}</TableCell>
+                                <TableCell>Interest Expenses</TableCell>
+                                <TableCell>{asset.propertyType ? "Mortgage" : "Other Loan"}</TableCell>
+                                <TableCell>Monthly</TableCell>
+                                <TableCell className="text-right">{formatCurrency(monthlyInterest)}</TableCell>
+                                <TableCell className="text-right">{formatCurrency(scaleAmount(monthlyInterest))}</TableCell>
+                              </TableRow>
+                            );
                           }
                           
                           return null;
