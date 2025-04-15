@@ -502,6 +502,7 @@ export default function AssetDetailPage() {
         // Ensure expenses are properly handled by creating deep copies
         propertyExpenses: values.propertyExpenses ? 
           JSON.parse(JSON.stringify(values.propertyExpenses)) : {},
+        // IMPORTANT: Always send an empty object for investmentExpenses when it's null to prevent validation errors
         investmentExpenses: values.investmentExpenses ? 
           JSON.parse(JSON.stringify(values.investmentExpenses)) : {}
       };
