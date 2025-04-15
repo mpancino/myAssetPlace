@@ -110,10 +110,11 @@ export function MortgageDetails({ property, mortgages = [], isLoading = false }:
     navigate(`/add-loan?type=mortgage&securedAssetId=${property.id}`);
   };
   
-  // Function to navigate to the mortgage edit page
+  // Function to navigate to the mortgage edit page in the Loans area
   const handleEditMortgage = () => {
     if (mortgage && mortgage.id) {
-      navigate(`/asset-classes/2/edit/${mortgage.id}`);
+      // Navigate to the edit loan page with the mortgage ID
+      navigate(`/edit-loan/${mortgage.id}`);
     }
   };
   
@@ -236,14 +237,14 @@ export function MortgageDetails({ property, mortgages = [], isLoading = false }:
             <div className="text-muted-foreground text-sm mb-1 flex items-center">
               <Banknote className="mr-1 h-4 w-4" /> Original Loan
             </div>
-            <div className="text-xl font-semibold">{formatCurrency(mortgageAmount)}</div>
+            <div className="text-xl font-semibold">{formatCurrency(mortgageAmount, '$', false)}</div>
           </div>
           
           <div className="bg-muted/30 p-4 rounded-lg">
             <div className="text-muted-foreground text-sm mb-1 flex items-center">
               <DollarSign className="mr-1 h-4 w-4" /> Monthly Payment
             </div>
-            <div className="text-xl font-semibold">{formatCurrency(monthlyPayment)}</div>
+            <div className="text-xl font-semibold">{formatCurrency(monthlyPayment, '$', false)}</div>
           </div>
           
           <div className="bg-muted/30 p-4 rounded-lg">
@@ -266,8 +267,8 @@ export function MortgageDetails({ property, mortgages = [], isLoading = false }:
         <div>
           <div className="text-sm font-medium mb-2">Mortgage Progress</div>
           <div className="flex justify-between text-sm text-muted-foreground mb-1">
-            <span>{formatCurrency(mortgageAmount - currentBalance)} paid</span>
-            <span>{formatCurrency(currentBalance)} remaining</span>
+            <span>{formatCurrency(mortgageAmount - currentBalance, '$', false)} paid</span>
+            <span>{formatCurrency(currentBalance, '$', false)} remaining</span>
           </div>
           <Progress value={percentagePaid} className="h-2" />
           <div className="flex justify-between text-xs text-muted-foreground mt-1">
@@ -287,7 +288,7 @@ export function MortgageDetails({ property, mortgages = [], isLoading = false }:
                 <div>
                   <div className="text-muted-foreground text-xs mb-1">Principal</div>
                   <div className="font-medium">
-                    {formatCurrency(currentPaymentBreakdown.principal)}
+                    {formatCurrency(currentPaymentBreakdown.principal, '$', false)}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
                     {((currentPaymentBreakdown.principal / monthlyPayment) * 100).toFixed(1)}%
@@ -297,7 +298,7 @@ export function MortgageDetails({ property, mortgages = [], isLoading = false }:
                 <div>
                   <div className="text-muted-foreground text-xs mb-1">Interest Expenses</div>
                   <div className="font-medium text-amber-600">
-                    {formatCurrency(currentPaymentBreakdown.interest)}
+                    {formatCurrency(currentPaymentBreakdown.interest, '$', false)}
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
                     {((currentPaymentBreakdown.interest / monthlyPayment) * 100).toFixed(1)}%
@@ -308,7 +309,7 @@ export function MortgageDetails({ property, mortgages = [], isLoading = false }:
               <div className="mt-4 pt-3 border-t border-border">
                 <div className="text-muted-foreground text-xs mb-1">Total Payment</div>
                 <div className="font-medium">
-                  {formatCurrency(monthlyPayment)}
+                  {formatCurrency(monthlyPayment, '$', false)}
                 </div>
               </div>
             </div>
@@ -323,12 +324,12 @@ export function MortgageDetails({ property, mortgages = [], isLoading = false }:
               <div className="grid grid-cols-1 gap-3">
                 <div>
                   <div className="text-muted-foreground text-xs mb-1">Principal Payments</div>
-                  <div className="font-medium">{formatCurrency(totalPrincipal)}</div>
+                  <div className="font-medium">{formatCurrency(totalPrincipal, '$', false)}</div>
                 </div>
                 
                 <div>
                   <div className="text-muted-foreground text-xs mb-1">Interest Expenses</div>
-                  <div className="font-medium text-amber-600">{formatCurrency(totalInterest)}</div>
+                  <div className="font-medium text-amber-600">{formatCurrency(totalInterest, '$', false)}</div>
                 </div>
                 
                 <div className="pt-2 border-t border-border">
