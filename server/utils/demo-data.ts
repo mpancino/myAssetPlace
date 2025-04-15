@@ -255,7 +255,7 @@ export async function createDemoAssets(userId: number): Promise<Asset[]> {
         loanTerm: 360, // 30 years in months
         paymentFrequency: "monthly",
         paymentAmount: 1419.47, // Calculated monthly payment
-        lender: "Home Loans Inc",
+        lender: "Home Loans Inc", // Default lender value
         interestRateType: "variable", // Fixed field name to match schema
         startDate: new Date("2015-06-20"),
         originalAmount: 280000,
@@ -263,7 +263,8 @@ export async function createDemoAssets(userId: number): Promise<Asset[]> {
         isLiability: true,
         loanPurpose: "mortgage",
         isFixedRatePeriod: false,
-        isInterestOnly: false
+        isInterestOnly: false,
+        assetHoldingTypeId: 1 // Personal - default asset holding type
       };
       
       const createdMortgage = await storage.createMortgage(primaryMortgage);
@@ -285,7 +286,7 @@ export async function createDemoAssets(userId: number): Promise<Asset[]> {
         loanTerm: 360, // 30 years in months
         paymentFrequency: "monthly",
         paymentAmount: 1172.12, // Calculated monthly payment
-        lender: "Westpac Bank",
+        lender: "Westpac Bank", // Default lender value
         interestRateType: "fixed", // Fixed field name to match schema
         startDate: new Date("2018-09-15"),
         originalAmount: 250000,
@@ -295,7 +296,8 @@ export async function createDemoAssets(userId: number): Promise<Asset[]> {
         isFixedRatePeriod: true,
         fixedRateEndDate: new Date("2025-09-15"), // 7-year fixed period
         variableRateAfterFixed: 4.25,
-        isInterestOnly: false
+        isInterestOnly: false,
+        assetHoldingTypeId: 1 // Personal - default asset holding type
       };
       
       const createdMortgage = await storage.createMortgage(investmentMortgage);
