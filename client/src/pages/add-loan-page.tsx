@@ -242,6 +242,7 @@ export default function AddLoanPage() {
                   onSuccess={handleLoanCreated}
                   isEditing={isEditing}
                   mortgageId={mortgageId || undefined}
+                  isMortgage={isMortgage}
                 />
               ) : (
                 <div>Error loading data</div>

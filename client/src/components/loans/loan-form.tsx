@@ -44,6 +44,8 @@ interface LoanFormProps {
   defaultValues?: Partial<InsertLoan>;
   isEditing?: boolean;
   assetId?: number;
+  mortgageId?: number;  // Added for direct mortgage editing
+  isMortgage?: boolean; // Flag to indicate this is a mortgage form
   onSuccess?: (loan: Asset) => void;
 }
 
@@ -53,6 +55,8 @@ export function LoanForm({
   defaultValues,
   isEditing = false,
   assetId,
+  mortgageId,
+  isMortgage = false,
   onSuccess,
 }: LoanFormProps) {
   const { toast } = useToast();
@@ -93,19 +97,58 @@ export function LoanForm({
   // Create or update mutation
   const mutation = useMutation({
     mutationFn: async (data: InsertLoan) => {
+      // Case 1: Editing an existing asset
       if (isEditing && assetId) {
         const res = await apiRequest("PATCH", `/api/assets/${assetId}`, data);
         return await res.json();
-      } else {
+      } 
+      // Case 2: Editing a mortgage directly
+      else if (isEditing && mortgageId) {
+        // Convert loan form data to mortgage update format
+        const mortgageData = {
+          name: data.name,
+          description: data.description,
+          value: data.value,
+          lender: data.loanProvider,
+          originalAmount: data.originalLoanAmount,
+          interestRate: data.interestRate,
+          interestRateType: data.interestRateType,
+          loanTerm: data.loanTerm,
+          paymentFrequency: data.paymentFrequency,
+          paymentAmount: data.paymentAmount,
+          startDate: data.startDate,
+          securedAssetId: data.securedAssetId
+        };
+        
+        const res = await apiRequest("PATCH", `/api/mortgages/${mortgageId}`, mortgageData);
+        return await res.json();
+      } 
+      // Case 3: Creating a new loan/asset
+      else {
         const res = await apiRequest("POST", "/api/assets", data);
         return await res.json();
       }
     },
     onSuccess: (loan: Asset) => {
+      // Invalidate all potentially affected queries
       queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
+      
+      // Also invalidate mortgage data if we're editing a mortgage
+      if (mortgageId) {
+        queryClient.invalidateQueries({ queryKey: ["/api/mortgages"] });
+        
+        // Invalidate the property's mortgage list if we have a secured asset
+        if (loan.securedAssetId) {
+          queryClient.invalidateQueries({ 
+            queryKey: [`/api/properties/${loan.securedAssetId}/mortgages`] 
+          });
+        }
+      }
+      
+      // Show success toast
       toast({
-        title: `Loan ${isEditing ? "updated" : "created"} successfully`,
-        description: `Your ${form.getValues("name")} loan has been ${isEditing ? "updated" : "created"}.`,
+        title: `${isMortgage ? "Mortgage" : "Loan"} ${isEditing ? "updated" : "created"} successfully`,
+        description: `Your ${form.getValues("name")} has been ${isEditing ? "updated" : "created"}.`,
       });
       
       // Call the onSuccess callback if provided
@@ -115,7 +158,13 @@ export function LoanForm({
         // Set success state and redirect after a delay (fallback)
         setIsSuccess(true);
         setTimeout(() => {
-          setLocation("/asset-classes/" + loansAssetClass?.id);
+          // If this is for a property, redirect back to the property
+          if (loan.securedAssetId) {
+            setLocation(`/assets/${loan.securedAssetId}`);
+          } else {
+            // Otherwise go to loans overview
+            setLocation("/asset-classes/" + loansAssetClass?.id);
+          }
         }, 1500); // Redirect after 1.5 seconds
       }
     },
