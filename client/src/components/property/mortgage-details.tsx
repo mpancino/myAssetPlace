@@ -246,15 +246,15 @@ export function MortgageDetails({ property }: MortgageDetailsProps) {
                 </div>
                 
                 <div>
-                  <div className="text-muted-foreground text-xs mb-1">Interest Payments</div>
-                  <div className="font-medium">{formatCurrency(totalInterest)}</div>
+                  <div className="text-muted-foreground text-xs mb-1">Interest Expenses</div>
+                  <div className="font-medium text-amber-600">{formatCurrency(totalInterest)}</div>
                 </div>
                 
                 <div className="pt-2 border-t border-border">
                   <div className="text-muted-foreground text-xs mb-1">Total Cost of Loan</div>
                   <div className="font-medium">{formatCurrency(totalPayments)}</div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    {((totalInterest / mortgageAmount) * 100).toFixed(1)}% paid in interest
+                    {((totalInterest / mortgageAmount) * 100).toFixed(1)}% paid as interest expenses
                   </div>
                 </div>
               </div>
@@ -279,7 +279,7 @@ export function MortgageDetails({ property }: MortgageDetailsProps) {
                     <TableHead>Payment #</TableHead>
                     <TableHead>Payment</TableHead>
                     <TableHead>Principal</TableHead>
-                    <TableHead>Interest</TableHead>
+                    <TableHead>Interest Expenses</TableHead>
                     <TableHead>Remaining Balance</TableHead>
                   </TableRow>
                 </TableHeader>
