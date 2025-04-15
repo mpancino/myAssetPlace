@@ -250,16 +250,20 @@ export async function createDemoAssets(userId: number): Promise<Asset[]> {
         userId,
         name: "Home Mortgage",
         description: "Primary residence mortgage",
-        value: 280000,
+        value: -280000, // Negative value as it's a liability
         interestRate: 4.5,
         loanTerm: 360, // 30 years in months
         paymentFrequency: "monthly",
+        paymentAmount: 1419.47, // Calculated monthly payment
         lender: "Home Loans Inc",
         interestRateType: "variable", // Fixed field name to match schema
-        startDate: new Date("2015-06-20").toISOString(),
+        startDate: new Date("2015-06-20"),
         originalAmount: 280000,
         securedAssetId: primaryResidenceId,
-        isLiability: true
+        isLiability: true,
+        loanPurpose: "mortgage",
+        isFixedRatePeriod: false,
+        isInterestOnly: false
       };
       
       const createdMortgage = await storage.createMortgage(primaryMortgage);
@@ -276,16 +280,22 @@ export async function createDemoAssets(userId: number): Promise<Asset[]> {
         userId,
         name: "Investment Property Mortgage",
         description: "Rental property financing",
-        value: 250000,
+        value: -250000, // Negative value as it's a liability
         interestRate: 3.85,
         loanTerm: 360, // 30 years in months
         paymentFrequency: "monthly",
+        paymentAmount: 1172.12, // Calculated monthly payment
         lender: "Westpac Bank",
-        interestRateType: "variable", // Fixed field name to match schema
-        startDate: new Date("2018-09-15").toISOString(),
+        interestRateType: "fixed", // Fixed field name to match schema
+        startDate: new Date("2018-09-15"),
         originalAmount: 250000,
         securedAssetId: investmentPropertyId,
-        isLiability: true
+        isLiability: true,
+        loanPurpose: "investment",
+        isFixedRatePeriod: true,
+        fixedRateEndDate: new Date("2025-09-15"), // 7-year fixed period
+        variableRateAfterFixed: 4.25,
+        isInterestOnly: false
       };
       
       const createdMortgage = await storage.createMortgage(investmentMortgage);
