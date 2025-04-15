@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
+import { logInfo, logError } from "@/lib/logger";
+import { formSpacing } from "@/lib/form-utils";
 import { insertPropertySchema, InsertProperty, AssetClass, AssetHoldingType, PropertyExpense } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,8 +32,6 @@ import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { PropertyExpenses } from "@/components/property/property-expenses";
-import { logInfo, logError } from "@/lib/logger";
-import { formSpacing } from "@/lib/form-utils";
 
 interface PropertyFormProps {
   onSubmit: (data: InsertProperty) => void;
@@ -130,7 +130,7 @@ export function PropertyForm({
   }, [defaultValues, form, assetClassId, realEstateClass?.id]);
 
   const handleSubmit = (data: InsertProperty) => {
-    logInfo("Form submitted with data", { component: "PropertyForm" });
+    logInfo("form", "Property form submitted successfully");
     onSubmit(data);
   };
 
@@ -148,7 +148,7 @@ export function PropertyForm({
               Enter the essential details about your property
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className={formSpacing.section}>
             <FormField
               control={form.control}
               name="name"
