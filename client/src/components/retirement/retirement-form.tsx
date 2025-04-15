@@ -105,6 +105,11 @@ export function RetirementForm({
 
   // Handler for form submission
   const onSubmit = async (values: RetirementFormValues) => {
+    logInfo("form", `Submitting retirement form - ${isEditing ? 'update' : 'create'}`, {
+      accountName: values.name,
+      value: values.value
+    });
+    
     try {
       // Include the investment expenses from the state
       const dataToSubmit = {
@@ -117,6 +122,11 @@ export function RetirementForm({
         // Update existing asset
         const response = await apiRequest("PATCH", `/api/assets/${assetId}`, dataToSubmit);
         const updatedAsset = await response.json();
+
+        logInfo("asset", "Retirement account updated successfully", {
+          id: assetId,
+          name: values.name
+        });
 
         toast({
           title: "Retirement Account Updated",
@@ -131,6 +141,11 @@ export function RetirementForm({
         // Create new asset
         const response = await apiRequest("POST", "/api/assets", dataToSubmit);
         const newAsset = await response.json();
+
+        logInfo("asset", "Retirement account created successfully", {
+          name: values.name,
+          id: newAsset.id
+        });
 
         toast({
           title: "Retirement Account Added",
@@ -149,7 +164,11 @@ export function RetirementForm({
         setLocation("/dashboard");
       }
     } catch (error) {
-      console.error("Error saving retirement account:", error);
+      logError("form", "Error saving retirement account", { 
+        accountName: values.name,
+        error 
+      });
+      
       toast({
         title: "Error",
         description: "Failed to save retirement account. Please try again.",
@@ -166,9 +185,9 @@ export function RetirementForm({
           Track your retirement accounts to monitor your progress towards your retirement goals.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className={formSpacing.section}>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className={formSpacing.container}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
