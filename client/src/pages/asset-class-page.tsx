@@ -325,7 +325,7 @@ export default function AssetClassPage() {
             <CardContent>
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <dt className="text-sm text-muted-foreground font-medium">
+                  <dt className="text-lg text-primary font-bold uppercase tracking-wide">
                     TOTAL {assetClass.name === "Loans & Liabilities" ? "LIABILITIES" : "ASSETS"}
                   </dt>
                   <dd className="text-2xl font-semibold">{assets?.length || 0}</dd>
@@ -396,9 +396,9 @@ export default function AssetClassPage() {
           </Card>
         </div>
 
-        <h2 className="text-2xl font-bold mb-4">
+        <h2 className="text-3xl font-extrabold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 inline-block text-transparent bg-clip-text">
           {assetClass.name === "Loans & Liabilities" 
-            ? "Your Loans & Mortgages" 
+            ? "YOUR LOANS & MORTGAGES" 
             : `Your ${assetClass.name} Assets`
           }
         </h2>

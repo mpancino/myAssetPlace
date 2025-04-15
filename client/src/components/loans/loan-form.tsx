@@ -97,13 +97,13 @@ export function LoanForm({
   // Create or update mutation
   const mutation = useMutation({
     mutationFn: async (data: InsertLoan) => {
-      // Case 1: Editing an existing asset
-      if (isEditing && assetId) {
-        const res = await apiRequest("PATCH", `/api/assets/${assetId}`, data);
-        return await res.json();
-      } 
-      // Case 2: Editing a mortgage directly
-      else if (isEditing && mortgageId) {
+      // Determine if this is likely a mortgage by ID range or explicit flag
+      const isMortgageEndpoint = isMortgage || (assetId && assetId < 100);
+      console.log("Using mortgage endpoint:", isMortgageEndpoint, "for ID:", assetId || mortgageId);
+      
+      // Case 1: Editing an existing asset that's actually a mortgage
+      if (isEditing && assetId && isMortgageEndpoint) {
+        console.log("Editing mortgage via assets endpoint:", assetId);
         // Convert loan form data to mortgage update format
         const mortgageData = {
           name: data.name,
@@ -120,11 +120,40 @@ export function LoanForm({
           securedAssetId: data.securedAssetId
         };
         
-        const res = await apiRequest("PATCH", `/api/mortgages/${mortgageId}`, mortgageData);
+        const res = await apiRequest("PUT", `/api/mortgages/${assetId}`, mortgageData);
+        return await res.json();
+      }
+      // Case 2: Editing a regular loan/asset
+      else if (isEditing && assetId) {
+        console.log("Editing regular loan:", assetId);
+        const res = await apiRequest("PATCH", `/api/assets/${assetId}`, data);
         return await res.json();
       } 
-      // Case 3: Creating a new loan/asset
+      // Case 3: Editing a mortgage directly via mortgageId
+      else if (isEditing && mortgageId) {
+        console.log("Editing mortgage directly:", mortgageId);
+        // Convert loan form data to mortgage update format
+        const mortgageData = {
+          name: data.name,
+          description: data.description,
+          value: data.value,
+          lender: data.loanProvider,
+          originalAmount: data.originalLoanAmount,
+          interestRate: data.interestRate,
+          interestRateType: data.interestRateType,
+          loanTerm: data.loanTerm,
+          paymentFrequency: data.paymentFrequency,
+          paymentAmount: data.paymentAmount,
+          startDate: data.startDate,
+          securedAssetId: data.securedAssetId
+        };
+        
+        const res = await apiRequest("PUT", `/api/mortgages/${mortgageId}`, mortgageData);
+        return await res.json();
+      } 
+      // Case 4: Creating a new loan/asset
       else {
+        console.log("Creating new loan");
         const res = await apiRequest("POST", "/api/assets", data);
         return await res.json();
       }
