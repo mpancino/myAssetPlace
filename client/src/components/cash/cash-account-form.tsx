@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 import { useState, useEffect } from "react";
+import { logInfo, logError } from "@/lib/logger";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BalanceHistory } from "./balance-history";
 import { TransactionCategories } from "./transaction-categories";
@@ -72,9 +73,9 @@ export function CashAccountForm({
       assetClass.name.toLowerCase().includes("bank")
   );
   
-  console.log("Found cash asset class:", cashAssetClass);
-  console.log("Default values passed to form:", defaultValues);
-  console.log("All available asset classes:", assetClasses);
+  logInfo("form", "Found cash asset class:", cashAssetClass);
+  logInfo("form", "Default values passed to form:", defaultValues);
+  logInfo("form", "All available asset classes:", assetClasses);
 
   // Check if we have a classId in the URL parameters
   useEffect(() => {
@@ -85,9 +86,9 @@ export function CashAccountForm({
       const params = new URLSearchParams(searchParams);
       const classIdParam = params.get('classId');
       
-      console.log("Cash account classId from URL:", classIdParam);
-      console.log("Full URL:", url);
-      console.log("Search parameters:", searchParams ? '?' + searchParams : 'None');
+      logInfo("form", "Cash account classId from URL:", classIdParam);
+      logInfo("form", "Full URL:", url);
+      logInfo("form", "Search parameters:", searchParams ? '?' + searchParams : 'None');
       
       // Store in localStorage for persistence
       if (classIdParam) {
@@ -97,13 +98,13 @@ export function CashAccountForm({
         localStorage.setItem('selectedAssetClassId', cashAssetClass.id.toString());
       }
     } catch (error) {
-      console.error("Error processing URL parameters:", error);
+      logError("form", "Error processing URL parameters:", error);
     }
   }, [cashAssetClass]);
 
   // Initialize assetClassId from defaultValues or cashAssetClass
   const initialAssetClassId = defaultValues?.assetClassId || cashAssetClass?.id;
-  console.log("Initializing form with assetClassId:", initialAssetClassId);
+  logInfo("form", "Initializing form with assetClassId:", initialAssetClassId);
   
   // When editing, properly load all existing values from the defaultValues
   const formDefaultValues = isEditing && defaultValues 
@@ -141,8 +142,8 @@ export function CashAccountForm({
         ...defaultValues, // Still apply any values provided
       };
       
-  console.log("Form initialization with defaultValues:", isEditing ? "EDITING MODE" : "CREATE MODE");
-  console.log("Form defaultValues:", formDefaultValues);
+  logInfo("form", "Form initialization with defaultValues:", isEditing ? "EDITING MODE" : "CREATE MODE");
+  logInfo("form", "Form defaultValues:", formDefaultValues);
 
   const form = useForm<InsertCashAccount>({
     resolver: zodResolver(insertCashAccountSchema),
