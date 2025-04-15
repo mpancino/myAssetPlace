@@ -82,30 +82,34 @@ export default function AssetClassPage() {
   const { expenseCategories, isLoading: isLoadingExpenseCategories } = useAssetClassDetails(parseInt(classId));
   
   // Convert mortgages to asset format for display if in Loans & Liabilities
-  const mortgageAssets: Asset[] = useMemo(() => {
+  const mortgageAssets = useMemo(() => {
     // Only convert if this is the Loans & Liabilities section
     if (assetClass?.name === "Loans & Liabilities" || parseInt(classId) === 2) {
-      return mortgages.map((mortgage): Asset => ({
-        id: mortgage.id + 10000, // Prefix with 10000 to avoid ID conflicts
-        name: mortgage.name,
-        description: mortgage.description || '',
-        userId: mortgage.userId,
-        assetClassId: parseInt(classId),
-        assetHoldingTypeId: 1, // Default holding type
-        value: mortgage.value,
-        isLiability: true,
-        loanProvider: mortgage.lender,
-        interestRate: mortgage.interestRate,
-        interestRateType: mortgage.interestRateType,
-        loanTerm: mortgage.loanTerm,
-        paymentFrequency: mortgage.paymentFrequency,
-        paymentAmount: mortgage.paymentAmount || 0,
-        startDate: mortgage.startDate,
-        endDate: mortgage.endDate,
-        originalLoanAmount: mortgage.originalAmount,
-        _isMortgage: true, // Special flag to identify this as a mortgage
-        _mortgageId: mortgage.id // Store the original mortgage ID
-      }));
+      return mortgages.map((mortgage) => {
+        // Create an asset-like object from mortgage data
+        const assetFromMortgage: Partial<Asset> & { hasMortgage?: boolean; mortgageId?: number } = {
+          id: mortgage.id + 10000, // Prefix with 10000 to avoid ID conflicts
+          name: mortgage.name,
+          description: mortgage.description || '',
+          userId: mortgage.userId,
+          assetClassId: parseInt(classId),
+          assetHoldingTypeId: 1, // Default holding type
+          value: mortgage.value,
+          isLiability: true,
+          loanProvider: mortgage.lender,
+          interestRate: mortgage.interestRate,
+          interestRateType: mortgage.interestRateType,
+          loanTerm: mortgage.loanTerm,
+          paymentFrequency: mortgage.paymentFrequency,
+          paymentAmount: mortgage.paymentAmount || 0,
+          startDate: mortgage.startDate,
+          endDate: mortgage.endDate,
+          originalLoanAmount: mortgage.originalAmount,
+          hasMortgage: true, // Using standard property
+          mortgageId: mortgage.id // Store the original mortgage ID
+        };
+        return assetFromMortgage as unknown as Asset;
+      });
     }
     return [];
   }, [mortgages, assetClass, classId]);
@@ -154,7 +158,7 @@ export default function AssetClassPage() {
 
   useEffect(() => {
     if (assets?.length) {
-      const sum = assets.reduce((total, asset) => total + asset.value, 0);
+      const sum = assets.reduce((total: number, asset: Asset) => total + asset.value, 0);
       setTotalValue(sum);
     }
   }, [assets]);
@@ -320,7 +324,7 @@ export default function AssetClassPage() {
                 <div>
                   <dt className="text-sm text-muted-foreground">Total Value</dt>
                   <dd className="text-2xl font-semibold">
-                    {formatCurrency(totalValue, userCountry?.currencySymbol || '$')}
+                    {formatCurrency(totalValue, userCountry?.currencySymbol || '$', false)}
                   </dd>
                 </div>
                 {assetClass.defaultLowGrowthRate !== null && (
@@ -441,7 +445,7 @@ export default function AssetClassPage() {
                       <div>
                         <span className="text-sm text-muted-foreground">Current Value:</span>
                         <p className="text-xl font-semibold">
-                          {formatCurrency(asset.value, userCountry?.currencySymbol || '$')}
+                          {formatCurrency(asset.value, userCountry?.currencySymbol || '$', false)}
                         </p>
                       </div>
                       
@@ -449,7 +453,7 @@ export default function AssetClassPage() {
                         <div>
                           <span className="text-sm text-muted-foreground">Purchase Price:</span>
                           <p>
-                            {formatCurrency(asset.purchasePrice, userCountry?.currencySymbol || '$')}
+                            {formatCurrency(asset.purchasePrice, userCountry?.currencySymbol || '$', false)}
                           </p>
                         </div>
                       )}

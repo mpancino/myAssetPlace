@@ -12,7 +12,7 @@ export function cn(...inputs: ClassValue[]) {
  * @param currencySymbol The currency symbol to use (defaults to $)
  * @returns Formatted currency string
  */
-export function formatCurrency(value: number, compact = false, currencySymbol = '$'): string {
+export function formatCurrency(value: number, currencySymbol = '$', compact = false): string {
   // Handle zero case
   if (value === 0) return `${currencySymbol}0`;
   
