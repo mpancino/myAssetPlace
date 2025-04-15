@@ -316,11 +316,23 @@ export default function CashflowPage() {
             categories["Other Loan Payments"] += principalPayment;
           }
         } else {
-          // If no interest rate, categorize entire payment
+          // If no interest rate, estimate interest using a default rate of 5%
+          // We do this to ensure consistency in categorizing interest as an expense
+          const estimatedInterestRate = 5; // 5% as a default interest rate
+          const annualInterest = (estimatedInterestRate / 100) * (asset.value || asset.paymentAmount * 12);
+          const monthlyInterest = annualInterest / 12;
+          
+          // Add estimated interest expense to interest category
+          categories["Loan Interest"] += monthlyInterest;
+          
+          // Principal payment is total payment minus interest
+          const principalPayment = monthlyAmount - monthlyInterest;
+          
+          // Categorize principal portion of mortgage vs other loans
           if (asset.propertyType) {
-            categories["Mortgage Payments"] += monthlyAmount;
+            categories["Mortgage Payments"] += principalPayment;
           } else {
-            categories["Other Loan Payments"] += monthlyAmount;
+            categories["Other Loan Payments"] += principalPayment;
           }
         }
       }
@@ -760,16 +772,32 @@ export default function CashflowPage() {
                                 </>
                               );
                             } else {
-                              // If no interest rate data, show just the payment
+                              // If no interest rate data, estimate interest using a default rate of 5%
+                              // We do this to ensure consistency in categorizing interest as an expense
+                              const estimatedInterestRate = 5; // 5% as a default interest rate
+                              const annualInterest = (estimatedInterestRate / 100) * (asset.value || asset.paymentAmount * 12);
+                              const monthlyInterest = annualInterest / 12;
+                              const monthlyPrincipal = monthlyPayment - monthlyInterest;
+                              
                               return (
-                                <TableRow key={`loan-${asset.id}`}>
-                                  <TableCell className="font-medium">{asset.name}</TableCell>
-                                  <TableCell>Loan Payment</TableCell>
-                                  <TableCell>{asset.propertyType ? "Mortgage" : "Other Loan"}</TableCell>
-                                  <TableCell>{asset.paymentFrequency}</TableCell>
-                                  <TableCell className="text-right">{formatCurrency(asset.paymentAmount)}</TableCell>
-                                  <TableCell className="text-right">{formatCurrency(scaleAmount(monthlyPayment))}</TableCell>
-                                </TableRow>
+                                <>
+                                  <TableRow key={`loan-principal-est-${asset.id}`}>
+                                    <TableCell className="font-medium">{asset.name}</TableCell>
+                                    <TableCell>Principal Payment (Est.)</TableCell>
+                                    <TableCell>{asset.propertyType ? "Mortgage" : "Other Loan"}</TableCell>
+                                    <TableCell>{asset.paymentFrequency}</TableCell>
+                                    <TableCell className="text-right">{formatCurrency(monthlyPrincipal)}</TableCell>
+                                    <TableCell className="text-right">{formatCurrency(scaleAmount(monthlyPrincipal))}</TableCell>
+                                  </TableRow>
+                                  <TableRow key={`loan-interest-est-${asset.id}`}>
+                                    <TableCell className="font-medium">{asset.name}</TableCell>
+                                    <TableCell>Interest Expense (Est.)</TableCell>
+                                    <TableCell>{asset.propertyType ? "Mortgage" : "Other Loan"}</TableCell>
+                                    <TableCell>Monthly</TableCell>
+                                    <TableCell className="text-right">{formatCurrency(monthlyInterest)}</TableCell>
+                                    <TableCell className="text-right">{formatCurrency(scaleAmount(monthlyInterest))}</TableCell>
+                                  </TableRow>
+                                </>
                               );
                             }
                           }
