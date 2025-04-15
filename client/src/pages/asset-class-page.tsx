@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
-import { AssetClass, Asset, Country, AssetHoldingType } from "@shared/schema";
+import { AssetClass, Asset, Country, AssetHoldingType, Mortgage } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
@@ -54,19 +54,64 @@ export default function AssetClassPage() {
     staleTime: 5 * 1000 // 5 seconds
   });
   
+  // Fetch mortgages if we're in the Loans & Liabilities class
+  const { 
+    data: mortgages = [],
+    isLoading: mortgagesLoading,
+    refetch: refetchMortgages
+  } = useQuery<Mortgage[]>({ 
+    queryKey: ['/api/mortgages'],
+    enabled: !!classId && (assetClass?.name === "Loans & Liabilities" || parseInt(classId) === 2),
+    // Refresh data when component mounts - ensures up-to-date data when navigating back
+    refetchOnMount: true,
+    staleTime: 5 * 1000 // 5 seconds
+  });
+  
   // Force refetch on mount
   useEffect(() => {
     if (classId) {
       refetchAssetClass();
       refetchAssets();
+      if (assetClass?.name === "Loans & Liabilities" || parseInt(classId) === 2) {
+        refetchMortgages();
+      }
     }
-  }, [classId, refetchAssetClass, refetchAssets]);
+  }, [classId, refetchAssetClass, refetchAssets, refetchMortgages, assetClass]);
   
   // Get expense categories using our hook
   const { expenseCategories, isLoading: isLoadingExpenseCategories } = useAssetClassDetails(parseInt(classId));
   
+  // Convert mortgages to asset format for display if in Loans & Liabilities
+  const mortgageAssets: Asset[] = useMemo(() => {
+    // Only convert if this is the Loans & Liabilities section
+    if (assetClass?.name === "Loans & Liabilities" || parseInt(classId) === 2) {
+      return mortgages.map((mortgage): Asset => ({
+        id: mortgage.id + 10000, // Prefix with 10000 to avoid ID conflicts
+        name: mortgage.name,
+        description: mortgage.description || '',
+        userId: mortgage.userId,
+        assetClassId: parseInt(classId),
+        assetHoldingTypeId: 1, // Default holding type
+        value: mortgage.value,
+        isLiability: true,
+        loanProvider: mortgage.lender,
+        interestRate: mortgage.interestRate,
+        interestRateType: mortgage.interestRateType,
+        loanTerm: mortgage.loanTerm,
+        paymentFrequency: mortgage.paymentFrequency,
+        paymentAmount: mortgage.paymentAmount || 0,
+        startDate: mortgage.startDate,
+        endDate: mortgage.endDate,
+        originalLoanAmount: mortgage.originalAmount,
+        _isMortgage: true, // Special flag to identify this as a mortgage
+        _mortgageId: mortgage.id // Store the original mortgage ID
+      }));
+    }
+    return [];
+  }, [mortgages, assetClass, classId]);
+  
   // Filter assets by class ID and make additional adjustments for misclassified assets
-  const assets = allAssets.filter(asset => {
+  const filteredAssets = allAssets.filter(asset => {
     // First filter by the asset class ID
     const matchesClassId = asset.assetClassId === parseInt(classId);
     
@@ -82,6 +127,14 @@ export default function AssetClassPage() {
       return matchesClassId;
     }
   });
+  
+  // Combine regular assets with mortgage assets for Loans & Liabilities
+  const assets = useMemo(() => {
+    if (assetClass?.name === "Loans & Liabilities" || parseInt(classId) === 2) {
+      return [...filteredAssets, ...mortgageAssets];
+    }
+    return filteredAssets;
+  }, [filteredAssets, mortgageAssets, assetClass, classId]);
   
   // Fetch the user's country for currency information
   const {
