@@ -16,10 +16,13 @@ export default function AddLoanPage() {
   const [createdLoan, setCreatedLoan] = useState<Asset | null>(null);
   const searchParams = new URLSearchParams(useSearch());
   
-  // Check if this is a mortgage for a property
+  // Check if this is a mortgage for a property or editing an existing mortgage
   const loanType = searchParams.get('type');
   const securedAssetId = searchParams.get('securedAssetId') ? 
     parseInt(searchParams.get('securedAssetId') || '0') : null;
+  const mortgageId = searchParams.get('mortgageId') ? 
+    parseInt(searchParams.get('mortgageId') || '0') : null;
+  const isEditing = searchParams.get('edit') === 'true';
   const isMortgage = loanType === 'mortgage' && !!securedAssetId;
 
   useEffect(() => {
@@ -54,8 +57,21 @@ export default function AddLoanPage() {
     queryKey: isMortgage ? [`/api/assets/${securedAssetId}`] : ['no-asset'],
     enabled: isMortgage && !!securedAssetId
   });
+  
+  // If we're editing a mortgage, fetch the mortgage details
+  const {
+    data: existingMortgage,
+    isLoading: mortgageLoading
+  } = useQuery({
+    queryKey: isEditing && mortgageId ? [`/api/mortgages/${mortgageId}`] : ['no-mortgage'],
+    enabled: isEditing && !!mortgageId
+  });
 
-  const isLoading = assetClassesLoading || holdingTypesLoading || (isMortgage && securedAssetLoading);
+  const isLoading = 
+    assetClassesLoading || 
+    holdingTypesLoading || 
+    (isMortgage && securedAssetLoading) ||
+    (isEditing && mortgageId && mortgageLoading);
 
   // Handle success with redirect
   useEffect(() => {
@@ -96,36 +112,67 @@ export default function AddLoanPage() {
   
   // Prepare mortgage defaults if we're adding a mortgage for a property
   const getMortgageDefaults = () => {
-    if (isMortgage && securedAsset) {
-      // Find the loans/liabilities asset class
-      const loansAssetClass = assetClasses?.find(
-        (assetClass) => 
-          assetClass.name.toLowerCase().includes("loan") || 
-          assetClass.name.toLowerCase().includes("debt") ||
-          assetClass.name.toLowerCase().includes("liability")
-      );
+    // Find the loans/liabilities asset class
+    const loansAssetClass = assetClasses?.find(
+      (assetClass) => 
+        assetClass.name.toLowerCase().includes("loan") || 
+        assetClass.name.toLowerCase().includes("debt") ||
+        assetClass.name.toLowerCase().includes("liability")
+    );
+    
+    // Case 1: We're editing an existing mortgage
+    if (isEditing && existingMortgage) {
+      // Use existing mortgage data
+      const mortgageData = existingMortgage as any;
       
+      // Cast to any to bypass TypeScript strict checks
+      const defaults: any = {
+        name: mortgageData.name,
+        description: mortgageData.description || "",
+        value: mortgageData.value,
+        assetClassId: loansAssetClass?.id,
+        isLiability: true,
+        securedAssetId: mortgageData.securedAssetId,
+        loanProvider: mortgageData.lender || "",
+        interestRate: mortgageData.interestRate || 0,
+        interestRateType: (mortgageData.interestRateType as "fixed" | "variable") || "variable",
+        loanTerm: mortgageData.loanTerm || 0,
+        paymentFrequency: (mortgageData.paymentFrequency as "weekly" | "fortnightly" | "monthly" | "quarterly" | "annually") || "monthly",
+        paymentAmount: mortgageData.paymentAmount || 0,
+        startDate: mortgageData.startDate ? new Date(mortgageData.startDate) : new Date(),
+        originalLoanAmount: mortgageData.originalAmount || 0
+      };
+      
+      return defaults;
+    }
+    
+    // Case 2: We're adding a new mortgage for a property
+    if (isMortgage && securedAsset) {
       // Create a default loan name based on the property
       const defaultName = `Mortgage for ${securedAsset.name}`;
       
       // Default to a 30-year fixed rate mortgage
-      return {
+      // Cast to any to bypass TypeScript strict checks
+      const defaults: any = {
         name: defaultName,
         assetClassId: loansAssetClass?.id,
-        isLiability: true as const, // Use const assertion for literal types
+        isLiability: true,
         securedAssetId: securedAsset.id,
         loanProvider: "",
         interestRate: 4.5, // Default interest rate
-        interestRateType: "fixed" as const, // Use const assertion for enum values
+        interestRateType: "fixed",
         loanTerm: 360, // 30 years in months
-        paymentFrequency: "monthly" as const, // Use const assertion for enum values
+        paymentFrequency: "monthly",
         originalLoanAmount: securedAsset.value * 0.8, // Default to 80% LTV
         value: -(securedAsset.value * 0.8), // Stored as negative for liabilities
         description: `Mortgage secured by ${securedAsset.name}`,
-        startDate: new Date() // Required field in InsertLoan
+        startDate: new Date() // Required field
       };
+      
+      return defaults;
     }
     
+    // Case 3: Regular loan with no defaults
     return undefined;
   };
 
@@ -135,7 +182,10 @@ export default function AddLoanPage() {
         {success && createdLoan ? (
           <>
             <h1 className="text-3xl font-bold mb-8">
-              {isMortgage ? "Mortgage Created" : "Loan Created"}
+              {isEditing 
+                ? (isMortgage ? "Mortgage Updated" : "Loan Updated") 
+                : (isMortgage ? "Mortgage Created" : "Loan Created")
+              }
             </h1>
             <Card className="max-w-2xl mx-auto">
               <CardHeader>
@@ -146,7 +196,7 @@ export default function AddLoanPage() {
                   <Check className="h-12 w-12 text-green-600 dark:text-green-400" />
                 </div>
                 <p className="text-xl font-medium">
-                  Your {isMortgage ? "mortgage" : "loan"} '{createdLoan.name}' has been created successfully!
+                  Your {isMortgage ? "mortgage" : "loan"} '{createdLoan.name}' has been {isEditing ? "updated" : "created"} successfully!
                 </p>
                 <p>
                   {isMortgage && securedAssetId 
@@ -159,7 +209,13 @@ export default function AddLoanPage() {
         ) : (
           <>
             <h1 className="text-3xl font-bold mb-8 flex items-center">
-              {isMortgage && securedAsset ? (
+              {isEditing ? (
+                <>
+                  <Building className="mr-2 h-6 w-6" /> 
+                  {isMortgage ? "Edit Mortgage" : "Edit Loan"}
+                  {securedAsset && isMortgage ? ` for ${securedAsset.name}` : ""}
+                </>
+              ) : isMortgage && securedAsset ? (
                 <>
                   <Building className="mr-2 h-6 w-6" /> 
                   Add Mortgage for {securedAsset.name}
@@ -184,6 +240,8 @@ export default function AddLoanPage() {
                   holdingTypes={holdingTypes}
                   defaultValues={getMortgageDefaults()}
                   onSuccess={handleLoanCreated}
+                  isEditing={isEditing}
+                  mortgageId={mortgageId || undefined}
                 />
               ) : (
                 <div>Error loading data</div>
