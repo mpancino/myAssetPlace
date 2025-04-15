@@ -208,6 +208,9 @@ export default function Sidebar({ className }: SidebarProps) {
                 <NavLink href="/balance-sheet" icon={<BookOpenCheck className="h-5 w-5 mr-3" />}>
                   Balance Sheet
                 </NavLink>
+                <NavLink href="/cashflow" icon={<LineChart className="h-5 w-5 mr-3" />}>
+                  Cashflow
+                </NavLink>
                 <NavLink href="/projections" icon={<BarChart3 className="h-5 w-5 mr-3" />}>
                   Projections
                 </NavLink>

@@ -21,6 +21,7 @@ import AddEmploymentIncomePage from "@/pages/add-employment-income-page";
 import EditEmploymentIncomePage from "@/pages/edit-employment-income-page";
 import AssetDetailPage from "@/pages/asset-detail-page";
 import BalanceSheetPage from "@/pages/balance-sheet-page";
+import CashflowPage from "@/pages/cashflow-page";
 import ExpenseGeneratorPage from "@/pages/expense-generator-page";
 import ProjectionsPage from "@/pages/projections-page";
 import ProjectionsAssetFilterPage from "@/pages/projections-asset-filter-page";
@@ -63,6 +64,7 @@ function Router() {
       <ProtectedRoute path="/edit-employment-income/:id" component={EditEmploymentIncomePage} />
       <ProtectedRoute path="/assets/:assetId" component={AssetDetailPage} />
       <ProtectedRoute path="/balance-sheet" component={BalanceSheetPage} />
+      <ProtectedRoute path="/cashflow" component={CashflowPage} />
       <ProtectedRoute path="/expense-generator" component={ExpenseGeneratorPage} />
       <ProtectedRoute path="/projections" component={ProjectionsPage} />
       <ProtectedRoute path="/projections/asset-filter" component={ProjectionsAssetFilterPage} />
