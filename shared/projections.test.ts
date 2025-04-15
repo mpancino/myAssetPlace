@@ -31,7 +31,7 @@ describe('projection utilities', () => {
     color: '#4CAF50'
   };
   
-  const sampleAsset: Asset = {
+  const sampleAsset = {
     id: 1,
     name: 'Investment Property',
     description: 'Rental property',
@@ -60,7 +60,7 @@ describe('projection utilities', () => {
     vacancyRate: 5,
     createdAt: new Date(),
     updatedAt: new Date()
-  } as Asset;
+  } as unknown as Asset;
 
   const sampleSystemSettings: SystemSettings = {
     id: 1,
@@ -241,7 +241,7 @@ describe('projection engine', () => {
       vacancyRate: 5,
       createdAt: new Date(),
       updatedAt: new Date()
-    } as Asset,
+    } as unknown as Asset,
     
     // Cash asset
     {
@@ -257,7 +257,7 @@ describe('projection engine', () => {
       isLiability: false,
       createdAt: new Date(),
       updatedAt: new Date()
-    } as Asset,
+    } as unknown as Asset,
     
     // Loan/mortgage liability
     {
@@ -277,7 +277,7 @@ describe('projection engine', () => {
       originalLoanAmount: 350000,
       createdAt: new Date(),
       updatedAt: new Date()
-    } as Asset
+    } as unknown as Asset
   ];
   
   const projectionConfig: ProjectionConfig = {

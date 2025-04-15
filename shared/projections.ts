@@ -20,7 +20,7 @@ import {
 /**
  * Default projection configuration for Basic Mode
  */
-export const defaultBasicProjectionConfig = (settings: SystemSettings): ProjectionConfig => ({
+export const defaultBasicProjectionConfig = (settings: SystemSettings | any): ProjectionConfig => ({
   inflationRate: settings.defaultMediumInflationRate ?? 2.5,
   growthRateScenario: 'medium',
   includeIncome: true,
@@ -251,39 +251,41 @@ function calculateDividendIncome(asset: Asset): number {
  * Calculate annual employment income
  */
 function calculateEmploymentIncome(asset: Asset): number {
-  if (!asset.baseSalary) return 0;
+  // Use type assertion to access employment-specific fields that might not be in the Asset type
+  const employmentAsset = asset as any;
+  if (!employmentAsset.baseSalary) return 0;
   
   // Calculate annual salary based on payment frequency
   let annualSalary = 0;
-  switch (asset.paymentFrequency) {
+  switch (employmentAsset.paymentFrequency) {
     case 'weekly':
-      annualSalary = asset.baseSalary * 52;
+      annualSalary = employmentAsset.baseSalary * 52;
       break;
     case 'fortnightly':
-      annualSalary = asset.baseSalary * 26;
+      annualSalary = employmentAsset.baseSalary * 26;
       break;
     case 'monthly':
-      annualSalary = asset.baseSalary * 12;
+      annualSalary = employmentAsset.baseSalary * 12;
       break;
     case 'annually':
     default:
-      annualSalary = asset.baseSalary;
+      annualSalary = employmentAsset.baseSalary;
       break;
   }
   
   // Add bonus if applicable
   let bonusAmount = 0;
-  if (asset.bonusType === 'fixed' && asset.bonusFixedAmount) {
-    bonusAmount = asset.bonusFixedAmount;
-  } else if (asset.bonusType === 'percentage' && asset.bonusPercentage) {
-    bonusAmount = annualSalary * (asset.bonusPercentage / 100);
-  } else if (asset.bonusType === 'mixed' && asset.bonusFixedAmount && asset.bonusPercentage) {
-    bonusAmount = asset.bonusFixedAmount + (annualSalary * (asset.bonusPercentage / 100));
+  if (employmentAsset.bonusType === 'fixed' && employmentAsset.bonusFixedAmount) {
+    bonusAmount = employmentAsset.bonusFixedAmount;
+  } else if (employmentAsset.bonusType === 'percentage' && employmentAsset.bonusPercentage) {
+    bonusAmount = annualSalary * (employmentAsset.bonusPercentage / 100);
+  } else if (employmentAsset.bonusType === 'mixed' && employmentAsset.bonusFixedAmount && employmentAsset.bonusPercentage) {
+    bonusAmount = employmentAsset.bonusFixedAmount + (annualSalary * (employmentAsset.bonusPercentage / 100));
   }
   
   // Apply bonus likelihood if specified
-  if (bonusAmount > 0 && asset.bonusLikelihood && asset.bonusLikelihood < 100) {
-    bonusAmount *= (asset.bonusLikelihood / 100);
+  if (bonusAmount > 0 && employmentAsset.bonusLikelihood && employmentAsset.bonusLikelihood < 100) {
+    bonusAmount *= (employmentAsset.bonusLikelihood / 100);
   }
   
   return annualSalary + bonusAmount;

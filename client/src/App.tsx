@@ -22,6 +22,7 @@ import EditEmploymentIncomePage from "@/pages/edit-employment-income-page";
 import AssetDetailPage from "@/pages/asset-detail-page";
 import BalanceSheetPage from "@/pages/balance-sheet-page";
 import ExpenseGeneratorPage from "@/pages/expense-generator-page";
+import ProjectionsPage from "@/pages/projections-page";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { AuthProvider } from "@/hooks/use-auth";
 import { SubscriptionProvider } from "@/hooks/use-subscription";
@@ -62,6 +63,7 @@ function Router() {
       <ProtectedRoute path="/assets/:assetId" component={AssetDetailPage} />
       <ProtectedRoute path="/balance-sheet" component={BalanceSheetPage} />
       <ProtectedRoute path="/expense-generator" component={ExpenseGeneratorPage} />
+      <ProtectedRoute path="/projections" component={ProjectionsPage} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>

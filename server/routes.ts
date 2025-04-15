@@ -1413,7 +1413,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const projectionConfig = req.body as ProjectionConfig;
       
       // Get system settings for default values
-      const settings = await storage.getSystemSettings();
+      const settings = await storage.getSystemSettings() || {
+        id: 1,
+        defaultBasicModeYears: 10,
+        defaultAdvancedModeYears: 30,
+        defaultMediumInflationRate: 2.5
+      };
       
       // Validate and set default config values if needed
       const config: ProjectionConfig = {
@@ -1464,7 +1469,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     try {
       // Get system settings
-      const settings = await storage.getSystemSettings();
+      const settings = await storage.getSystemSettings() || {
+        id: 1,
+        defaultBasicModeYears: 10,
+        defaultAdvancedModeYears: 30,
+        defaultMediumInflationRate: 2.5
+      };
       
       // Get user to determine mode
       const user = await storage.getUser(req.user.id);
