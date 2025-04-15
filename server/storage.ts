@@ -8,6 +8,7 @@ import {
   assetHoldingTypes,
   assetClasses,
   assets,
+  mortgages,
   subscriptionPlans,
   userSubscriptions,
   systemSettings,
@@ -21,6 +22,8 @@ import {
   type InsertAssetClass,
   type Asset,
   type InsertAsset,
+  type Mortgage,
+  type InsertMortgage,
   type SubscriptionPlan,
   type InsertSubscriptionPlan,
   type UserSubscription,
@@ -67,6 +70,17 @@ export interface IStorage {
   deleteAsset(id: number): Promise<boolean>;
   listAssets(userId: number, limit?: number): Promise<Asset[]>;
   getUserAssetsByClass(userId: number): Promise<{ assetClass: AssetClass, totalValue: number }[]>;
+  
+  // Mortgage operations
+  getMortgage(id: number): Promise<Mortgage | undefined>;
+  createMortgage(mortgage: InsertMortgage): Promise<Mortgage>;
+  updateMortgage(id: number, mortgage: Partial<Mortgage>): Promise<Mortgage | undefined>;
+  deleteMortgage(id: number): Promise<boolean>;
+  listMortgages(userId: number): Promise<Mortgage[]>;
+  getMortgagesBySecuredAsset(assetId: number): Promise<Mortgage[]>;
+  linkMortgageToProperty(mortgageId: number, propertyId: number): Promise<boolean>;
+  unlinkMortgageFromProperty(mortgageId: number): Promise<boolean>;
+  migratePropertyMortgageData(propertyId: number): Promise<{mortgage: Mortgage, property: Asset} | undefined>;
   
   // Subscription operations
   getSubscriptionPlan(id: number): Promise<SubscriptionPlan | undefined>;
@@ -438,6 +452,206 @@ export class DatabaseStorage implements IStorage {
     }
     
     return query;
+  }
+
+  // Mortgage operations
+  async getMortgage(id: number): Promise<Mortgage | undefined> {
+    const [mortgage] = await db.select().from(mortgages).where(eq(mortgages.id, id));
+    return mortgage;
+  }
+
+  async createMortgage(mortgageData: InsertMortgage): Promise<Mortgage> {
+    const [createdMortgage] = await db.insert(mortgages).values(mortgageData).returning();
+    return createdMortgage;
+  }
+
+  async updateMortgage(id: number, mortgageData: Partial<Mortgage>): Promise<Mortgage | undefined> {
+    const [updatedMortgage] = await db
+      .update(mortgages)
+      .set(mortgageData)
+      .where(eq(mortgages.id, id))
+      .returning();
+    return updatedMortgage;
+  }
+
+  async deleteMortgage(id: number): Promise<boolean> {
+    try {
+      // First, check if there are any assets with this mortgage linked
+      const linkedAssets = await db
+        .select()
+        .from(assets)
+        .where(eq(assets.linkedMortgageId, id));
+
+      // If assets are linked, update them to remove the link
+      if (linkedAssets.length > 0) {
+        await db
+          .update(assets)
+          .set({ linkedMortgageId: null })
+          .where(eq(assets.linkedMortgageId, id));
+      }
+
+      // Then delete the mortgage
+      await db
+        .delete(mortgages)
+        .where(eq(mortgages.id, id));
+      
+      return true;
+    } catch (error) {
+      console.error("Error deleting mortgage:", error);
+      return false;
+    }
+  }
+
+  async listMortgages(userId: number): Promise<Mortgage[]> {
+    return db
+      .select()
+      .from(mortgages)
+      .where(eq(mortgages.userId, userId))
+      .orderBy(desc(mortgages.createdAt));
+  }
+
+  async getMortgagesBySecuredAsset(assetId: number): Promise<Mortgage[]> {
+    return db
+      .select()
+      .from(mortgages)
+      .where(eq(mortgages.securedAssetId, assetId));
+  }
+
+  async linkMortgageToProperty(mortgageId: number, propertyId: number): Promise<boolean> {
+    try {
+      // First verify that both entities exist and belong to the same user
+      const mortgage = await this.getMortgage(mortgageId);
+      const property = await this.getAsset(propertyId);
+
+      if (!mortgage || !property) {
+        console.error("Mortgage or property not found");
+        return false;
+      }
+
+      if (mortgage.userId !== property.userId) {
+        console.error("Mortgage and property belong to different users");
+        return false;
+      }
+
+      // Check the property is actually a property
+      if (property.assetClassId !== 3) { // Assuming real estate has assetClassId=3
+        console.error("Asset is not a property");
+        return false;
+      }
+
+      // Update both sides of the relationship
+      await db.transaction(async (tx) => {
+        // Update mortgage to point to property
+        await tx
+          .update(mortgages)
+          .set({ securedAssetId: propertyId })
+          .where(eq(mortgages.id, mortgageId));
+        
+        // Update property to point to mortgage
+        await tx
+          .update(assets)
+          .set({ linkedMortgageId: mortgageId })
+          .where(eq(assets.id, propertyId));
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Error linking mortgage to property:", error);
+      return false;
+    }
+  }
+
+  async unlinkMortgageFromProperty(mortgageId: number): Promise<boolean> {
+    try {
+      // Get the mortgage to find the linked property
+      const mortgage = await this.getMortgage(mortgageId);
+      if (!mortgage || !mortgage.securedAssetId) {
+        console.error("Mortgage not found or not linked to a property");
+        return false;
+      }
+
+      const propertyId = mortgage.securedAssetId;
+
+      // Update both sides of the relationship
+      await db.transaction(async (tx) => {
+        // Update mortgage to remove property link
+        await tx
+          .update(mortgages)
+          .set({ securedAssetId: null })
+          .where(eq(mortgages.id, mortgageId));
+        
+        // Update property to remove mortgage link
+        await tx
+          .update(assets)
+          .set({ linkedMortgageId: null })
+          .where(eq(assets.id, propertyId));
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Error unlinking mortgage from property:", error);
+      return false;
+    }
+  }
+
+  async migratePropertyMortgageData(propertyId: number): Promise<{mortgage: Mortgage, property: Asset} | undefined> {
+    try {
+      // Get the property with mortgage data
+      const [property] = await db
+        .select()
+        .from(assets)
+        .where(
+          and(
+            eq(assets.id, propertyId),
+            eq(assets.hasMortgage, true)
+          )
+        );
+
+      if (!property) {
+        console.error("Property not found or has no mortgage");
+        return undefined;
+      }
+
+      // Create a new mortgage from the property's mortgage data
+      const mortgageData: InsertMortgage = {
+        name: `Mortgage for ${property.name}`,
+        description: `Mortgage migrated from property ${property.name}`,
+        userId: property.userId,
+        value: -1 * (property.mortgageAmount || 0), // Make negative as it's a liability
+        lender: property.mortgageLender || '',
+        originalAmount: property.mortgageAmount || 0,
+        interestRate: property.mortgageInterestRate || 0,
+        interestRateType: property.mortgageType as 'fixed' | 'variable' | 'interest-only' || 'fixed',
+        loanTerm: property.mortgageTerm || 360, // Default to 30 years if not specified
+        paymentFrequency: property.mortgagePaymentFrequency as 'weekly' | 'fortnightly' | 'monthly' | 'quarterly' | 'annually' || 'monthly',
+        startDate: property.mortgageStartDate || new Date(),
+        securedAssetId: propertyId,
+        loanPurpose: 'mortgage'
+      };
+
+      // Create the mortgage
+      const mortgage = await this.createMortgage(mortgageData);
+
+      // Link the property to the mortgage
+      await db
+        .update(assets)
+        .set({ 
+          linkedMortgageId: mortgage.id,
+          // Don't set hasMortgage to false yet - we'll do that after verification
+        })
+        .where(eq(assets.id, propertyId));
+
+      // Return both updated entities
+      const updatedProperty = await this.getAsset(propertyId);
+      
+      return { 
+        mortgage, 
+        property: updatedProperty as Asset 
+      };
+    } catch (error) {
+      console.error("Error migrating property mortgage data:", error);
+      return undefined;
+    }
   }
 
   async getUserAssetsByClass(userId: number): Promise<{ assetClass: AssetClass, totalValue: number }[]> {

@@ -12,13 +12,17 @@ import {
   insertAssetClassSchema, 
   insertSubscriptionPlanSchema, 
   updateSystemSettingsSchema, 
+  insertMortgageSchema,
   users,
   assets,
   assetClasses,
+  mortgages,
   transformTaxSettings,
   type AssetHoldingType,
   type ProjectionConfig,
-  type ProjectionResult
+  type ProjectionResult,
+  type Asset,
+  type Mortgage
 } from "@shared/schema";
 import { generateProjections, defaultBasicProjectionConfig } from "@shared/projections";
 import { z } from "zod";
