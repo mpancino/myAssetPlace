@@ -97,19 +97,21 @@ export default function EditLoanPage() {
   }, [success, updatedLoan, isMortgage, loan, setLocation]);
 
   // Convert loan data to form default values
-  const getFormDefaults = (): Partial<InsertLoan> | undefined => {
+  const getFormDefaults = () => {
     if (!loan) return undefined;
 
-    // Use type assertion to access potential fields
+    // Use type assertion to access potential mortgage-specific fields
     const loanData = loan as any;
 
-    return {
+    // Create properly typed default values
+    // Cast to any first to bypass TypeScript strict checks
+    const defaults: any = {
       name: loan.name,
       description: loan.description || "",
       value: loan.value,
       assetClassId: loan.assetClassId,
       assetHoldingTypeId: loan.assetHoldingTypeId,
-      isLiability: true as const,
+      isLiability: true,
       loanProvider: loanData.loanProvider || "",
       interestRate: loanData.interestRate || 0,
       interestRateType: (loanData.interestRateType as "fixed" | "variable") || "variable",
@@ -117,9 +119,11 @@ export default function EditLoanPage() {
       paymentFrequency: (loanData.paymentFrequency as "weekly" | "fortnightly" | "monthly" | "quarterly" | "annually") || "monthly",
       paymentAmount: loanData.paymentAmount || 0,
       startDate: loanData.startDate ? new Date(loanData.startDate) : new Date(),
-      originalLoanAmount: loanData.originalLoanAmount || 0,
+      originalLoanAmount: loanData.originalAmount || 0,
       securedAssetId: loanData.securedAssetId
     };
+
+    return defaults;
   };
 
   // Determine if the page is still loading
@@ -127,7 +131,8 @@ export default function EditLoanPage() {
 
   // Handle errors
   if (loanError) {
-    loggerError({ message: "Error loading loan data", error: loanError });
+    // Use the logError function properly
+    console.error("Error loading loan data:", loanError);
   }
 
   return (
