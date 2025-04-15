@@ -323,7 +323,7 @@ export default function AssetDetailPage() {
   });
   
   // Fetch the associated mortgages for real estate properties
-  const { data: propertyMortgages = [], isLoading: isLoadingMortgages } = useQuery({
+  const { data: propertyMortgages = [], isLoading: isLoadingMortgages } = useQuery<Mortgage[]>({
     queryKey: [`/api/properties/${assetId}/mortgages`],
     enabled: !!assetId && !!asset && asset.assetClassId === 3, // Only for real estate assets
   });
@@ -2045,7 +2045,7 @@ export default function AssetDetailPage() {
                                 
                                 <FormField
                                   control={form.control}
-                                  name="mortgageType"
+                                  name="interestRateType" 
                                   render={({ field }) => (
                                     <FormItem>
                                       <FormLabel>Interest Rate Type</FormLabel>
