@@ -1,8 +1,8 @@
 import { storage } from "../storage";
-import { Asset, InsertAsset } from "@shared/schema";
+import { Asset, InsertAsset, InsertMortgage, Mortgage } from "@shared/schema";
 
-// Extended Asset type to include mortgage fields
-interface ExtendedAsset extends InsertAsset {
+// Extended Asset type to include mortgage fields for migration
+interface PropertyWithMortgage extends InsertAsset {
   hasMortgage?: boolean;
   mortgageAmount?: number;
   mortgageInterestRate?: number;
@@ -13,12 +13,18 @@ interface ExtendedAsset extends InsertAsset {
   mortgagePaymentFrequency?: string;
 }
 
+interface AssetWithId extends Asset {
+  id: number;
+}
+
 /**
  * Creates sample assets for a demo user
  * @param userId The ID of the user to create assets for
  */
 export async function createDemoAssets(userId: number): Promise<Asset[]> {
   console.log(`Creating demo assets for user ID: ${userId}`);
+  
+  // Define the assets
   const assets: InsertAsset[] = [
     // Cash & Bank Accounts
     {
@@ -77,7 +83,7 @@ export async function createDemoAssets(userId: number): Promise<Asset[]> {
       isLiability: false
     },
     
-    // Real Estate
+    // Real Estate - Without mortgage information (will be linked later)
     {
       userId,
       assetClassId: 3, // Real Estate
@@ -124,15 +130,7 @@ export async function createDemoAssets(userId: number): Promise<Asset[]> {
           frequency: "monthly",
           annualTotal: 960
         }
-      },
-      hasMortgage: true,
-      mortgageAmount: 280000,
-      mortgageInterestRate: 4.5,
-      mortgageTerm: 360,
-      mortgageStartDate: new Date("2015-06-20").toISOString(),
-      mortgageLender: "Home Loans Inc",
-      mortgageType: "variable",
-      mortgagePaymentFrequency: "monthly"
+      }
     },
     {
       userId,
@@ -184,15 +182,7 @@ export async function createDemoAssets(userId: number): Promise<Asset[]> {
           frequency: "monthly",
           annualTotal: 1800
         }
-      },
-      hasMortgage: true,
-      mortgageAmount: 250000,
-      mortgageInterestRate: 3.85,
-      mortgageTerm: 360,
-      mortgageStartDate: new Date("2018-09-15").toISOString(),
-      mortgageLender: "Westpac Bank",
-      mortgageType: "variable",
-      mortgagePaymentFrequency: "monthly",
+      }
     },
     
     // Loans & Liabilities
@@ -231,6 +221,8 @@ export async function createDemoAssets(userId: number): Promise<Asset[]> {
   ];
 
   const createdAssets: Asset[] = [];
+  let primaryResidenceId: number | null = null;
+  let investmentPropertyId: number | null = null;
 
   // Create assets one by one to handle any errors
   for (const asset of assets) {
@@ -238,9 +230,73 @@ export async function createDemoAssets(userId: number): Promise<Asset[]> {
       const createdAsset = await storage.createAsset(asset);
       createdAssets.push(createdAsset);
       console.log(`Created demo asset: ${createdAsset.name}`);
+      
+      // Save property IDs for mortgage linking
+      if (createdAsset.name === "Primary Residence") {
+        primaryResidenceId = createdAsset.id;
+      } else if (createdAsset.name === "Investment Property") {
+        investmentPropertyId = createdAsset.id;
+      }
     } catch (error) {
       console.error(`Error creating demo asset ${asset.name}:`, error);
     }
+  }
+
+  // Create mortgages and link them to properties
+  try {
+    if (primaryResidenceId) {
+      // Create primary residence mortgage
+      const primaryMortgage: InsertMortgage = {
+        userId,
+        name: "Home Mortgage",
+        description: "Primary residence mortgage",
+        value: 280000,
+        interestRate: 4.5,
+        loanTerm: 360, // 30 years in months
+        paymentFrequency: "monthly",
+        lender: "Home Loans Inc",
+        mortgageType: "variable",
+        startDate: new Date("2015-06-20").toISOString(),
+        originalLoanAmount: 280000,
+        securedAssetId: primaryResidenceId,
+        isLiability: true
+      };
+      
+      const createdMortgage = await storage.createMortgage(primaryMortgage);
+      console.log(`Created mortgage for primary residence: ${createdMortgage.name} with ID ${createdMortgage.id}`);
+      
+      // Link mortgage to property
+      await storage.linkMortgageToProperty(createdMortgage.id, primaryResidenceId);
+      console.log(`Linked mortgage ${createdMortgage.id} to property ${primaryResidenceId}`);
+    }
+    
+    if (investmentPropertyId) {
+      // Create investment property mortgage
+      const investmentMortgage: InsertMortgage = {
+        userId,
+        name: "Investment Property Mortgage",
+        description: "Rental property financing",
+        value: 250000,
+        interestRate: 3.85,
+        loanTerm: 360, // 30 years in months
+        paymentFrequency: "monthly",
+        lender: "Westpac Bank",
+        mortgageType: "variable",
+        startDate: new Date("2018-09-15").toISOString(),
+        originalLoanAmount: 250000,
+        securedAssetId: investmentPropertyId,
+        isLiability: true
+      };
+      
+      const createdMortgage = await storage.createMortgage(investmentMortgage);
+      console.log(`Created mortgage for investment property: ${createdMortgage.name} with ID ${createdMortgage.id}`);
+      
+      // Link mortgage to property
+      await storage.linkMortgageToProperty(createdMortgage.id, investmentPropertyId);
+      console.log(`Linked mortgage ${createdMortgage.id} to property ${investmentPropertyId}`);
+    }
+  } catch (error) {
+    console.error("Error creating and linking mortgages:", error);
   }
 
   return createdAssets;
