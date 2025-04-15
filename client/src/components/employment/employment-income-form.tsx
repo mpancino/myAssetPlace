@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { v4 as uuidv4 } from "uuid";
+import { logInfo, logError } from "@/lib/logger";
 import {
   Form,
   FormControl,
@@ -249,12 +250,12 @@ export function EmploymentIncomeForm({
         }
       });
       
-      console.log("Creating employment income with data:", formData);
+      logInfo("form", "Creating employment income with data:", formData);
       const response = await apiRequest("POST", "/api/assets", formData);
       return response.json();
     },
     onSuccess: (data) => {
-      console.log("Employment income created successfully:", data);
+      logInfo("form", "Employment income created successfully:", data);
       toast({
         title: "Employment income added",
         description: "Your employment income has been added successfully.",
@@ -269,7 +270,7 @@ export function EmploymentIncomeForm({
       }
     },
     onError: (error: Error) => {
-      console.error("Error creating employment income:", error);
+      logError("form", "Error creating employment income:", error);
       toast({
         title: "Error adding employment income",
         description: error.message,
@@ -307,12 +308,12 @@ export function EmploymentIncomeForm({
         }
       });
       
-      console.log("Updating employment income with data:", formData);
+      logInfo("form", "Updating employment income with data:", formData);
       const response = await apiRequest("PATCH", `/api/assets/${defaultValues.id}`, formData);
       return response.json();
     },
     onSuccess: (data) => {
-      console.log("Employment income updated successfully:", data);
+      logInfo("form", "Employment income updated successfully:", data);
       toast({
         title: "Employment income updated",
         description: "Your employment income has been updated successfully.",
@@ -328,7 +329,7 @@ export function EmploymentIncomeForm({
       }
     },
     onError: (error: Error) => {
-      console.error("Error updating employment income:", error);
+      logError("form", "Error updating employment income:", error);
       toast({
         title: "Error updating employment income",
         description: error.message,
@@ -340,14 +341,14 @@ export function EmploymentIncomeForm({
   // Submit handler
   const onSubmit = async (data: any) => {
     try {
-      logger.info('form', 'Submitting employment income form', data);
+      logInfo('form', 'Submitting employment income form', data);
       if (formMode === "create") {
         await createMutation.mutateAsync(data);
       } else {
         await updateMutation.mutateAsync(data);
       }
     } catch (error) {
-      logger.error('form', 'Form submission error:', error);
+      logError('form', 'Form submission error:', error);
     }
   };
 
