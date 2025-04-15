@@ -8,6 +8,8 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { formatCurrency } from "@/lib/utils";
+import { logInfo, logError } from "@/lib/logger";
+import { formSpacing } from "@/lib/form-utils";
 import { InvestmentExpenses } from "@/components/expense/investment-expenses";
 
 // UI Components
@@ -46,9 +48,9 @@ export function ShareForm({
   isEditing = false,
   assetId,
 }: ShareFormProps) {
-  console.log("FORM LOADED: ShareForm with dividend tracking tab");
-  console.log("PROPS: isEditing:", isEditing, "assetId:", assetId);
-  console.log("DEFAULT VALUES:", defaultValues);
+  logInfo("form", "FORM LOADED: ShareForm with dividend tracking tab");
+  logInfo("form", "PROPS: isEditing:", isEditing, "assetId:", assetId);
+  logInfo("form", "DEFAULT VALUES:", defaultValues);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -167,7 +169,7 @@ export function ShareForm({
         setLocation("/dashboard");
       }
     } catch (error) {
-      console.error("Error saving investment:", error);
+      logError("form", "Error saving investment:", error);
       toast({
         title: "Error",
         description: "Failed to save investment. Please try again.",
