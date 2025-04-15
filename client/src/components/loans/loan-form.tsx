@@ -104,13 +104,13 @@ export function LoanForm({
       // Case 1: Editing an existing asset that's actually a mortgage
       if (isEditing && assetId && isMortgageEndpoint) {
         console.log("Editing mortgage via assets endpoint:", assetId);
-        // Convert loan form data to mortgage update format
+        // Convert loan form data to mortgage update format - ensuring field names match DB schema
         const mortgageData = {
           name: data.name,
           description: data.description,
           value: data.value,
-          lender: data.loanProvider,
-          originalAmount: data.originalLoanAmount,
+          lender: data.loanProvider, // Form field is loanProvider but DB field is lender
+          originalAmount: data.originalLoanAmount, // Form field is originalLoanAmount but DB field is originalAmount
           interestRate: data.interestRate,
           interestRateType: data.interestRateType,
           loanTerm: data.loanTerm,
@@ -133,13 +133,13 @@ export function LoanForm({
       // Case 3: Editing a mortgage directly via mortgageId
       else if (isEditing && mortgageId) {
         console.log("Editing mortgage directly:", mortgageId);
-        // Convert loan form data to mortgage update format
+        // Convert loan form data to mortgage update format - ensuring field names match DB schema exactly
         const mortgageData = {
           name: data.name,
           description: data.description,
           value: data.value,
-          lender: data.loanProvider,
-          originalAmount: data.originalLoanAmount,
+          lender: data.loanProvider, // Form field is loanProvider but DB field is lender
+          originalAmount: data.originalLoanAmount, // Form field is originalLoanAmount but DB field is originalAmount 
           interestRate: data.interestRate,
           interestRateType: data.interestRateType,
           loanTerm: data.loanTerm,
