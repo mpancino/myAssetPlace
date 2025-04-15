@@ -281,7 +281,7 @@ export async function createDemoAssets(userId: number): Promise<Asset[]> {
         loanTerm: 360, // 30 years in months
         paymentFrequency: "monthly",
         lender: "Westpac Bank",
-        mortgageType: "variable",
+        interestRateType: "variable", // Fixed field name to match schema
         startDate: new Date("2018-09-15").toISOString(),
         originalAmount: 250000,
         securedAssetId: investmentPropertyId,
