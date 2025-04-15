@@ -271,6 +271,7 @@ Status indicators:
    - Fix property expense deduplication issues in Phase 4 [REQ-121, REQ-122, REQ-124]
    - Fix TypeScript errors in asset-detail-page.tsx related to expense handling
    - Fix TypeScript errors in share-form and stock-option-form components
+   - ✅ Fixed mortgage update functionality (DEF-004) with field name mismatches between form and database schema
 
 2. ⚠️ **Stabilize Core Features**
    - ✅ Standardize asset card UI consistency with "View Details" labels [REQ-218]
@@ -318,6 +319,7 @@ Status indicators:
 | DEF-001 | PropertyExpenses component displays "[object Object]" in category dropdown menu instead of category names | PropertyExpenses | High | 🔄 In Progress |
 | DEF-002 | TypeScript errors in asset-detail-page.tsx related to expense handling and property types | AssetDetailPage | High | ⏳ Not Started |
 | DEF-003 | NaN errors in numeric input fields when clearing values (particularly in bonusLikelihood field) | Employment Income Form | Medium | ✅ Fixed |
+| DEF-004 | Mortgage updates fail due to field name mismatches between form (loanProvider/originalLoanAmount) and database schema (lender/originalAmount) | LoanForm | High | ✅ Fixed |
 
 ## Implementation Notes
 1. We should NOT implement cryptocurrency or any asset classes not explicitly mentioned in the PDD
