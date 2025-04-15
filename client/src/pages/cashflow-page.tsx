@@ -302,9 +302,8 @@ export default function CashflowPage() {
         
         // Calculate interest portion for loans
         if (asset.interestRate && asset.value) {
-          // Monthly interest amount
-          const annualInterest = (asset.interestRate / 100) * asset.value;
-          const monthlyInterest = annualInterest / 12;
+          // Monthly interest amount - consistent with how it's calculated in property cards
+          const monthlyInterest = (asset.interestRate / 100) * asset.value / 12;
           
           // Add interest expense to interest category
           categories["Interest Expenses"] += monthlyInterest;
@@ -322,8 +321,8 @@ export default function CashflowPage() {
           // If no interest rate, estimate interest using a default rate of 5%
           // We do this to ensure consistency in categorizing interest as an expense
           const estimatedInterestRate = 5; // 5% as a default interest rate
-          const annualInterest = (estimatedInterestRate / 100) * (asset.value || asset.paymentAmount * 12);
-          const monthlyInterest = annualInterest / 12;
+          // Calculate consistent with property card and other loan displays
+          const monthlyInterest = (estimatedInterestRate / 100) * (asset.value || asset.paymentAmount * 12) / 12;
           
           // Add estimated interest expense to interest category
           categories["Interest Expenses"] += monthlyInterest;
