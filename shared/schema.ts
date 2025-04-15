@@ -252,6 +252,12 @@ export const systemSettings = pgTable("system_settings", {
   defaultBasicModeYears: integer("default_basic_mode_years"),
   defaultAdvancedModeYears: integer("default_advanced_mode_years"),
   
+  // Projection default settings
+  defaultInflationRate: real("default_inflation_rate").default(2.5),
+  defaultLowInflationRate: real("default_low_inflation_rate").default(1.5),
+  defaultMediumInflationRate: real("default_medium_inflation_rate").default(2.5),
+  defaultHighInflationRate: real("default_high_inflation_rate").default(4.0),
+  
   // API integration settings
   enablePropertyApi: boolean("enable_property_api").default(false),
   enableStockApi: boolean("enable_stock_api").default(false),
