@@ -247,7 +247,7 @@ export default function CashflowPage() {
       "Mortgage Payments": 0,
       "Property Expenses": 0,
       "Investment Fees": 0,
-      "Interest Expenses": 0, // Renamed to be consistent with other expense categories 
+      "Interest Expenses": 0,
       "Other Loan Payments": 0,
       "Other Expenses": 0,
     };
@@ -287,55 +287,44 @@ export default function CashflowPage() {
         });
       }
       
-      // Loan payments
+      // Loan payments, breaking them into principal and interest
       if (asset.isLiability && asset.paymentAmount) {
-        let monthlyAmount = asset.paymentAmount;
+        let monthlyPayment = asset.paymentAmount;
         if (asset.paymentFrequency === "weekly") {
-          monthlyAmount = asset.paymentAmount * 52 / 12;
+          monthlyPayment = asset.paymentAmount * 52 / 12;
         } else if (asset.paymentFrequency === "fortnightly") {
-          monthlyAmount = asset.paymentAmount * 26 / 12;
+          monthlyPayment = asset.paymentAmount * 26 / 12;
         } else if (asset.paymentFrequency === "quarterly") {
-          monthlyAmount = asset.paymentAmount / 3;
+          monthlyPayment = asset.paymentAmount / 3;
         } else if (asset.paymentFrequency === "annually") {
-          monthlyAmount = asset.paymentAmount / 12;
+          monthlyPayment = asset.paymentAmount / 12;
         }
         
-        // Calculate interest portion for loans
+        // Interest expenses - extract from asset using same formula that's used in UI components
+        let monthlyInterest = 0;
         if (asset.interestRate && asset.value) {
-          // Monthly interest amount - consistent with how it's calculated in property cards
-          const monthlyInterest = (asset.interestRate / 100) * asset.value / 12;
-          
-          // Add interest expense to interest category
-          categories["Interest Expenses"] += monthlyInterest;
-          
-          // Principal payment is total payment minus interest
-          const principalPayment = monthlyAmount - monthlyInterest;
-          
-          // Categorize principal portion of mortgage vs other loans
-          if (asset.propertyType) {
-            categories["Mortgage Payments"] += principalPayment;
-          } else {
-            categories["Other Loan Payments"] += principalPayment;
-          }
+          // Use the same formula as in the property card
+          monthlyInterest = (asset.interestRate / 100) * asset.value / 12;
+        } else if (asset.mortgageInterestRate && asset.mortgageAmount) {
+          // For property mortgages that have their own fields
+          monthlyInterest = (asset.mortgageInterestRate / 100) * asset.mortgageAmount / 12;  
         } else {
-          // If no interest rate, estimate interest using a default rate of 5%
-          // We do this to ensure consistency in categorizing interest as an expense
-          const estimatedInterestRate = 5; // 5% as a default interest rate
-          // Calculate consistent with property card and other loan displays
-          const monthlyInterest = (estimatedInterestRate / 100) * (asset.value || asset.paymentAmount * 12) / 12;
-          
-          // Add estimated interest expense to interest category
-          categories["Interest Expenses"] += monthlyInterest;
-          
-          // Principal payment is total payment minus interest
-          const principalPayment = monthlyAmount - monthlyInterest;
-          
-          // Categorize principal portion of mortgage vs other loans
-          if (asset.propertyType) {
-            categories["Mortgage Payments"] += principalPayment;
-          } else {
-            categories["Other Loan Payments"] += principalPayment;
-          }
+          // Fallback to estimate if no interest rate data is available
+          const estimatedInterestRate = 5; // 5% as default
+          monthlyInterest = (estimatedInterestRate / 100) * (asset.value || asset.paymentAmount * 12) / 12;
+        }
+        
+        // Add interest expense to interest category
+        categories["Interest Expenses"] += monthlyInterest;
+        
+        // Principal payment is total payment minus interest
+        const principalPayment = monthlyPayment - monthlyInterest;
+        
+        // Categorize principal portion of mortgage vs other loans
+        if (asset.propertyType) {
+          categories["Mortgage Payments"] += principalPayment;
+        } else {
+          categories["Other Loan Payments"] += principalPayment;
         }
       }
     });
@@ -746,9 +735,18 @@ export default function CashflowPage() {
                             }
                             
                             // If we have interest rate information, show payment split
+                            // First determine if we have interest rate data from any source
+                            let monthlyInterest = 0;
                             if (asset.interestRate && asset.value) {
-                              // Calculate monthly interest and principal - using same formula as property card
-                              const monthlyInterest = (asset.interestRate / 100) * asset.value / 12;
+                              // Standard loan interest calculation
+                              monthlyInterest = (asset.interestRate / 100) * asset.value / 12;
+                            } else if (asset.mortgageInterestRate && asset.mortgageAmount) {
+                              // Property mortgage interest calculation
+                              monthlyInterest = (asset.mortgageInterestRate / 100) * asset.mortgageAmount / 12;
+                            }
+                              
+                            // If we have valid interest data
+                            if (monthlyInterest > 0) {
                               const monthlyPrincipal = monthlyPayment - monthlyInterest;
                               
                               // Return both interest and principal rows
