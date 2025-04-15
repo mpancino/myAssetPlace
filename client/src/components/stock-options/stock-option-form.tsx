@@ -8,6 +8,8 @@ import { AssetClass, AssetHoldingType, InsertAsset } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/utils";
+import { logInfo, logError } from "@/lib/logger";
+import { formSpacing } from "@/lib/form-utils";
 import { InvestmentExpenses } from "@/components/expense/investment-expenses";
 
 // UI Components
@@ -76,9 +78,9 @@ export function StockOptionForm({
   isEditing = false,
   assetId,
 }: StockOptionFormProps) {
-  console.log("FORM LOADED: StockOptionForm with vesting schedule tab");
-  console.log("PROPS: isEditing:", isEditing, "assetId:", assetId);
-  console.log("DEFAULT VALUES:", defaultValues);
+  logInfo("form", "FORM LOADED: StockOptionForm with vesting schedule tab");
+  logInfo("form", "PROPS: isEditing:", isEditing, "assetId:", assetId);
+  logInfo("form", "DEFAULT VALUES:", defaultValues);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -191,7 +193,7 @@ export function StockOptionForm({
         setLocation("/dashboard");
       }
     } catch (error) {
-      console.error("Error saving stock options:", error);
+      logError("form", "Error saving stock options:", error);
       toast({
         title: "Error",
         description: "Failed to save stock options. Please try again.",
@@ -210,7 +212,7 @@ export function StockOptionForm({
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className={formSpacing.container}>
             <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="mb-4">
                 <TabsTrigger value="details">Details</TabsTrigger>
@@ -219,7 +221,7 @@ export function StockOptionForm({
                 <TabsTrigger value="expenses">Expenses</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="details" className="space-y-4">
+              <TabsContent value="details" className={formSpacing.section}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -353,7 +355,7 @@ export function StockOptionForm({
                 />
               </TabsContent>
 
-              <TabsContent value="valuation" className="space-y-4">
+              <TabsContent value="valuation" className={formSpacing.section}>
                 <div className="rounded-md bg-muted p-4 mb-4">
                   <h3 className="font-medium mb-2">Estimated Value</h3>
                   <p className="text-xl font-bold">{formatCurrency(intrinsicValue)}</p>
@@ -507,7 +509,7 @@ export function StockOptionForm({
                 />
               </TabsContent>
 
-              <TabsContent value="vesting" className="space-y-4">
+              <TabsContent value="vesting" className={formSpacing.section}>
                 <FormField
                   control={form.control}
                   name="expirationDate"
@@ -555,7 +557,7 @@ export function StockOptionForm({
                 />
               </TabsContent>
 
-              <TabsContent value="expenses" className="pt-4">
+              <TabsContent value="expenses" className={formSpacing.section}>
                 <InvestmentExpenses 
                   value={investmentExpenses}
                   onChange={handleExpensesChange}
