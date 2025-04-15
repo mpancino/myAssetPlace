@@ -64,7 +64,7 @@ function Router() {
       <ProtectedRoute path="/edit-employment-income/:id" component={EditEmploymentIncomePage} />
       <ProtectedRoute path="/assets/:assetId" component={AssetDetailPage} />
       <ProtectedRoute path="/balance-sheet" component={BalanceSheetPage} />
-      <ProtectedRoute path="/cashflow" component={CashflowPage} />
+      <Route path="/cashflow" component={() => <CashflowPage />} />
       <ProtectedRoute path="/expense-generator" component={ExpenseGeneratorPage} />
       <ProtectedRoute path="/projections" component={ProjectionsPage} />
       <ProtectedRoute path="/projections/asset-filter" component={ProjectionsAssetFilterPage} />

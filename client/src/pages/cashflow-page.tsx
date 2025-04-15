@@ -37,18 +37,34 @@ import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Asset } from "@shared/schema";
 
+// Define the structure for expense objects
+interface ExpenseItem {
+  id: string;
+  category: string;
+  description: string;
+  amount: number;
+  frequency: string;
+  annualTotal: number;
+}
+
+// Define the structure for category breakdowns
+interface CategoryBreakdown {
+  category: string;
+  amount: number;
+}
+
 export default function CashflowPage() {
   const [selectedPeriod, setSelectedPeriod] = useState("monthly");
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [activeTab, setActiveTab] = useState("summary");
   
   // Fetch user assets
-  const { data: assets, isLoading: isLoadingAssets } = useQuery({
+  const { data: assets = [], isLoading: isLoadingAssets } = useQuery<Asset[]>({
     queryKey: ['/api/assets'],
   });
   
   // Extract income-generating assets
-  const incomeAssets = assets ? assets.filter((asset: Asset) => {
+  const incomeAssets = assets.filter((asset: Asset) => {
     // Consider rental properties
     if (asset.isRental) return true;
     
@@ -62,10 +78,10 @@ export default function CashflowPage() {
     if (asset.interestRate && asset.interestRate > 0) return true;
     
     return false;
-  }) : [];
+  });
 
   // Extract expense-generating assets
-  const expenseAssets = assets ? assets.filter((asset: Asset) => {
+  const expenseAssets = assets.filter((asset: Asset) => {
     // Asset has expenses in property expenses
     if (asset.propertyExpenses && Object.keys(asset.propertyExpenses).length > 0) return true;
     
@@ -76,7 +92,7 @@ export default function CashflowPage() {
     if (asset.isLiability && asset.paymentAmount) return true;
     
     return false;
-  }) : [];
+  });
   
   // Calculate total monthly income from all assets
   const calculateTotalIncome = () => {
@@ -459,7 +475,7 @@ export default function CashflowPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {incomeCategories.map((cat, i) => (
+                          {incomeCategories.map((cat: CategoryBreakdown, i: number) => (
                             <TableRow key={i}>
                               <TableCell className="font-medium">{cat.category}</TableCell>
                               <TableCell className="text-right">{formatCurrency(scaleAmount(cat.amount))}</TableCell>
@@ -490,7 +506,7 @@ export default function CashflowPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {expenseCategories.map((cat, i) => (
+                          {expenseCategories.map((cat: CategoryBreakdown, i: number) => (
                             <TableRow key={i}>
                               <TableCell className="font-medium">{cat.category}</TableCell>
                               <TableCell className="text-right">{formatCurrency(scaleAmount(cat.amount))}</TableCell>
