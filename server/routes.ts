@@ -753,6 +753,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `Found ${Object.keys(req.body.investmentExpenses).length} expenses` : 
         "None");
       
+      // Ensure investmentExpenses is never null to prevent validation errors
+      if (req.body.investmentExpenses === null) {
+        console.log("Converting null investmentExpenses to empty object");
+        req.body.investmentExpenses = {};
+      }
+      
       // For real estate assets, check for property expenses and implement deduplication
       if (asset.assetClassId === 3 && req.body.propertyExpenses) {
         console.log("Detailed property expenses data:", JSON.stringify(req.body.propertyExpenses));
@@ -913,13 +919,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Handle empty expense objects to avoid type errors
-      if (req.body.investmentExpenses && Object.keys(req.body.investmentExpenses).length === 0) {
-        req.body.investmentExpenses = null;
-      }
-      if (req.body.propertyExpenses && Object.keys(req.body.propertyExpenses).length === 0) {
-        req.body.propertyExpenses = null;
-      }
+      // Handle empty expense objects by keeping them as empty objects
+      // We used to convert empty objects to null, but this caused validation issues
+      // Keep as empty objects to avoid ZodError with "Expected object, received null"
       
       // Ensure accountType is a string to match schema
       if (req.body.accountType) {
