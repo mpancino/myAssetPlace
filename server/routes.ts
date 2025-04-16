@@ -1301,9 +1301,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("DEBUG: Attempting to validate with insertMortgageSchema.partial()");
       
-      // Validate the data
-      const validatedData = insertMortgageSchema.partial().parse(req.body);
-      console.log("DEBUG: Validated mortgage data:", JSON.stringify(validatedData, null, 2));
+      // Pre-process the request body to convert date strings to Date objects
+      const processedBody = { ...req.body };
+      
+      // Convert startDate string to Date object if it exists
+      if (processedBody.startDate && typeof processedBody.startDate === 'string') {
+        try {
+          processedBody.startDate = new Date(processedBody.startDate);
+          console.log("DEBUG: Converted startDate string to Date object:", processedBody.startDate);
+        } catch (error) {
+          console.error("ERROR: Failed to convert startDate to Date object:", error);
+          return res.status(400).json({ 
+            errors: [{ message: "Invalid startDate format" }]
+          });
+        }
+      }
+      
+      // Convert fixedRateEndDate string to Date object if it exists
+      if (processedBody.fixedRateEndDate && typeof processedBody.fixedRateEndDate === 'string') {
+        try {
+          processedBody.fixedRateEndDate = new Date(processedBody.fixedRateEndDate);
+          console.log("DEBUG: Converted fixedRateEndDate string to Date object:", processedBody.fixedRateEndDate);
+        } catch (error) {
+          console.error("ERROR: Failed to convert fixedRateEndDate to Date object:", error);
+          return res.status(400).json({ 
+            errors: [{ message: "Invalid fixedRateEndDate format" }]
+          });
+        }
+      }
+      
+      // Validate the processed data
+      let validatedData;
+      try {
+        validatedData = insertMortgageSchema.partial().parse(processedBody);
+        console.log("DEBUG: Validated mortgage data:", JSON.stringify(validatedData, null, 2));
+      } catch (error) {
+        console.error("ERROR: Validation failed:", error);
+        return res.status(400).json({ 
+          errors: error.errors || [{ message: "Validation failed" }]
+        });
+      }
       
       // Check if validatedData is empty (meaning all fields were rejected by validation)
       if (Object.keys(validatedData).length === 0) {

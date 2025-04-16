@@ -632,7 +632,7 @@ export function LoanForm({
                     loanTerm: formData.loanTerm,
                     paymentFrequency: formData.paymentFrequency,
                     paymentAmount: formData.paymentAmount,
-                    startDate: new Date(formData.startDate), // Convert to proper Date object
+                    startDate: formData.startDate, // Send as ISO string which server will convert to Date
                     securedAssetId: formData.securedAssetId,
                     assetHoldingTypeId: formData.assetHoldingTypeId
                   };
