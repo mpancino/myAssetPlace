@@ -435,15 +435,8 @@ export default function AssetDetailPage() {
       investmentExpenses: parseInvestmentExpenses(asset?.investmentExpenses),
       annualIncome: asset?.annualIncome || null,
       
-      // Mortgage fields
-      hasMortgage: asset?.hasMortgage || false,
-      mortgageLender: asset?.mortgageLender || null,
-      mortgageAmount: asset?.mortgageAmount || null,
-      mortgageInterestRate: asset?.mortgageInterestRate || null,
-      mortgageType: asset?.mortgageType || null,
-      mortgageTerm: asset?.mortgageTerm || null,
-      mortgageStartDate: asset?.mortgageStartDate ? new Date(asset.mortgageStartDate) : null,
-      mortgagePaymentFrequency: asset?.mortgagePaymentFrequency || null,
+      // Property-Mortgage relationship
+      linkedMortgageId: asset?.linkedMortgageId || null,
     },
   });
   
