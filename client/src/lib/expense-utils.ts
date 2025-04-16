@@ -167,19 +167,29 @@ export function calculateMonthlyInterestExpense(asset: any): number {
   }
   
   // If we have a loan with interest rate and value
-  if (asset.interestRate && asset.value) {
+  if (asset.interestRate && Math.abs(asset.value) > 0) {
     // Set isLiability flag since interest is always a liability
     if (asset.isLiability !== true) {
       asset.isLiability = true;
     }
-    return (asset.interestRate / 100) * asset.value / 12;
+    // Use the absolute value of the loan amount since liabilities can be stored as negative values
+    return (asset.interestRate / 100) * Math.abs(asset.value) / 12;
+  }
+  
+  // Special case for loans with interest rate but zero payment amount
+  if (asset.interestRate && asset.originalAmount) {
+    // Set isLiability flag since interest is always a liability
+    if (asset.isLiability !== true) {
+      asset.isLiability = true;
+    }
+    return (asset.interestRate / 100) * asset.originalAmount / 12;
   }
   
   // Fallback to an estimation if there's a payment amount but no explicit interest data
   if (asset.isLiability && asset.paymentAmount) {
     // Use a default rate of 5% for estimation purposes
     const estimatedInterestRate = 5;
-    return (estimatedInterestRate / 100) * (asset.value || asset.paymentAmount * 12) / 12;
+    return (estimatedInterestRate / 100) * (Math.abs(asset.value) || asset.paymentAmount * 12) / 12;
   }
   
   // No interest expense
