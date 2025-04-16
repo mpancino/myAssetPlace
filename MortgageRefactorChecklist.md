@@ -93,17 +93,24 @@ This document outlines the plan to improve the mortgage system architecture, add
    - [x] Update server/routes.ts to import AssetWithLegacyMortgage
    - [x] Add annualIncome field to AssetWithLegacyMortgage interface for compatibility
 
-2. **Remove legacy mortgage fields**
-   - [ ] Remove hasMortgage checks from components
-   - [ ] Remove legacy API handling for mortgage data in properties
-   - [ ] Clean up any database migration code for legacy fields
+2. **Create legacy compatibility utilities**
+   - [x] Create legacy-asset-utils.ts with helper functions
+   - [x] Add isLegacyMortgageProperty() utility function
+   - [x] Add asLegacyAsset() for type-safe access to legacy fields
+   - [x] Import and use utility functions across components
 
-2. **Clean up asset detail page**
-   - [ ] Remove conditional rendering based on hasMortgage
-   - [ ] Update property tab to reference mortgages properly
-   - [ ] Remove any references to legacy mortgage fields
+3. **Replace direct property access**
+   - [x] Update asset-detail-page.tsx to use helper functions
+   - [x] Update asset-class-page.tsx to use helper functions
+   - [ ] Update any remaining components using legacy fields
 
-3. **Update projections engine**
+4. **Update conditional rendering**
+   - [x] Replace direct hasMortgage checks with isLegacyMortgageProperty()
+   - [x] Update property card components for better compatibility
+   - [ ] Update property forms to remove any legacy mortgage fields
+   - [ ] Remove conditional UI rendering based on legacy fields
+
+5. **Update projections engine**
    - [ ] Ensure projections use the new mortgage relationships
    - [ ] Update any projection code that relied on legacy fields
 

@@ -8,6 +8,7 @@ import { formatCurrency } from "@/lib/utils";
 import { calculateMonthlyInterestExpense } from "@/lib/expense-utils";
 import { PropertyExpense } from "@shared/schema";
 import { calculateLoanPayment } from "@shared/calculations";
+import { isLegacyMortgageProperty, asLegacyAsset } from "@/lib/legacy-asset-utils";
 
 interface PropertyCardProps {
   property: Asset;
@@ -27,10 +28,11 @@ export function PropertyCard({
   // Determine if property is a rental
   const isRental = !!property.isRental;
   
-  // Handle possible snake_case vs camelCase inconsistency
-  const hasMortgage = property.hasMortgage || (property as any).has_mortgage;
-  const mortgageAmount = property.mortgageAmount || (property as any).mortgage_amount;
-  const mortgageInterestRate = property.mortgageInterestRate || (property as any).mortgage_interest_rate;
+  // Convert to legacy asset with mortgage properties if needed
+  const legacyAsset = asLegacyAsset(property);
+  const hasMortgage = isLegacyMortgageProperty(legacyAsset);
+  const mortgageAmount = legacyAsset?.mortgageAmount || 0;
+  const mortgageInterestRate = legacyAsset?.mortgageInterestRate || 0;
   
   // Format rental income to monthly basis
   const formatRentalIncome = () => {
