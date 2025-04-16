@@ -73,6 +73,26 @@ export function LoanForm({
 
   const [isSuccess, setIsSuccess] = useState(false);
   
+  // Process default values to ensure date fields are consistently formatted
+  const processedDefaults = defaultValues ? {
+    ...defaultValues,
+    // Ensure startDate is a proper Date object 
+    startDate: defaultValues.startDate ? 
+      (defaultValues.startDate instanceof Date ? 
+        defaultValues.startDate : 
+        new Date(defaultValues.startDate as string)
+      ) : undefined,
+    // Process fixedRateEndDate if it exists
+    fixedRateEndDate: defaultValues.fixedRateEndDate ? 
+      (defaultValues.fixedRateEndDate instanceof Date ? 
+        defaultValues.fixedRateEndDate : 
+        new Date(defaultValues.fixedRateEndDate as string)
+      ) : undefined
+  } : {};
+  
+  // Log the processed defaults for debugging
+  console.log("Processed default values:", processedDefaults);
+  
   const form = useForm<InsertLoan>({
     resolver: zodResolver(insertLoanSchema),
     defaultValues: {
@@ -90,7 +110,7 @@ export function LoanForm({
       paymentAmount: 0,
       startDate: new Date(),
       originalLoanAmount: 0,
-      ...defaultValues,
+      ...processedDefaults,
     },
   });
 
@@ -603,11 +623,13 @@ export function LoanForm({
                 Cancel
               </Button>
               
+              {/* Force submit button - visible when form is erroneously stuck in dirty state */}
               <Button 
                 type="button" 
                 className="bg-primary"
+                title="Use this if the Save button isn't working due to form validation issues"
                 onClick={() => {
-                  // Skip validation and force submission
+                  // Skip validation and force submission directly via API
                   console.log("Forcing form submission...");
                   
                   // Get the current data
