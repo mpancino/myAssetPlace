@@ -411,7 +411,11 @@ export const insertLoanSchema = insertAssetSchema.extend({
   originalLoanAmount: z.number().min(0, "Original loan amount must be greater than 0").max(1000000000, "Loan amount cannot exceed 1 billion"),
 });
 
-export const insertMortgageSchema = createInsertSchema(mortgages)
+export const insertMortgageSchema = createInsertSchema(mortgages, {
+  startDate: z.union([z.string(), z.date()]).transform(val => 
+    typeof val === 'string' ? new Date(val) : val
+  ),
+})
   .omit({
     id: true,
     createdAt: true,
@@ -429,12 +433,16 @@ export const insertMortgageSchema = createInsertSchema(mortgages)
     loanTerm: z.number().min(1, "Loan term must be at least 1 month").max(1200, "Loan term cannot exceed 1200 months (100 years)"),
     paymentFrequency: z.enum(["weekly", "fortnightly", "monthly", "quarterly", "annually"]),
     paymentAmount: z.number().min(0, "Payment amount must be greater than 0").max(1000000000, "Payment amount cannot exceed 1 billion").optional(),
-    startDate: z.date(),
+    startDate: z.union([z.string(), z.date()]).transform(val => 
+      typeof val === 'string' ? new Date(val) : val
+    ),
     securedAssetId: z.number().optional(),
     assetHoldingTypeId: z.number().default(1), // Default to Personal (id=1)
     loanPurpose: z.enum(["mortgage", "investment", "personal", "other"]).optional(),
     isFixedRatePeriod: z.boolean().default(false).optional(),
-    fixedRateEndDate: z.date().optional(),
+    fixedRateEndDate: z.union([z.string(), z.date()])
+      .transform(val => typeof val === 'string' ? new Date(val) : val)
+      .optional(),
     variableRateAfterFixed: z.number().min(0).max(100).optional(),
     isInterestOnly: z.boolean().default(false).optional(),
     interestOnlyPeriod: z.number().min(0).max(1200).optional(),
