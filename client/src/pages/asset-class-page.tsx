@@ -15,6 +15,7 @@ import { AssetClass, Asset, Country, AssetHoldingType, Mortgage } from "@shared/
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
+import { calculateMonthlyInterestExpense } from "@/lib/expense-utils";
 import { PropertyCard } from "@/components/property/property-card";
 import { useAssetClassDetails } from "@/hooks/use-asset-class-details";
 import { isLegacyMortgageProperty, asLegacyAsset } from "@/lib/legacy-asset-utils";
@@ -458,6 +459,11 @@ export default function AssetClassPage() {
                           Hidden
                         </Badge>
                       )}
+                      {asset.isLiability && (
+                        <Badge variant="outline" className="ml-2 bg-destructive/10 text-destructive">
+                          Liability
+                        </Badge>
+                      )}
                     </div>
                     {asset.description && (
                       <CardDescription className="line-clamp-2">{asset.description}</CardDescription>
@@ -487,21 +493,50 @@ export default function AssetClassPage() {
                         </div>
                       )}
                       
-                      {/* Show mortgage-specific fields if this is a mortgage */}
-                      {(asset as any).mortgageId && (
+                      {/* Show loan/mortgage-specific fields */}
+                      {((asset as any).mortgageId || asset.isLiability || asset.interestRate) && (
                         <>
-                          <div>
-                            <span className="text-sm text-muted-foreground">Lender:</span>
-                            <p>{asset.loanProvider || (asset as any).lender}</p>
-                          </div>
-                          <div>
-                            <span className="text-sm text-muted-foreground">Interest Rate:</span>
-                            <p>{asset.interestRate}% ({asset.interestRateType})</p>
-                          </div>
-                          <div>
-                            <span className="text-sm text-muted-foreground">Loan Term:</span>
-                            <p>{asset.loanTerm || 0} months ({Math.round((asset.loanTerm || 0)/12)} years)</p>
-                          </div>
+                          {/* Lender information */}
+                          {(asset.loanProvider || (asset as any).lender) && (
+                            <div>
+                              <span className="text-sm text-muted-foreground">Lender:</span>
+                              <p>{asset.loanProvider || (asset as any).lender}</p>
+                            </div>
+                          )}
+                          
+                          {/* Interest Rate */}
+                          {asset.interestRate && asset.interestRate > 0 && (
+                            <div>
+                              <span className="text-sm text-muted-foreground">Interest Rate:</span>
+                              <p>{asset.interestRate}% {asset.interestRateType && `(${asset.interestRateType})`}</p>
+                            </div>
+                          )}
+                          
+                          {/* Loan Term */}
+                          {asset.loanTerm && asset.loanTerm > 0 && (
+                            <div>
+                              <span className="text-sm text-muted-foreground">Loan Term:</span>
+                              <p>{asset.loanTerm} months ({Math.round(asset.loanTerm/12)} years)</p>
+                            </div>
+                          )}
+                          
+                          {/* Monthly Payment Amount */}
+                          {asset.paymentAmount && asset.paymentAmount > 0 && (
+                            <div>
+                              <span className="text-sm text-muted-foreground">Payment:</span>
+                              <p>{formatCurrency(asset.paymentAmount)}/{asset.paymentFrequency || 'month'}</p>
+                            </div>
+                          )}
+                          
+                          {/* Interest Expense - show for all liability assets with interest rates */}
+                          {asset.interestRate && asset.interestRate > 0 && asset.value && (
+                            <div>
+                              <span className="text-sm text-muted-foreground">Interest Expense:</span>
+                              <p className="font-medium text-amber-600">
+                                {formatCurrency(calculateMonthlyInterestExpense(asset))}/month
+                              </p>
+                            </div>
+                          )}
                         </>
                       )}
                     </div>
