@@ -36,7 +36,7 @@ import LoadingSpinner from "@/components/ui/loading-spinner";
 import { PlusCircle, ArrowDownUp, TrendingUp, Download } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
-import { Asset } from "@shared/schema";
+import { Asset, Mortgage } from "@shared/schema";
 
 // Define the structure for expense objects
 interface ExpenseItem {
@@ -62,6 +62,12 @@ export default function CashflowPage() {
   // Fetch user assets
   const { data: assets = [], isLoading: isLoadingAssets } = useQuery<Asset[]>({
     queryKey: ['/api/assets'],
+  });
+  
+  // Fetch user mortgages separately - mortgages are standalone entities 
+  // that will be included in the cashflow calculations
+  const { data: mortgages = [], isLoading: isLoadingMortgages } = useQuery<Mortgage[]>({
+    queryKey: ['/api/mortgages'],
   });
   
   // Extract income-generating assets
@@ -201,6 +207,37 @@ export default function CashflowPage() {
       "Other Expenses": 0,
     };
     
+    // First handle standalone mortgage entities
+    mortgages.forEach((mortgage: Mortgage) => {
+      if (mortgage.paymentAmount) {
+        // Convert payment to monthly equivalent based on frequency
+        let monthlyPayment = mortgage.paymentAmount;
+        if (mortgage.paymentFrequency === "weekly") {
+          monthlyPayment = mortgage.paymentAmount * 52 / 12;
+        } else if (mortgage.paymentFrequency === "fortnightly") {
+          monthlyPayment = mortgage.paymentAmount * 26 / 12;
+        } else if (mortgage.paymentFrequency === "quarterly") {
+          monthlyPayment = mortgage.paymentAmount / 3;
+        } else if (mortgage.paymentFrequency === "annually") {
+          monthlyPayment = mortgage.paymentAmount / 12;
+        }
+        
+        // Calculate interest component
+        const monthlyRate = mortgage.interestRate / 100 / 12;
+        const principal = mortgage.originalAmount;
+        // This is a simplified calculation; a more accurate one would use the current balance
+        const monthlyInterest = principal * monthlyRate;
+        
+        // Add interest to Interest Expenses
+        categories["Interest Expenses"] += monthlyInterest;
+        
+        // Add principal component to Mortgage Payments
+        const principalPayment = monthlyPayment - monthlyInterest;
+        categories["Mortgage Payments"] += principalPayment;
+      }
+    });
+    
+    // Then handle expenses associated with assets
     expenseAssets.forEach((asset: Asset) => {
       // Property expenses
       if (asset.propertyExpenses) {
@@ -371,7 +408,7 @@ export default function CashflowPage() {
           </div>
         </div>
         
-        {isLoadingAssets ? (
+        {isLoadingAssets || isLoadingMortgages ? (
           <div className="flex items-center justify-center h-60">
             <LoadingSpinner className="h-8 w-8" />
           </div>
@@ -608,6 +645,52 @@ export default function CashflowPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
+                        {/* First display standalone mortgage expenses */}
+                        {mortgages.map((mortgage: Mortgage) => {
+                          if (mortgage.paymentAmount) {
+                            // Convert payment to monthly equivalent based on frequency
+                            let monthlyPayment = mortgage.paymentAmount;
+                            if (mortgage.paymentFrequency === "weekly") {
+                              monthlyPayment = mortgage.paymentAmount * 52 / 12;
+                            } else if (mortgage.paymentFrequency === "fortnightly") {
+                              monthlyPayment = mortgage.paymentAmount * 26 / 12;
+                            } else if (mortgage.paymentFrequency === "quarterly") {
+                              monthlyPayment = mortgage.paymentAmount / 3;
+                            } else if (mortgage.paymentFrequency === "annually") {
+                              monthlyPayment = mortgage.paymentAmount / 12;
+                            }
+                            
+                            // Calculate interest component
+                            const monthlyRate = mortgage.interestRate / 100 / 12;
+                            const principal = mortgage.originalAmount;
+                            const monthlyInterest = principal * monthlyRate;
+                            
+                            // Get the property name if available
+                            let propertyName = "Unknown Property";
+                            if (mortgage.securedAssetId) {
+                              const securedAsset = assets.find(a => a.id === mortgage.securedAssetId);
+                              if (securedAsset) {
+                                propertyName = securedAsset.name;
+                              }
+                            }
+                            
+                            return (
+                              <TableRow key={`mortgage-${mortgage.id}`}>
+                                <TableCell className="font-medium">{propertyName}</TableCell>
+                                <TableCell>{mortgage.lender} Mortgage</TableCell>
+                                <TableCell>Mortgage Payment</TableCell>
+                                <TableCell>{mortgage.paymentFrequency}</TableCell>
+                                <TableCell className="text-right">{formatCurrency(mortgage.paymentAmount)}</TableCell>
+                                <TableCell className="text-right">
+                                  {formatCurrency(scaleAmount(monthlyPayment))}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          }
+                          return null;
+                        })}
+                        
+                        {/* Then display expenses associated with assets */}
                         {expenseAssets.map((asset: Asset) => {
                           // Property expenses
                           if (asset.propertyExpenses) {
