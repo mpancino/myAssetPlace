@@ -88,7 +88,7 @@ export default function AssetClassPage() {
       return mortgages.map((mortgage) => {
         // Create an asset-like object from mortgage data
         const assetFromMortgage: Partial<Asset> & { 
-          hasMortgage?: boolean; 
+          // Legacy mortgage property replaced with mortgageId reference
           mortgageId?: number;
           securedAssetId?: number;
           lender?: string;
