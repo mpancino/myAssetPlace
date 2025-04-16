@@ -88,7 +88,12 @@ This document outlines the plan to improve the mortgage system architecture, add
 
 ## Section 5: Legacy Code Removal
 
-1. **Remove legacy mortgage fields**
+1. **Update type references**
+   - [x] Update asset-detail-page.tsx to use AssetWithLegacyMortgage instead of Asset
+   - [x] Update server/routes.ts to import AssetWithLegacyMortgage
+   - [x] Add annualIncome field to AssetWithLegacyMortgage interface for compatibility
+
+2. **Remove legacy mortgage fields**
    - [ ] Remove hasMortgage checks from components
    - [ ] Remove legacy API handling for mortgage data in properties
    - [ ] Clean up any database migration code for legacy fields

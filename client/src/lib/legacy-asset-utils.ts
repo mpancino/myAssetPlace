@@ -48,3 +48,14 @@ export function getMortgageDataStatus(asset: AssetWithLegacyMortgage | undefined
   if (hasModern) return 'modern';
   return 'none';
 }
+
+/**
+ * Simple check if a property has legacy mortgage data
+ * This replaces the old hasMortgage === true check
+ */
+export function isLegacyMortgageProperty(asset: AssetWithLegacyMortgage | undefined): boolean {
+  if (!asset) return false;
+  
+  // Check if the property has any legacy mortgage data
+  return hasLegacyMortgageData(asset);
+}

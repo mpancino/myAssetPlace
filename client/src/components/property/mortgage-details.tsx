@@ -45,6 +45,7 @@ import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { isLegacyMortgageProperty } from "@/lib/legacy-asset-utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -104,7 +105,7 @@ export function MortgageDetails({
   
   // Check if this is a legacy property with built-in mortgage data
   const propertyWithLegacy = property as AssetWithLegacyMortgage;
-  const hasLegacyMortgage = propertyWithLegacy.hasMortgage === true;
+  const hasLegacyMortgage = isLegacyMortgageProperty(propertyWithLegacy);
   
   // Get the primary mortgage from the linked mortgages array
   const mortgage = mortgages.length > 0 ? mortgages[0] : null;
