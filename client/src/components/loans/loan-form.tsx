@@ -195,7 +195,37 @@ export function LoanForm({
           throw new Error("Failed to update mortgage. Please try again.");
         }
       } 
-      // Case 4: Creating a new loan/asset
+      // Case 4: Creating a new mortgage
+      else if (isMortgage) {
+        console.log("Creating new mortgage");
+        // Convert loan form data to mortgage format
+        const mortgageData = {
+          name: data.name,
+          description: data.description,
+          value: data.value,
+          lender: data.loanProvider,
+          originalAmount: data.originalLoanAmount,
+          interestRate: data.interestRate,
+          interestRateType: data.interestRateType,
+          loanTerm: data.loanTerm,
+          paymentFrequency: data.paymentFrequency,
+          paymentAmount: data.paymentAmount,
+          startDate: data.startDate instanceof Date ? 
+            data.startDate.toISOString() : 
+            (data.startDate ? new Date(data.startDate as string).toISOString() : new Date().toISOString()),
+          securedAssetId: data.securedAssetId,
+          assetHoldingTypeId: data.assetHoldingTypeId
+        };
+        
+        try {
+          const res = await apiRequest("POST", "/api/mortgages", mortgageData);
+          return await res.json();
+        } catch (error) {
+          console.error("Error creating mortgage:", error);
+          throw new Error("Failed to create mortgage. Please try again.");
+        }
+      }
+      // Case 5: Creating a new loan/asset
       else {
         console.log("Creating new loan");
         try {
@@ -264,7 +294,7 @@ export function LoanForm({
     onError: (error: Error) => {
       toast({
         title: "Error",
-        description: `Failed to ${isEditing ? "update" : "create"} loan: ${error.message}`,
+        description: `Failed to ${isEditing ? "update" : "create"} ${isMortgage ? "mortgage" : "loan"}: ${error.message}`,
         variant: "destructive",
       });
     },
