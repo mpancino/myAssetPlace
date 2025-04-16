@@ -1,14 +1,15 @@
-import { Asset, AssetHoldingType } from "@shared/schema";
+import { Asset, AssetHoldingType, Mortgage } from "@shared/schema";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, MapPin, Home, Building, DollarSign, BedDouble, Bath, Car, CreditCard } from "lucide-react";
+import { Pencil, Trash2, MapPin, Home, Building, DollarSign, BedDouble, Bath, Car, CreditCard, Clock, Calendar, Percent } from "lucide-react";
 import { useLocation } from "wouter";
 import { formatCurrency } from "@/lib/utils";
 import { calculateMonthlyInterestExpense } from "@/lib/expense-utils";
 import { PropertyExpense } from "@shared/schema";
 import { calculateLoanPayment } from "@shared/calculations";
 import { isLegacyMortgageProperty, asLegacyAsset } from "@/lib/legacy-asset-utils";
+import { useQuery } from "@tanstack/react-query";
 
 interface PropertyCardProps {
   property: Asset;
@@ -28,11 +29,26 @@ export function PropertyCard({
   // Determine if property is a rental
   const isRental = !!property.isRental;
   
+  // Fetch mortgages for this property
+  const { data: mortgages = [], isLoading: mortgagesLoading } = useQuery<Mortgage[]>({
+    queryKey: [`/api/properties/${property.id}/mortgages`],
+    enabled: !!property.id,
+    // Don't refetch too often
+    staleTime: 60 * 1000 // 1 minute
+  });
+  
+  // Get the primary mortgage
+  const mortgage = mortgages.length > 0 ? mortgages[0] : null;
+  
   // Convert to legacy asset with mortgage properties if needed
   const legacyAsset = asLegacyAsset(property);
-  const hasMortgage = isLegacyMortgageProperty(legacyAsset);
-  const mortgageAmount = legacyAsset?.mortgageAmount || 0;
-  const mortgageInterestRate = legacyAsset?.mortgageInterestRate || 0;
+  const hasLegacyMortgage = isLegacyMortgageProperty(legacyAsset);
+  // Check if we have a mortgage either via the legacy method or through the mortgages API
+  const hasMortgage = hasLegacyMortgage || !!mortgage;
+  // Get mortgage amount from either source
+  const mortgageAmount = mortgage?.value ? Math.abs(mortgage.value) : (legacyAsset?.mortgageAmount || 0);
+  // Get mortgage interest rate from either source
+  const mortgageInterestRate = mortgage?.interestRate || legacyAsset?.mortgageInterestRate || 0;
   
   // Format rental income to monthly basis
   const formatRentalIncome = () => {
@@ -114,6 +130,45 @@ export function PropertyCard({
                   {formatCurrency(mortgageAmount || 0)}
                 </div>
               </div>
+              
+              {/* Show mortgage rate if we have it */}
+              {mortgage && mortgage.interestRate > 0 && (
+                <div className="flex justify-between">
+                  <div className="text-sm text-muted-foreground flex items-center">
+                    <Percent className="h-3 w-3 mr-1" />
+                    Interest Rate
+                  </div>
+                  <div className="font-medium">
+                    {mortgage.interestRate.toFixed(2)}% {mortgage.interestRateType ? `(${mortgage.interestRateType})` : ''}
+                  </div>
+                </div>
+              )}
+              
+              {/* Show payment information if we have it */}
+              {mortgage && mortgage.paymentAmount > 0 && (
+                <div className="flex justify-between">
+                  <div className="text-sm text-muted-foreground flex items-center">
+                    <Calendar className="h-3 w-3 mr-1" />
+                    Payment
+                  </div>
+                  <div className="font-medium">
+                    {formatCurrency(mortgage.paymentAmount)}/{mortgage.paymentFrequency}
+                  </div>
+                </div>
+              )}
+              
+              {/* Show loan term if we have it */}
+              {mortgage && mortgage.loanTerm > 0 && (
+                <div className="flex justify-between">
+                  <div className="text-sm text-muted-foreground flex items-center">
+                    <Clock className="h-3 w-3 mr-1" />
+                    Term
+                  </div>
+                  <div className="font-medium">
+                    {mortgage.remainingTerm ? (mortgage.remainingTerm / 12).toFixed(1) : (mortgage.loanTerm / 12).toFixed(1)} years
+                  </div>
+                </div>
+              )}
               
               {/* Show interest expense if we have an interest rate */}
               {mortgageInterestRate && mortgageAmount > 0 && (
