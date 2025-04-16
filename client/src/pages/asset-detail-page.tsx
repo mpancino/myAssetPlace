@@ -536,7 +536,7 @@ export default function AssetDetailPage() {
       
       const res = await apiRequest("PATCH", `/api/assets/${assetId}`, dataToSend);
       const data = await res.json();
-      return data as Asset;
+      return data as AssetWithLegacyMortgage;
     },
     onSuccess: (updatedAsset) => {
       if (!updatedAsset) return;
@@ -728,7 +728,7 @@ export default function AssetDetailPage() {
       const data = await res.json();
       
       console.log(`[SEQUENCE:${Date.now()}] 2. API REQUEST COMPLETED - received response`);
-      return data as Asset;
+      return data as AssetWithLegacyMortgage;
     },
     onSuccess: (updatedAsset) => {
       if (!updatedAsset) return;
@@ -841,7 +841,7 @@ export default function AssetDetailPage() {
       
       const res = await apiRequest("PATCH", `/api/assets/${assetId}`, dataToSend);
       const data = await res.json();
-      return data as Asset;
+      return data as AssetWithLegacyMortgage;
     },
     onSuccess: (updatedAsset) => {
       if (!updatedAsset) return;
