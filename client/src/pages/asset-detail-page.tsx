@@ -288,15 +288,8 @@ const assetDetailSchema = z.object({
   // Investment-specific fields
   annualIncome: z.number().optional().nullable(),
   
-  // Mortgage fields
-  hasMortgage: z.boolean().optional().nullable(),
-  mortgageLender: z.string().optional().nullable(),
-  mortgageAmount: z.number().optional().nullable(),
-  mortgageInterestRate: z.number().optional().nullable(),
-  mortgageType: z.string().optional().nullable(),
-  mortgageTerm: z.number().optional().nullable(),
-  mortgageStartDate: z.date().optional().nullable(),
-  mortgagePaymentFrequency: z.string().optional().nullable(),
+  // Property-Mortgage relationship field
+  linkedMortgageId: z.number().optional().nullable(),
 });
 
 type AssetDetailFormValues = z.infer<typeof assetDetailSchema>;
