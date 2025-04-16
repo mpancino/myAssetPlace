@@ -645,6 +645,9 @@ export interface AssetWithLegacyMortgage extends Asset {
   mortgageTerm?: number | null;
   mortgageStartDate?: Date | null;
   mortgagePaymentFrequency?: string | null;
+  
+  // Investment asset specific fields - not in schema but used in UI
+  annualIncome?: number | null;
 }
 export type InsertShare = z.infer<typeof insertShareSchema>;
 export type InsertStockOption = z.infer<typeof insertStockOptionSchema>;
