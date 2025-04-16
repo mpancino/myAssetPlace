@@ -49,7 +49,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
-import { AssetClass, AssetHoldingType, Asset, Mortgage } from "@shared/schema";
+import { AssetClass, AssetHoldingType, Asset, Mortgage, AssetWithLegacyMortgage } from "@shared/schema";
 import { OffsetAccountSection } from "@/components/loans/offset-account-section";
 import { calculateLoanPayment, calculatePrincipalAndInterest } from "@shared/calculations";
 import { formatCurrency } from "@/lib/utils";
@@ -315,7 +315,7 @@ export default function AssetDetailPage() {
   const [currentInvestmentExpenses, setCurrentInvestmentExpenses] = useState<Record<string, InvestmentExpense> | undefined>(undefined);
   
   // Fetch the asset details
-  const { data: asset, isLoading: isLoadingAsset } = useQuery<Asset>({
+  const { data: asset, isLoading: isLoadingAsset } = useQuery<AssetWithLegacyMortgage>({
     queryKey: [`/api/assets/${assetId}`],
     enabled: !!assetId,
     staleTime: 0, // Disable caching for this query to always get fresh data
