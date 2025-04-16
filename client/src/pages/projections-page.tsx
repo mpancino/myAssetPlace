@@ -14,7 +14,8 @@ import {
   ProjectionConfig, 
   ProjectionPeriod, 
   ProjectionScenario,
-  ProjectionResult
+  ProjectionResult,
+  Asset
 } from "@shared/schema";
 import { formatCurrency } from "@/lib/utils";
 import { useLocation } from "wouter";
@@ -41,6 +42,20 @@ export default function ProjectionsPage() {
       if (!res.ok) throw new Error('Failed to load default configuration');
       return res.json();
     }
+  });
+  
+  // Fetch user's cash accounts for cashflow allocation
+  const {
+    data: cashAccounts = [],
+    isLoading: cashAccountsLoading
+  } = useQuery<Asset[]>({
+    queryKey: ['/api/assets/cash'],
+    queryFn: async () => {
+      const res = await fetch('/api/assets?assetClass=cash');
+      if (!res.ok) throw new Error('Failed to load cash accounts');
+      return res.json();
+    },
+    enabled: user?.preferredMode === 'advanced' // Only load for advanced mode
   });
   
   // State for projection configuration
@@ -307,15 +322,72 @@ export default function ProjectionsPage() {
               <CardHeader>
                 <CardTitle className="text-lg">Advanced Settings</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <Button 
                   variant="outline" 
-                  className="w-full"
+                  className="w-full mb-4"
                   onClick={() => navigate('/projections/asset-filter')}
                 >
                   <Settings className="mr-2 h-4 w-4" />
                   Configure Asset Filters
                 </Button>
+                
+                <div className="pt-4 border-t border-border">
+                  <h4 className="font-medium mb-3">Cashflow Allocation</h4>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox 
+                        id="allocateCashflow" 
+                        checked={config.allocateCashflow}
+                        onCheckedChange={(checked) => updateConfig({ allocateCashflow: !!checked })}
+                      />
+                      <Label htmlFor="allocateCashflow">Allocate Cashflow to Cash Account</Label>
+                    </div>
+                    
+                    {config.allocateCashflow && (
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor="targetCashAccount">Target Cash Account</Label>
+                          <Select 
+                            value={config.targetCashAccountId ? String(config.targetCashAccountId) : ''} 
+                            onValueChange={(value) => updateConfig({ targetCashAccountId: value ? parseInt(value) : null })}
+                            disabled={cashAccountsLoading || cashAccounts.length === 0}
+                          >
+                            <SelectTrigger id="targetCashAccount">
+                              <SelectValue placeholder="Select cash account" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {cashAccounts.length === 0 ? (
+                                <SelectItem value="" disabled>No cash accounts available</SelectItem>
+                              ) : (
+                                cashAccounts.map((account) => (
+                                  <SelectItem key={account.id} value={String(account.id)}>
+                                    {account.name}
+                                  </SelectItem>
+                                ))
+                              )}
+                            </SelectContent>
+                          </Select>
+                          {cashAccounts.length === 0 && !cashAccountsLoading && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              You need to create a cash account first.
+                            </p>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <Checkbox 
+                            id="allowNegativeBalance" 
+                            checked={config.allowNegativeBalance}
+                            onCheckedChange={(checked) => updateConfig({ allowNegativeBalance: !!checked })}
+                          />
+                          <Label htmlFor="allowNegativeBalance">Allow Negative Balance</Label>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
               </CardContent>
             </Card>
           )}
