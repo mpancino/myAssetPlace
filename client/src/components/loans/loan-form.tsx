@@ -7,6 +7,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 import { logError, logInfo } from "@/lib/logger";
 import { formSpacing } from "@/lib/form-utils";
+import { calculateLoanPayment } from "@shared/calculations";
 
 import {
   Form,
