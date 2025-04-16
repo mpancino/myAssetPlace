@@ -54,6 +54,7 @@ import { asLegacyAsset, hasLegacyMortgageData, getMortgageDataStatus, isLegacyMo
 import { OffsetAccountSection } from "@/components/loans/offset-account-section";
 import { calculateLoanPayment, calculatePrincipalAndInterest } from "@shared/calculations";
 import { formatCurrency } from "@/lib/utils";
+import { calculateMonthlyInterestExpense } from "@/lib/expense-utils";
 import { 
   AlertDialog,
   AlertDialogAction,
