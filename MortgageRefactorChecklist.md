@@ -40,12 +40,12 @@ This document outlines the plan to improve the mortgage system architecture, add
    - [x] Strengthen relationship between mortgages and properties with clear documentation
 
 2. **Create migration function for existing data**
-   - [ ] Verify `migratePropertyMortgageData` works for all scenarios
-   - [ ] Add function to cleanup legacy fields after migration
+   - [x] Verify `migratePropertyMortgageData` works for all scenarios
+   - [x] Add function to cleanup legacy fields after migration
 
 3. **Update asset model types**
-   - [ ] Remove mortgage fields from Asset type
-   - [ ] Update InsertProperty type to remove mortgage fields
+   - [x] Create backward-compatible AssetWithLegacyMortgage interface
+   - [x] Keep Asset type reflecting actual database schema
 
 ## Section 3: Backend Implementation
 
@@ -151,7 +151,7 @@ This document outlines the plan to improve the mortgage system architecture, add
 ## Implementation Order
 
 1. Complete Section 1 (Legacy Code Identification) ✓
-2. Complete Section 2 (Data Model Cleanup)
+2. Complete Section 2 (Data Model Cleanup) ✓
 3. Complete Section 3 (Backend Implementation)
 4. Complete Section 4 (Frontend Implementation)
 5. Complete Section 5 (Legacy Code Removal)

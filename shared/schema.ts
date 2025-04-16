@@ -632,6 +632,20 @@ export type InsertAsset = z.infer<typeof insertAssetSchema>;
 export type InsertCashAccount = z.infer<typeof insertCashAccountSchema>;
 export type InsertLoan = z.infer<typeof insertLoanSchema>;
 export type InsertProperty = z.infer<typeof insertPropertySchema>;
+
+// This type provides backward compatibility during the mortgage refactoring process
+// It should be removed once all frontend components have been updated to use the new mortgage model
+export interface AssetWithLegacyMortgage extends Asset {
+  // Legacy mortgage fields (now removed from database schema)
+  hasMortgage?: boolean | null;
+  mortgageLender?: string | null;
+  mortgageAmount?: number | null;
+  mortgageInterestRate?: number | null;
+  mortgageType?: string | null;
+  mortgageTerm?: number | null;
+  mortgageStartDate?: Date | null;
+  mortgagePaymentFrequency?: string | null;
+}
 export type InsertShare = z.infer<typeof insertShareSchema>;
 export type InsertStockOption = z.infer<typeof insertStockOptionSchema>;
 export type InsertEmploymentIncome = z.infer<typeof insertEmploymentIncomeSchema>;

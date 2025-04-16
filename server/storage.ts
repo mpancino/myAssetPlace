@@ -81,6 +81,7 @@ export interface IStorage {
   linkMortgageToProperty(mortgageId: number, propertyId: number): Promise<boolean>;
   unlinkMortgageFromProperty(mortgageId: number): Promise<boolean>;
   migratePropertyMortgageData(propertyId: number): Promise<{mortgage: Mortgage, property: Asset} | undefined>;
+  cleanupPropertyMortgageData(propertyId: number): Promise<boolean>;
   
   // Subscription operations
   getSubscriptionPlan(id: number): Promise<SubscriptionPlan | undefined>;
@@ -696,6 +697,50 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error("Error migrating property mortgage data:", error);
       return undefined;
+    }
+  }
+  
+  /**
+   * Cleans up legacy mortgage fields from a property after successful migration to the mortgage table
+   * @param propertyId The ID of the property to clean up
+   * @returns True if cleanup was successful, false otherwise
+   */
+  async cleanupPropertyMortgageData(propertyId: number): Promise<boolean> {
+    try {
+      // First verify that this property has a linked mortgage
+      const property = await this.getAsset(propertyId);
+      
+      if (!property) {
+        console.error("Property not found for mortgage data cleanup");
+        return false;
+      }
+      
+      // Only clean up if the property has a linked mortgage
+      if (!property.linkedMortgageId) {
+        console.warn("Property has no linked mortgage - cannot clean up legacy fields");
+        return false;
+      }
+      
+      // Clean up legacy mortgage fields
+      await db
+        .update(assets)
+        .set({
+          hasMortgage: false,           // Turn off the legacy flag
+          mortgageAmount: null,         // Clear out all the legacy mortgage fields
+          mortgageInterestRate: null,
+          mortgageTerm: null,
+          mortgageStartDate: null,
+          mortgageLender: null,
+          mortgageType: null,
+          mortgagePaymentFrequency: null
+        })
+        .where(eq(assets.id, propertyId));
+        
+      console.log(`Successfully cleaned up legacy mortgage data for property ID ${propertyId}`);
+      return true;
+    } catch (error) {
+      console.error("Error cleaning up property mortgage data:", error);
+      return false;
     }
   }
 
