@@ -619,11 +619,70 @@ export function LoanForm({
                     formData.userId = defaultValues?.userId as number || 194; // Demo user
                   }
                   
-                  // Log before submission
-                  console.log("Direct submission data:", formData);
+                  // Create mortgage data with proper conversions
+                  const mortgageData = {
+                    name: formData.name,
+                    description: formData.description,
+                    userId: formData.userId,
+                    value: formData.value,
+                    lender: formData.loanProvider,
+                    originalAmount: formData.originalLoanAmount,
+                    interestRate: formData.interestRate,
+                    interestRateType: formData.interestRateType,
+                    loanTerm: formData.loanTerm,
+                    paymentFrequency: formData.paymentFrequency,
+                    paymentAmount: formData.paymentAmount,
+                    startDate: new Date(formData.startDate), // Convert to proper Date object
+                    securedAssetId: formData.securedAssetId,
+                    assetHoldingTypeId: formData.assetHoldingTypeId
+                  };
                   
-                  // Directly call the mutation
-                  mutation.mutate(formData as InsertLoan);
+                  // Log before submission
+                  console.log("Converted mortgage data:", mortgageData);
+                  
+                  // Direct API call to bypass the mutation
+                  fetch(`/api/mortgages/${mortgageId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(mortgageData)
+                  })
+                  .then(response => {
+                    if (!response.ok) {
+                      return response.json().then(err => {
+                        throw new Error(JSON.stringify(err));
+                      });
+                    }
+                    return response.json();
+                  })
+                  .then(data => {
+                    // Success handler - same as mutation success
+                    console.log("Update successful:", data);
+                    
+                    // Invalidate queries
+                    queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
+                    queryClient.invalidateQueries({ queryKey: ["/api/mortgages"] });
+                    queryClient.invalidateQueries({ queryKey: [`/api/mortgages/${mortgageId}`] });
+                    queryClient.invalidateQueries({ queryKey: [`/api/properties/${formData.securedAssetId}/mortgages`] });
+                    
+                    // Show success toast
+                    toast({
+                      title: "Mortgage updated successfully",
+                      description: `Your ${formData.name} has been updated.`,
+                    });
+                    
+                    // Redirect to property page
+                    setTimeout(() => {
+                      setLocation(`/assets/${formData.securedAssetId}`);
+                    }, 1000);
+                  })
+                  .catch(error => {
+                    console.error("Direct API error:", error);
+                    toast({
+                      title: "Error updating mortgage",
+                      description: `Error: ${error.message}`,
+                      variant: "destructive",
+                    });
+                  });
                 }}
               >
                 {mutation.isPending 
