@@ -1127,7 +1127,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: req.user.id
       };
       
-      // Validate the data
+      // Additional validation logic beyond schema
+      if (mortgageData.securedAssetId) {
+        // Verify that the secured asset exists and belongs to the user
+        const asset = await storage.getAsset(mortgageData.securedAssetId);
+        
+        if (!asset) {
+          return res.status(404).json({ 
+            message: "The property specified as collateral does not exist",
+            field: "securedAssetId"
+          });
+        }
+        
+        if (asset.userId !== req.user.id) {
+          return res.status(403).json({ 
+            message: "You are not authorized to use this property as collateral",
+            field: "securedAssetId"
+          });
+        }
+        
+        // Verify the asset is a property (asset class 3 is Real Estate)
+        if (asset.assetClassId !== 3) {
+          return res.status(400).json({
+            message: "Only real estate properties can be used as collateral for mortgages",
+            field: "securedAssetId"
+          });
+        }
+      }
+      
+      // Verify value is negative for liabilities
+      if (mortgageData.value && mortgageData.value > 0) {
+        mortgageData.value = -Math.abs(mortgageData.value);
+      }
+      
+      // Additional validation for mortgage fields
+      if (mortgageData.loanTerm && mortgageData.loanTerm <= 0) {
+        return res.status(400).json({
+          message: "Loan term must be a positive number of months",
+          field: "loanTerm"
+        });
+      }
+      
+      if (mortgageData.interestRate && (mortgageData.interestRate < 0 || mortgageData.interestRate > 30)) {
+        return res.status(400).json({
+          message: "Interest rate must be between 0% and 30%",
+          field: "interestRate"
+        });
+      }
+      
+      // Validate and transform start date if provided
+      if (mortgageData.startDate) {
+        try {
+          mortgageData.startDate = new Date(mortgageData.startDate);
+        } catch (e) {
+          return res.status(400).json({
+            message: "Invalid start date format",
+            field: "startDate"
+          });
+        }
+      }
+      
+      // Validate the data through Zod schema
       const validatedData = insertMortgageSchema.parse(mortgageData);
       
       // Create the mortgage
@@ -1135,16 +1195,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // If a secured asset (property) is specified, link them
       if (mortgage.securedAssetId) {
-        await storage.linkMortgageToProperty(mortgage.id, mortgage.securedAssetId);
+        const linkResult = await storage.linkMortgageToProperty(mortgage.id, mortgage.securedAssetId);
+        if (!linkResult) {
+          console.warn(`Failed to link mortgage ${mortgage.id} to property ${mortgage.securedAssetId}`);
+        }
       }
       
       res.status(201).json(mortgage);
     } catch (err) {
       if (err instanceof z.ZodError) {
-        return res.status(400).json({ errors: err.errors });
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: err.errors 
+        });
       }
       console.error("Error creating mortgage:", err);
-      res.status(500).json({ message: "Failed to create mortgage" });
+      res.status(500).json({ 
+        message: "Failed to create mortgage", 
+        error: err instanceof Error ? err.message : String(err)
+      });
     }
   });
 
@@ -1328,6 +1397,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Migration endpoint: Convert property mortgage data to separate mortgage entity
+  // Migrate property mortgage data to a separate mortgage entity
   app.post("/api/properties/:id/migrate-mortgage", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Not authenticated" });
@@ -1335,6 +1405,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     try {
       const propertyId = parseInt(req.params.id);
+      if (isNaN(propertyId)) {
+        return res.status(400).json({ message: "Invalid property ID" });
+      }
       
       // Check if property exists and user owns it
       const property = await storage.getAsset(propertyId);
@@ -1342,13 +1415,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Property not found" });
       }
       
-      if (property.userId !== req.user.id) {
+      if (property.userId !== req.user.id && req.user.role !== 'admin') {
         return res.status(403).json({ message: "Not authorized to migrate mortgage for this property" });
       }
       
+      // The property might be using AssetWithLegacyMortgage interface
+      const legacyProperty = property as AssetWithLegacyMortgage;
+      
       // Check if property has mortgage data to migrate
-      if (!property.hasMortgage) {
+      if (!legacyProperty.hasMortgage) {
         return res.status(400).json({ message: "Property does not have mortgage data to migrate" });
+      }
+      
+      // Check if property already has a linked mortgage
+      if (property.linkedMortgageId) {
+        return res.status(400).json({ 
+          message: "Property already has a linked mortgage. Remove the existing link before migrating.", 
+          linkedMortgageId: property.linkedMortgageId 
+        });
       }
       
       // Perform the migration
@@ -1358,11 +1442,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ message: "Failed to migrate mortgage data" });
       }
       
-      // Return the migrated data
-      res.json(result);
+      // After successful migration, clean up legacy data if requested
+      const cleanupRequested = req.body.cleanupLegacyData === true;
+      let cleanupSuccess = false;
+      
+      if (cleanupRequested) {
+        cleanupSuccess = await storage.cleanupPropertyMortgageData(propertyId);
+      }
+      
+      // Return the migrated data with cleanup status
+      res.json({
+        ...result,
+        cleanupRequested,
+        cleanupSuccess
+      });
     } catch (err) {
       console.error("Error migrating property mortgage data:", err);
-      res.status(500).json({ message: "Failed to migrate mortgage data" });
+      res.status(500).json({ message: "Failed to migrate mortgage data", error: err instanceof Error ? err.message : String(err) });
+    }
+  });
+
+  // Endpoint to clean up legacy mortgage data for a property
+  app.post("/api/properties/:id/cleanup-mortgage", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    try {
+      const propertyId = parseInt(req.params.id);
+      if (isNaN(propertyId)) {
+        return res.status(400).json({ message: "Invalid property ID" });
+      }
+      
+      // Check if property exists and user owns it
+      const property = await storage.getAsset(propertyId);
+      if (!property) {
+        return res.status(404).json({ message: "Property not found" });
+      }
+      
+      if (property.userId !== req.user.id && req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Not authorized to clean up mortgage data for this property" });
+      }
+      
+      // Check if property has a linked mortgage
+      if (!property.linkedMortgageId) {
+        return res.status(400).json({ 
+          message: "Property has no linked mortgage. Cannot clean up legacy data when no mortgage is linked." 
+        });
+      }
+      
+      // Perform the cleanup
+      const cleanupSuccess = await storage.cleanupPropertyMortgageData(propertyId);
+      
+      if (!cleanupSuccess) {
+        return res.status(500).json({ message: "Failed to clean up legacy mortgage data" });
+      }
+      
+      // Return the cleaned property data
+      const cleanedProperty = await storage.getAsset(propertyId);
+      
+      res.json({
+        property: cleanedProperty,
+        cleanupSuccess
+      });
+    } catch (err) {
+      console.error("Error cleaning up property mortgage data:", err);
+      res.status(500).json({ 
+        message: "Failed to clean up legacy mortgage data", 
+        error: err instanceof Error ? err.message : String(err) 
+      });
     }
   });
 
