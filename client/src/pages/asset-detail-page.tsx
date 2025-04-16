@@ -1305,7 +1305,7 @@ export default function AssetDetailPage() {
               
               <TabsContent value="overview" className="space-y-4 pt-4">
                 {/* Property-specific overview with mortgage information */}
-                {selectedClass?.name?.toLowerCase() === "real estate" && asset?.hasMortgage && !isEditing && (
+                {selectedClass?.name?.toLowerCase() === "real estate" && (asset ? isLegacyMortgageProperty(asLegacyAsset(asset)) : false) && !isEditing && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <Card className="col-span-1 bg-gradient-to-br from-primary/5 to-primary/10">
                       <CardHeader className="pb-2">
@@ -1334,7 +1334,7 @@ export default function AssetDetailPage() {
                             </div>
                           </div>
                           
-                          {asset?.hasMortgage && asset?.mortgageInterestRate && asset?.mortgageAmount && (
+                          {(asset ? isLegacyMortgageProperty(asLegacyAsset(asset)) : false) && asset?.mortgageInterestRate && asset?.mortgageAmount && (
                             <div>
                               <div className="text-sm text-muted-foreground mb-1">Monthly Interest Expense</div>
                               <div className="text-xl font-semibold text-amber-600">
