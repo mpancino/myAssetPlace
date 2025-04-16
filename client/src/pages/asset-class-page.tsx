@@ -528,15 +528,18 @@ export default function AssetClassPage() {
                             </div>
                           )}
                           
-                          {/* Interest Expense - show for all liability assets with interest rates */}
-                          {asset.interestRate && asset.interestRate > 0 && asset.value && (
-                            <div>
-                              <span className="text-sm text-muted-foreground">Interest Expense:</span>
-                              <p className="font-medium text-amber-600">
-                                {formatCurrency(calculateMonthlyInterestExpense(asset))}/month
-                              </p>
-                            </div>
-                          )}
+                          {/* Interest Expense - show for all liability assets with interest expenses */}
+                          {(() => {
+                            const monthlyInterest = calculateMonthlyInterestExpense(asset);
+                            return monthlyInterest > 0 ? (
+                              <div>
+                                <span className="text-sm text-muted-foreground">Interest Expense:</span>
+                                <p className="font-medium text-amber-600">
+                                  {formatCurrency(monthlyInterest)}/month
+                                </p>
+                              </div>
+                            ) : null;
+                          })()}
                         </>
                       )}
                     </div>
