@@ -632,7 +632,9 @@ export function LoanForm({
                     loanTerm: formData.loanTerm,
                     paymentFrequency: formData.paymentFrequency,
                     paymentAmount: formData.paymentAmount,
-                    startDate: formData.startDate, // Send as ISO string which server will convert to Date
+                    startDate: formData.startDate instanceof Date ? 
+                      formData.startDate.toISOString() : 
+                      (formData.startDate ? new Date(formData.startDate).toISOString() : new Date().toISOString()), // Ensure we send an ISO string
                     securedAssetId: formData.securedAssetId,
                     assetHoldingTypeId: formData.assetHoldingTypeId
                   };
