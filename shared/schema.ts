@@ -202,16 +202,8 @@ export const assets = pgTable("assets", {
   // New bidirectional relationship fields
   linkedMortgageId: integer("linked_mortgage_id").references(() => mortgages.id, { onDelete: "set null" }),
   
-  // Legacy mortgage fields - to be migrated and then removed
-  mortgageId: integer("mortgage_id"), // link to associated mortgage (if any)
-  hasMortgage: boolean("has_mortgage").default(false),
-  mortgageAmount: real("mortgage_amount"),
-  mortgageInterestRate: real("mortgage_interest_rate"),
-  mortgageTerm: integer("mortgage_term"), // In months
-  mortgageStartDate: date("mortgage_start_date"),
-  mortgageLender: text("mortgage_lender"),
-  mortgageType: text("mortgage_type"), // fixed, variable
-  mortgagePaymentFrequency: text("mortgage_payment_frequency"), // weekly, fortnightly, monthly
+  // Legacy linkage field - keeping for backward compatibility
+  mortgageId: integer("mortgage_id"), // legacy link to associated mortgage
   
   // Share/Stock specific fields
   ticker: text("ticker"), // Stock ticker symbol
