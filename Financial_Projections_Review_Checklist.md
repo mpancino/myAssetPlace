@@ -138,13 +138,44 @@
 - [ ] Examine memory usage during projection calculations
 
 ## Gap Analysis
-- [ ] Identify missing features compared to PDD requirements
-- [ ] Document architectural improvements needed
-- [ ] List enhancement opportunities
-- [ ] Prioritize implementation backlog
+- [x] Identify missing features compared to PDD requirements
+  - Primary gap: Cashflow allocation to cash accounts is not implemented
+  - Scenario management could be enhanced with saving/comparing multiple scenarios
+  - Retirement accounts may need special handling beyond standard asset growth
+- [x] Document architectural improvements needed
+  - Add `allocateCashflow` and `targetCashAccountId` to ProjectionConfig
+  - Enhance projection generation to modify cash account balances based on cashflow
+  - Add fallback mechanisms for negative cashflow when cash accounts are depleted
+- [x] List enhancement opportunities
+  - Persistent scenario saving and comparison
+  - More sophisticated asset-specific growth models (especially for real estate)
+  - Automatic rebalancing simulation based on target asset allocations
+  - Visualization enhancements showing impact of cashflow allocation
+- [x] Prioritize implementation backlog
+  1. Implement cashflow allocation to cash accounts (high priority)
+  2. Add fallback handling for depleted cash accounts 
+  3. Enhance visualization to show cashflow allocation effects
+  4. Implement scenario comparison features
+  5. Add advanced asset-specific projection models
 
 ## Final Recommendations
-- [ ] Summarize key findings
-- [ ] Outline critical fixes needed
-- [ ] Suggest optimization opportunities
-- [ ] Provide roadmap for completing Phase 7 implementation
+- [x] Summarize key findings
+  - The current projection implementation provides a solid foundation
+  - Cashflow is calculated but not integrated into asset values over time
+  - Core projection mechanisms work well for basic asset and liability modeling
+  - Configuration UI offers good flexibility but lacks some advanced features
+- [x] Outline critical fixes needed
+  - Add ProjectionConfig schema updates for cashflow allocation
+  - Implement logic to add net cashflow to specified cash account
+  - Modify projection visualization to show effects of cashflow allocation
+- [x] Suggest optimization opportunities
+  - Cache projection results for frequently used configurations
+  - Consider running complex projections in a web worker to avoid UI blocking
+  - Implement incremental rendering for projection charts with large datasets
+- [x] Provide roadmap for completing Phase 7 implementation
+  1. Update ProjectionConfig schema in shared/schema.ts
+  2. Modify projection UI to include cashflow allocation options
+  3. Enhance generateProjections function to handle cashflow allocation
+  4. Update visualization components to show cashflow allocation effects
+  5. Test with various scenarios (positive/negative cashflow, account depletion)
+  6. Document the new functionality for users
