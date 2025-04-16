@@ -117,7 +117,9 @@ export function LoanForm({
           loanTerm: data.loanTerm,
           paymentFrequency: data.paymentFrequency,
           paymentAmount: data.paymentAmount,
-          startDate: data.startDate instanceof Date ? data.startDate : (data.startDate ? new Date(data.startDate as string) : new Date()), // Ensure date is in proper format
+          startDate: data.startDate instanceof Date ? 
+            data.startDate.toISOString() : 
+            (data.startDate ? new Date(data.startDate as string).toISOString() : new Date().toISOString()), // Send ISO string
           securedAssetId: data.securedAssetId,
           assetHoldingTypeId: data.assetHoldingTypeId // Include asset holding type
         };
@@ -157,7 +159,9 @@ export function LoanForm({
           loanTerm: data.loanTerm,
           paymentFrequency: data.paymentFrequency,
           paymentAmount: data.paymentAmount,
-          startDate: data.startDate instanceof Date ? data.startDate : (data.startDate ? new Date(data.startDate as string) : new Date()), // Ensure date is in proper format
+          startDate: data.startDate instanceof Date ? 
+            data.startDate.toISOString() : 
+            (data.startDate ? new Date(data.startDate as string).toISOString() : new Date().toISOString()), // Send ISO string
           securedAssetId: data.securedAssetId,
           assetHoldingTypeId: data.assetHoldingTypeId // Include asset holding type
         };
