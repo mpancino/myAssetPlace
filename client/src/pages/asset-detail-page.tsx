@@ -459,7 +459,6 @@ export default function AssetDetailPage() {
         propertyType: asset.propertyType,
         address: asset.address,
         suburb: asset.suburb,
-        // city removed
         state: asset.state,
         postcode: asset.postcode,
         country: asset.country,
@@ -479,15 +478,8 @@ export default function AssetDetailPage() {
         investmentExpenses: parseInvestmentExpenses(asset.investmentExpenses),
         annualIncome: asset.annualIncome,
         
-        // Mortgage fields
-        hasMortgage: asset.hasMortgage,
-        mortgageLender: asset.mortgageLender,
-        mortgageAmount: asset.mortgageAmount,
-        mortgageInterestRate: asset.mortgageInterestRate,
-        mortgageType: asset.mortgageType,
-        mortgageTerm: asset.mortgageTerm,
-        mortgageStartDate: asset.mortgageStartDate ? new Date(asset.mortgageStartDate) : null,
-        mortgagePaymentFrequency: asset.mortgagePaymentFrequency,
+        // Property-Mortgage relationship
+        linkedMortgageId: asset.linkedMortgageId,
       });
     }
   }, [asset, form]);
@@ -2269,12 +2261,12 @@ export default function AssetDetailPage() {
                     {/* Mortgage Details - Only shown when not editing */}
                     {console.log("Mortgage rendering condition:", {
                       isEditing,
-                      hasMortgage: asset.hasMortgage,
-                      shouldRender: !isEditing && asset.hasMortgage,
+                      linkedMortgageId: asset.linkedMortgageId,
+                      shouldRender: !isEditing && (asset.linkedMortgageId || propertyMortgages?.length > 0),
                       mortgagesCount: propertyMortgages?.length,
                       isLoadingMortgages
                     })}
-                    {!isEditing && (asset.hasMortgage || propertyMortgages?.length > 0) && (
+                    {!isEditing && (asset.linkedMortgageId || propertyMortgages?.length > 0) && (
                       <MortgageDetails 
                         property={asset} 
                         mortgages={propertyMortgages} 
@@ -2332,8 +2324,8 @@ export default function AssetDetailPage() {
                     {/* Debug info for mortgage display conditions */}
                     {console.log("Mortgage rendering condition:", {
                       isEditing,
-                      hasMortgage: asset.hasMortgage,
-                      shouldRender: !isEditing && asset.hasMortgage,
+                      linkedMortgageId: asset.linkedMortgageId,
+                      shouldRender: !isEditing && (asset.linkedMortgageId || propertyMortgages?.length > 0),
                       mortgagesCount: propertyMortgages?.length,
                       isLoadingMortgages
                     })}
