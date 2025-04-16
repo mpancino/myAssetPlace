@@ -51,7 +51,7 @@ export function PropertyCard({
   const mortgageInterestRate = mortgage?.interestRate || legacyAsset?.mortgageInterestRate || 0;
   
   // Format rental income to monthly basis
-  const formatRentalIncome = () => {
+  const formatRentalIncome = (): string => {
     if (!property.rentalIncome) return "N/A";
     
     if (property.rentalFrequency === "weekly") {
@@ -145,14 +145,14 @@ export function PropertyCard({
               )}
               
               {/* Show payment information if we have it */}
-              {mortgage && mortgage.paymentAmount > 0 && (
+              {mortgage && mortgage.paymentAmount && mortgage.paymentAmount > 0 && (
                 <div className="flex justify-between">
                   <div className="text-sm text-muted-foreground flex items-center">
                     <Calendar className="h-3 w-3 mr-1" />
                     Payment
                   </div>
                   <div className="font-medium">
-                    {formatCurrency(mortgage.paymentAmount)}/{mortgage.paymentFrequency}
+                    {formatCurrency(mortgage.paymentAmount || 0)}/{mortgage.paymentFrequency}
                   </div>
                 </div>
               )}

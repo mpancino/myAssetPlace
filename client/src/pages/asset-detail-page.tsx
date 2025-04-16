@@ -1174,6 +1174,19 @@ export default function AssetDetailPage() {
   
   // Not found state
   if (!asset && !isLoadingAsset) {
+    // Check if there's an error in the query
+    const errorMessage = assetError 
+      ? `Error: ${(assetError as Error).message}` 
+      : "The asset you're looking for doesn't exist or has been deleted.";
+    
+    // Special message for newly created mortgages
+    const referrer = document.referrer;
+    const isMortgageRedirect = referrer && referrer.includes('/mortgages');
+    
+    const actionGuide = isMortgageRedirect 
+      ? "You may have just created a mortgage. Please go to the property page to view it."
+      : "Please return to the dashboard or try another asset.";
+    
     return (
       <MainLayout>
         <div className="container mx-auto p-4">
@@ -1185,13 +1198,19 @@ export default function AssetDetailPage() {
                   Asset Not Found
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <p>The asset you're looking for doesn't exist or has been deleted.</p>
+              <CardContent className="space-y-4">
+                <p>{errorMessage}</p>
+                <p className="text-muted-foreground">{actionGuide}</p>
               </CardContent>
-              <CardFooter>
+              <CardFooter className="flex flex-col gap-2 sm:flex-row justify-between">
                 <Button onClick={() => setLocation("/dashboard")}>
-                  Return to Dashboard
+                  Go to Dashboard
                 </Button>
+                {isMortgageRedirect && (
+                  <Button onClick={() => setLocation("/asset-classes/3")} variant="outline">
+                    View Properties
+                  </Button>
+                )}
               </CardFooter>
             </Card>
           </div>
