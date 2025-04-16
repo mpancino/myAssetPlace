@@ -283,10 +283,15 @@ export function LoanForm({
     
     // Add missing userId from current user if needed
     if (!data.userId) {
-      // This should match the user ID from the existing mortgage
-      data.userId = mortgageId && defaultValues ? 
-        (defaultValues.userId as number) : 
-        undefined;
+      // If we're editing a mortgage, we MUST use the original user ID
+      // to avoid authorization errors
+      if (isEditing && (mortgageId || assetId) && defaultValues?.userId) {
+        data.userId = defaultValues.userId as number;
+        console.log("Using existing mortgage owner's user ID:", data.userId);
+      } else {
+        // For new mortgages, the server will assign the current user's ID
+        console.log("New mortgage - server will assign current user ID");
+      }
     }
     
     console.log("Final data being submitted:", data);
@@ -640,9 +645,18 @@ export function LoanForm({
                     formData.value = -Math.abs(formData.value);
                   }
                   
-                  // Add userId if needed
+                  // Add userId if needed - make sure it matches the original user ID
+                  // Use the exact same user ID as the one who created the mortgage
+                  // This is important for authorization purposes
                   if (!formData.userId) {
-                    formData.userId = defaultValues?.userId as number || 194; // Demo user
+                    // Get user ID from the current mortgage
+                    const mortgageUserId = defaultValues?.userId;
+                    
+                    // Log for debugging
+                    console.log("Mortgage belongs to user ID:", mortgageUserId);
+                    
+                    // Assign the user ID, ensuring it matches the mortgage's owner
+                    formData.userId = mortgageUserId as number;
                   }
                   
                   // Create mortgage data with proper conversions
