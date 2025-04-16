@@ -683,8 +683,12 @@ export function LoanForm({
                   console.log("Converted mortgage data:", mortgageData);
                   
                   // Direct API call to bypass the mutation
-                  fetch(`/api/mortgages/${mortgageId}`, {
-                    method: 'PATCH',
+                  // Use POST for new mortgages, PATCH for existing ones
+                  const url = mortgageId ? `/api/mortgages/${mortgageId}` : '/api/mortgages';
+                  const method = mortgageId ? 'PATCH' : 'POST';
+                  
+                  fetch(url, {
+                    method: method,
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(mortgageData)
                   })
@@ -708,8 +712,10 @@ export function LoanForm({
                     
                     // Show success toast
                     toast({
-                      title: "Mortgage updated successfully",
-                      description: `Your ${formData.name} has been updated.`,
+                      title: mortgageId 
+                        ? "Mortgage updated successfully" 
+                        : "Mortgage created successfully",
+                      description: `Your ${formData.name} has been ${mortgageId ? 'updated' : 'created'}.`,
                     });
                     
                     // Redirect to property page
@@ -720,7 +726,9 @@ export function LoanForm({
                   .catch(error => {
                     console.error("Direct API error:", error);
                     toast({
-                      title: "Error updating mortgage",
+                      title: mortgageId 
+                        ? "Error updating mortgage" 
+                        : "Error creating mortgage",
                       description: `Error: ${error.message}`,
                       variant: "destructive",
                     });
