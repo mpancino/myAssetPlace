@@ -560,7 +560,17 @@ export function LoanForm({
               </Button>
               <Button 
                 type="submit" 
-                disabled={mutation.isPending}
+                disabled={mutation.isPending || !form.formState.isDirty}
+                onClick={() => {
+                  console.log("Form state:", {
+                    isDirty: form.formState.isDirty,
+                    isValid: form.formState.isValid,
+                    errors: form.formState.errors,
+                    dirtyFields: form.formState.dirtyFields,
+                    touchedFields: form.formState.touchedFields,
+                    defaultValues: form.formState.defaultValues,
+                  });
+                }}
               >
                 {mutation.isPending 
                   ? "Saving..." 
