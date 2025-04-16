@@ -288,8 +288,15 @@ const assetDetailSchema = z.object({
   // Investment-specific fields
   annualIncome: z.number().optional().nullable(),
   
-  // Property-Mortgage relationship field
-  linkedMortgageId: z.number().optional().nullable(),
+  // Mortgage fields
+  hasMortgage: z.boolean().optional().nullable(),
+  mortgageLender: z.string().optional().nullable(),
+  mortgageAmount: z.number().optional().nullable(),
+  mortgageInterestRate: z.number().optional().nullable(),
+  mortgageType: z.string().optional().nullable(),
+  mortgageTerm: z.number().optional().nullable(),
+  mortgageStartDate: z.date().optional().nullable(),
+  mortgagePaymentFrequency: z.string().optional().nullable(),
 });
 
 type AssetDetailFormValues = z.infer<typeof assetDetailSchema>;
@@ -435,8 +442,15 @@ export default function AssetDetailPage() {
       investmentExpenses: parseInvestmentExpenses(asset?.investmentExpenses),
       annualIncome: asset?.annualIncome || null,
       
-      // Property-Mortgage relationship
-      linkedMortgageId: asset?.linkedMortgageId || null,
+      // Mortgage fields
+      hasMortgage: asset?.hasMortgage || false,
+      mortgageLender: asset?.mortgageLender || null,
+      mortgageAmount: asset?.mortgageAmount || null,
+      mortgageInterestRate: asset?.mortgageInterestRate || null,
+      mortgageType: asset?.mortgageType || null,
+      mortgageTerm: asset?.mortgageTerm || null,
+      mortgageStartDate: asset?.mortgageStartDate ? new Date(asset.mortgageStartDate) : null,
+      mortgagePaymentFrequency: asset?.mortgagePaymentFrequency || null,
     },
   });
   
@@ -459,6 +473,7 @@ export default function AssetDetailPage() {
         propertyType: asset.propertyType,
         address: asset.address,
         suburb: asset.suburb,
+        // city removed
         state: asset.state,
         postcode: asset.postcode,
         country: asset.country,
@@ -478,8 +493,15 @@ export default function AssetDetailPage() {
         investmentExpenses: parseInvestmentExpenses(asset.investmentExpenses),
         annualIncome: asset.annualIncome,
         
-        // Property-Mortgage relationship
-        linkedMortgageId: asset.linkedMortgageId,
+        // Mortgage fields
+        hasMortgage: asset.hasMortgage,
+        mortgageLender: asset.mortgageLender,
+        mortgageAmount: asset.mortgageAmount,
+        mortgageInterestRate: asset.mortgageInterestRate,
+        mortgageType: asset.mortgageType,
+        mortgageTerm: asset.mortgageTerm,
+        mortgageStartDate: asset.mortgageStartDate ? new Date(asset.mortgageStartDate) : null,
+        mortgagePaymentFrequency: asset.mortgagePaymentFrequency,
       });
     }
   }, [asset, form]);
@@ -1961,69 +1983,194 @@ export default function AssetDetailPage() {
                           <CardTitle className="flex items-center">
                             <DollarSign className="mr-2 h-5 w-5" /> Mortgage Information
                           </CardTitle>
-                          <CardDescription>
-                            Link this property to an existing mortgage or create a new one
-                          </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                           <FormField
                             control={form.control}
-                            name="linkedMortgageId"
+                            name="hasMortgage"
                             render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Linked Mortgage</FormLabel>
-                                <div className="space-y-3">
-                                  {/* Existing mortgages dropdown */}
-                                  {propertyMortgages && propertyMortgages.length > 0 ? (
-                                    <Select
-                                      value={field.value?.toString() || ""}
-                                      onValueChange={(value) => {
-                                        if (value === "create_new") {
-                                          // Navigate to add loan page to create a new mortgage
-                                          // Will be linked after creation
-                                          setLocation(`/add-loan?type=mortgage&securedAssetId=${assetId}`);
-                                        } else {
-                                          field.onChange(value === "" ? null : parseInt(value));
-                                        }
-                                      }}
-                                    >
-                                      <FormControl>
-                                        <SelectTrigger>
-                                          <SelectValue placeholder="Select a mortgage" />
-                                        </SelectTrigger>
-                                      </FormControl>
-                                      <SelectContent>
-                                        <SelectItem value="">None (no mortgage)</SelectItem>
-                                        {propertyMortgages.map((mortgage) => (
-                                          <SelectItem key={mortgage.id} value={mortgage.id.toString()}>
-                                            {mortgage.lender} - {formatCurrency(mortgage.originalAmount)}
-                                          </SelectItem>
-                                        ))}
-                                        <SelectItem value="create_new">
-                                          <Plus className="mr-2 h-4 w-4 inline" />
-                                          Create New Mortgage
-                                        </SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  ) : (
-                                    <div className="text-center p-4 border rounded border-dashed">
-                                      <p className="text-muted-foreground mb-4">No mortgage records available.</p>
-                                      <Button 
-                                        variant="outline" 
-                                        onClick={() => setLocation(`/add-loan?type=mortgage&securedAssetId=${assetId}`)}
-                                      >
-                                        <Plus className="mr-2 h-4 w-4" /> Create New Mortgage
-                                      </Button>
-                                    </div>
-                                  )}
+                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="text-base">Property Mortgage</FormLabel>
+                                  <FormDescription>
+                                    Does this property have a mortgage?
+                                  </FormDescription>
                                 </div>
-                                <FormDescription>
-                                  Select an existing mortgage to link to this property, or create a new one
-                                </FormDescription>
-                                <FormMessage />
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value === true}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
                               </FormItem>
                             )}
                           />
+                          
+                          {form.watch("hasMortgage") && (
+                            <div className="space-y-4 animate-in fade-in-50 duration-300">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField
+                                  control={form.control}
+                                  name="mortgageAmount"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Mortgage Amount ($)</FormLabel>
+                                      <FormControl>
+                                        <Input
+                                          type="number"
+                                          step="0.01"
+                                          placeholder="Enter mortgage amount"
+                                          onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : 0)}
+                                          value={field.value || ""}
+                                        />
+                                      </FormControl>
+                                      <FormDescription>
+                                        Current outstanding mortgage balance
+                                      </FormDescription>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                
+                                <FormField
+                                  control={form.control}
+                                  name="mortgageLender"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Mortgage Lender</FormLabel>
+                                      <FormControl>
+                                        <Input 
+                                          placeholder="e.g., ANZ, Commonwealth Bank" 
+                                          {...field} 
+                                          value={field.value || ""}
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField
+                                  control={form.control}
+                                  name="mortgageInterestRate"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Interest Rate (%)</FormLabel>
+                                      <FormControl>
+                                        <Input
+                                          type="number"
+                                          step="0.01"
+                                          min="0"
+                                          max="100"
+                                          placeholder="Enter interest rate"
+                                          onChange={e => field.onChange(e.target.value ? parseFloat(e.target.value) : 0)}
+                                          value={field.value || ""}
+                                        />
+                                      </FormControl>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                
+                                <FormField
+                                  control={form.control}
+                                  name="interestRateType" 
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Interest Rate Type</FormLabel>
+                                      <Select
+                                        value={field.value || ""}
+                                        onValueChange={field.onChange}
+                                      >
+                                        <FormControl>
+                                          <SelectTrigger>
+                                            <SelectValue placeholder="Select interest rate type" />
+                                          </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                          <SelectItem value="fixed">Fixed</SelectItem>
+                                          <SelectItem value="variable">Variable</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField
+                                  control={form.control}
+                                  name="mortgageTerm"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel>Loan Term (months)</FormLabel>
+                                      <FormControl>
+                                        <Input
+                                          type="number"
+                                          min="1"
+                                          max="1200"
+                                          placeholder="e.g., 360 for 30 years"
+                                          onChange={e => field.onChange(e.target.value ? parseInt(e.target.value) : 360)}
+                                          value={field.value || ""}
+                                        />
+                                      </FormControl>
+                                      <FormDescription>
+                                        Total term of the mortgage (e.g., 360 months = 30 years)
+                                      </FormDescription>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                                
+                                <FormField
+                                  control={form.control}
+                                  name="mortgageStartDate"
+                                  render={({ field }) => (
+                                    <FormItem className="flex flex-col">
+                                      <FormLabel>Mortgage Start Date</FormLabel>
+                                      <DatePicker
+                                        date={field.value ? new Date(field.value) : null}
+                                        setDate={field.onChange}
+                                      />
+                                      <FormDescription>
+                                        When did the mortgage begin?
+                                      </FormDescription>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+                              </div>
+                              
+                              <FormField
+                                control={form.control}
+                                name="mortgagePaymentFrequency"
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>Payment Frequency</FormLabel>
+                                    <Select
+                                      value={field.value || ""}
+                                      onValueChange={field.onChange}
+                                    >
+                                      <FormControl>
+                                        <SelectTrigger>
+                                          <SelectValue placeholder="Select payment frequency" />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        <SelectItem value="weekly">Weekly</SelectItem>
+                                        <SelectItem value="fortnightly">Fortnightly</SelectItem>
+                                        <SelectItem value="monthly">Monthly</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                          )}
                         </CardContent>
                       </Card>
                     )}
@@ -2136,12 +2283,12 @@ export default function AssetDetailPage() {
                     {/* Mortgage Details - Only shown when not editing */}
                     {console.log("Mortgage rendering condition:", {
                       isEditing,
-                      linkedMortgageId: asset.linkedMortgageId,
-                      shouldRender: !isEditing && (asset.linkedMortgageId || propertyMortgages?.length > 0),
+                      hasMortgage: asset.hasMortgage,
+                      shouldRender: !isEditing && asset.hasMortgage,
                       mortgagesCount: propertyMortgages?.length,
                       isLoadingMortgages
                     })}
-                    {!isEditing && (asset.linkedMortgageId || propertyMortgages?.length > 0) && (
+                    {!isEditing && (asset.hasMortgage || propertyMortgages?.length > 0) && (
                       <MortgageDetails 
                         property={asset} 
                         mortgages={propertyMortgages} 
@@ -2199,8 +2346,8 @@ export default function AssetDetailPage() {
                     {/* Debug info for mortgage display conditions */}
                     {console.log("Mortgage rendering condition:", {
                       isEditing,
-                      linkedMortgageId: asset.linkedMortgageId,
-                      shouldRender: !isEditing && (asset.linkedMortgageId || propertyMortgages?.length > 0),
+                      hasMortgage: asset.hasMortgage,
+                      shouldRender: !isEditing && asset.hasMortgage,
                       mortgagesCount: propertyMortgages?.length,
                       isLoadingMortgages
                     })}
