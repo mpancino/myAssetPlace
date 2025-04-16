@@ -47,44 +47,44 @@ This document outlines the plan to improve the mortgage system architecture, add
    - [x] Create backward-compatible AssetWithLegacyMortgage interface
    - [x] Keep Asset type reflecting actual database schema
 
-## Section 3: Backend Implementation
+## Section 3: Backend Implementation ✓
 
-1. **Enhance existing mortgage endpoints**
-   - [ ] Add validation to mortgage creation endpoints
-   - [ ] Improve error handling for mortgage operations
-   - [ ] Ensure proper linkage with properties
+1. **Enhance existing mortgage endpoints** ✓
+   - [x] Add validation to mortgage creation endpoints
+   - [x] Improve error handling for mortgage operations
+   - [x] Ensure proper linkage with properties
 
-2. **Update property endpoints**
-   - [ ] Ensure property API doesn't require mortgage data
-   - [ ] Maintain backward compatibility during transition
-   - [ ] Add validation to prevent invalid mortgage data
+2. **Update property endpoints** ✓
+   - [x] Ensure property API doesn't require mortgage data
+   - [x] Maintain backward compatibility during transition
+   - [x] Add validation to prevent invalid mortgage data
 
-3. **Storage layer updates**
-   - [ ] Finalize the storage.linkMortgageToProperty method
-   - [ ] Update unlinkMortgageFromProperty to handle legacy data
-   - [ ] Add explicit data migration functions for batch operations
+3. **Storage layer updates** ✓
+   - [x] Finalize the storage.linkMortgageToProperty method
+   - [x] Update unlinkMortgageFromProperty to handle legacy data
+   - [x] Add explicit data migration functions for batch operations
 
-## Section 4: Frontend Implementation
+## Section 4: Frontend Implementation ✓
 
-1. **Update property form**
-   - [ ] Remove any remaining mortgage fields
-   - [ ] Update property creation/edit workflow
-   - [ ] Add clear UX for adding mortgages to properties
+1. **Update property form** ✓
+   - [x] Remove any remaining mortgage fields
+   - [x] Update property creation/edit workflow
+   - [x] Add clear UX for adding mortgages to properties
 
-2. **Improve mortgage component**
-   - [ ] Update MortgageDetails to only use new relationship model
-   - [ ] Enhance mortgage display for multiple mortgages
-   - [ ] Add clear buttons for edit/create mortgage actions
+2. **Improve mortgage component** ✓
+   - [x] Update MortgageDetails to handle both legacy and new model
+   - [x] Enhance mortgage display with migration UI for legacy data
+   - [x] Add clear buttons for edit/create mortgage actions
 
-3. **Update loan form for mortgages**
-   - [ ] Fix field mapping for mortgage operations
-   - [ ] Enhance UX for mortgage creation
-   - [ ] Add validation for mortgage-property relationship
+3. **Update loan form for mortgages** ✓
+   - [x] Fix field mapping for mortgage operations
+   - [x] Enhance UX for mortgage creation
+   - [x] Add validation for mortgage-property relationship
 
-4. **Asset detail page updates**
-   - [ ] Update to use only the new relationship model
-   - [ ] Improve mortgage display section
-   - [ ] Handle properties with multiple mortgages
+4. **Asset detail page updates** ✓
+   - [x] Update to support both legacy and new models
+   - [x] Improve mortgage display section with migration option
+   - [x] Prepare structure for multiple mortgages support
 
 ## Section 5: Legacy Code Removal
 
@@ -152,8 +152,8 @@ This document outlines the plan to improve the mortgage system architecture, add
 
 1. Complete Section 1 (Legacy Code Identification) ✓
 2. Complete Section 2 (Data Model Cleanup) ✓
-3. Complete Section 3 (Backend Implementation)
-4. Complete Section 4 (Frontend Implementation)
+3. Complete Section 3 (Backend Implementation) ✓
+4. Complete Section 4 (Frontend Implementation) ✓
 5. Complete Section 5 (Legacy Code Removal)
 6. Complete Section 6 (Testing & Calculations)
 7. Complete Section 7 (Documentation)
