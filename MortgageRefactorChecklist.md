@@ -16,6 +16,7 @@ This checklist outlines the development tasks needed to improve the mortgage ass
   - [ ] `mortgageType`
   - [ ] `mortgagePaymentFrequency`
 - [ ] Only keep `mortgageId` field for backward compatibility
+- [ ] Identify and mark legacy database columns for future removal
 
 ### 1.2 Mortgage Schema Standardization
 - [ ] Review and standardize `insertMortgageSchema` field names
@@ -69,10 +70,14 @@ This checklist outlines the development tasks needed to improve the mortgage ass
 - [ ] Improve error handling in storage methods
 - [ ] Optimize data access patterns
 
-### 3.3 Migration Support
+### 3.3 Legacy Code Removal and Migration Support
+- [ ] Identify and remove all legacy mortgage code from property components
+- [ ] Remove obsolete mortgage-related methods from utility files
+- [ ] Remove or update outdated mortgage functions in API routes
 - [ ] Create functions to handle legacy data migration
 - [ ] Add validation for migrated mortgage data
 - [ ] Create recovery mechanisms for failed migrations
+- [ ] Create database migration script to safely remove legacy columns in production
 
 ## 4. Cashflow and Financial Calculations
 
@@ -141,13 +146,35 @@ This checklist outlines the development tasks needed to improve the mortgage ass
 - [ ] Lazy load mortgage details when needed
 - [ ] Ensure large mortgage lists perform well
 
+## 8. Legacy Code Identification
+
+### 8.1 Component Code Inventory
+- [ ] Review all property-related components for mortgage code usage
+- [ ] Identify all mortgage field references in property forms
+- [ ] Find embedded mortgage display components in property views
+- [ ] Document all mortgage-related UI elements for replacement
+
+### 8.2 API and Storage Code Inventory
+- [ ] Catalog all mortgage-related API endpoints 
+- [ ] Identify all storage methods that process mortgage data
+- [ ] Find outdated or unused mortgage code
+- [ ] List all mortgage calculation functions for standardization
+
+### 8.3 Utility Function Review
+- [ ] Review mortgage calculation utilities
+- [ ] Identify any utility functions mixing property and mortgage concerns
+- [ ] Document shared functions that need separation
+- [ ] List any dead code for removal
+
 ## Implementation Order
 
-1. Schema cleanup and standardization
-2. Backend storage and API updates
-3. Frontend component updates
-4. Calculation and integration updates
-5. Testing and verification
-6. Documentation
+1. Legacy code inventory and documentation
+2. Schema cleanup and standardization
+3. Backend storage and API updates
+4. Frontend component updates
+5. Legacy code removal
+6. Calculation and integration updates
+7. Testing and verification
+8. Documentation and final cleanup
 
 This checklist will be used to track progress and ensure a complete implementation of the mortgage refactoring.
