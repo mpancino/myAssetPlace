@@ -32,7 +32,11 @@ export const defaultBasicProjectionConfig = (settings: SystemSettings | any): Pr
   enabledAssetHoldingTypes: [], // Empty means all holding types
   includeHiddenAssets: false,
   excludeLiabilities: false,
-  calculateAfterTax: false
+  calculateAfterTax: false,
+  // Default cashflow allocation options
+  allocateCashflow: false, // Default to not allocating cashflow
+  targetCashAccountId: null, // No default cash account selected
+  allowNegativeBalance: false // Default to not allowing negative balance
 });
 
 /**
@@ -517,6 +521,67 @@ export function generateProjections(
     // Calculate net worth and cashflow for this year
     netWorth[year] = totalAssetValue[year] - totalLiabilityValue[year];
     netCashflow[year] = totalIncome[year] - totalExpenses[year];
+    
+    // Apply cashflow allocation if enabled
+    if (config.allocateCashflow && config.targetCashAccountId !== null) {
+      // Find the target cash account
+      const targetCashAccount = filteredAssets.find(asset => 
+        asset.id === config.targetCashAccountId && !asset.isLiability
+      );
+      
+      if (targetCashAccount) {
+        // Get the index of the cash account in the filtered assets array
+        const assetIndex = filteredAssets.indexOf(targetCashAccount);
+        
+        // Apply cashflow to cash account value
+        let updatedCashValue = targetCashAccount.value;
+        
+        // For year 1+, we need to use the projected value from previous calculations
+        if (year > 1) {
+          // Get the previous year's projected value for this asset
+          const assetClass = assetClasses[targetCashAccount.assetClassId];
+          const growthRate = getAssetGrowthRate(targetCashAccount, assetClass, config.growthRateScenario);
+          updatedCashValue = calculateFutureValue(targetCashAccount.value, growthRate, year - 1);
+        }
+        
+        // Add the net cashflow (which can be positive or negative)
+        updatedCashValue += netCashflow[year];
+        
+        // Check if we allow negative balance
+        if (!config.allowNegativeBalance && updatedCashValue < 0) {
+          updatedCashValue = 0;
+        }
+        
+        // Update the cash account's projected value for this year
+        if (assetIndex >= 0) {
+          // Create a copy of the asset with updated value for future projections
+          filteredAssets[assetIndex] = {
+            ...targetCashAccount,
+            value: updatedCashValue
+          };
+          
+          // Update the total asset value to reflect the change
+          // First, remove the previous contribution of this asset
+          const assetClass = assetClasses[targetCashAccount.assetClassId];
+          const growthRate = getAssetGrowthRate(targetCashAccount, assetClass, config.growthRateScenario);
+          const previousValue = calculateFutureValue(targetCashAccount.value, growthRate, year - 1);
+          totalAssetValue[year] -= previousValue;
+          
+          // Then add the new value
+          totalAssetValue[year] += updatedCashValue;
+          
+          // Update the asset class and holding type breakdowns
+          assetClassValues[targetCashAccount.assetClassId][year] -= previousValue;
+          assetClassValues[targetCashAccount.assetClassId][year] += updatedCashValue;
+          
+          holdingTypeValues[targetCashAccount.assetHoldingTypeId][year] -= previousValue;
+          holdingTypeValues[targetCashAccount.assetHoldingTypeId][year] += updatedCashValue;
+          
+          // Recalculate net worth with updated asset value
+          netWorth[year] = totalAssetValue[year] - totalLiabilityValue[year];
+        }
+      }
+    }
     
     // Apply inflation adjustment if needed
     if (config.inflationRate > 0) {

@@ -758,6 +758,11 @@ export type ProjectionConfig = {
   includeHiddenAssets: boolean;
   excludeLiabilities: boolean;
   calculateAfterTax: boolean;
+  // Cashflow allocation options
+  allocateCashflow: boolean;
+  targetCashAccountId: number | null;
+  // When target account is depleted, whether to allow negative balance
+  allowNegativeBalance: boolean;
 };
 
 export type ProjectionResult = {
