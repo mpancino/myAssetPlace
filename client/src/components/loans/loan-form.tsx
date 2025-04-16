@@ -50,6 +50,32 @@ interface LoanFormProps {
   onSuccess?: (loan: Asset) => void;
 }
 
+// Helper function for calculating loan payments based on form data
+function calculatePaymentAmount(data: any): number {
+  if (data.paymentAmount) {
+    return data.paymentAmount;
+  }
+  
+  // Only calculate if we have all the required information
+  if (data.interestRate > 0 && data.loanTerm > 0 && Math.abs(data.originalLoanAmount || data.value) > 0) {
+    // Determine payment frequency multiplier
+    const paymentsPerYear = 
+      data.paymentFrequency === 'monthly' ? 12 : 
+      data.paymentFrequency === 'fortnightly' ? 26 : 
+      data.paymentFrequency === 'weekly' ? 52 : 12;
+    
+    // Calculate using the loan payment formula
+    return calculateLoanPayment(
+      Math.abs(data.originalLoanAmount || data.value),
+      data.interestRate / 100, // Convert percentage to decimal
+      data.loanTerm / 12, // Convert months to years
+      paymentsPerYear
+    );
+  }
+  
+  return 0;
+}
+
 export function LoanForm({
   assetClasses,
   holdingTypes,
@@ -702,7 +728,17 @@ export function LoanForm({
                     interestRateType: formData.interestRateType,
                     loanTerm: formData.loanTerm,
                     paymentFrequency: formData.paymentFrequency,
-                    paymentAmount: formData.paymentAmount,
+                    // Calculate payment amount if missing but we have interest rate and original amount
+                    paymentAmount: formData.paymentAmount || 
+                      (formData.interestRate > 0 && formData.loanTerm > 0 && Math.abs(formData.originalLoanAmount || formData.value) > 0 ? 
+                        calculateLoanPayment(
+                          Math.abs(formData.originalLoanAmount || formData.value),
+                          formData.interestRate / 100, // Convert percentage to decimal
+                          formData.loanTerm / 12, // Convert months to years
+                          formData.paymentFrequency === 'monthly' ? 12 : 
+                            formData.paymentFrequency === 'fortnightly' ? 26 : 
+                            formData.paymentFrequency === 'weekly' ? 52 : 12
+                        ) : 0),
                     startDate: formData.startDate instanceof Date ? 
                       formData.startDate.toISOString() : 
                       (formData.startDate ? new Date(formData.startDate).toISOString() : new Date().toISOString()), // Ensure we send an ISO string
