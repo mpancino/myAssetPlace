@@ -50,7 +50,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { apiRequest, queryClient, getQueryFn } from "@/lib/queryClient";
 import { AssetClass, AssetHoldingType, Asset, Mortgage, AssetWithLegacyMortgage } from "@shared/schema";
-import { asLegacyAsset, hasLegacyMortgageData, getMortgageDataStatus } from "@/lib/legacy-asset-utils";
+import { asLegacyAsset, hasLegacyMortgageData, getMortgageDataStatus, isLegacyMortgageProperty } from "@/lib/legacy-asset-utils";
 import { OffsetAccountSection } from "@/components/loans/offset-account-section";
 import { calculateLoanPayment, calculatePrincipalAndInterest } from "@shared/calculations";
 import { formatCurrency } from "@/lib/utils";
@@ -444,7 +444,7 @@ export default function AssetDetailPage() {
       annualIncome: asset?.annualIncome || null,
       
       // Mortgage fields
-      hasMortgage: asset?.hasMortgage || false,
+      hasMortgage: asset ? isLegacyMortgageProperty(asLegacyAsset(asset)) : false,
       mortgageLender: asset?.mortgageLender || null,
       mortgageAmount: asset?.mortgageAmount || null,
       mortgageInterestRate: asset?.mortgageInterestRate || null,
