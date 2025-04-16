@@ -620,17 +620,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
       const assetClassId = req.query.assetClassId ? parseInt(req.query.assetClassId as string) : undefined;
+      const assetClassName = req.query.assetClass as string | undefined;
       
-      // If assetClassId is provided, filter assets by that class
+      // Get all assets first (we'll need to filter them)
+      const allAssets = await storage.listAssets(req.user.id);
+      
+      // If assetClassId is provided, filter assets by that class ID
       if (assetClassId) {
-        const allAssets = await storage.listAssets(req.user.id);
         const filteredAssets = allAssets.filter(asset => asset.assetClassId === assetClassId);
         return res.json(filteredAssets);
       }
       
+      // If assetClassName is provided, filter assets by class name
+      if (assetClassName) {
+        // Get all asset classes first
+        const assetClasses = await storage.listAssetClasses();
+        
+        // Find the asset class ID matching the provided name (case insensitive)
+        const targetClass = assetClasses.find(ac => 
+          ac.name.toLowerCase() === assetClassName.toLowerCase()
+        );
+        
+        if (targetClass) {
+          const filteredAssets = allAssets.filter(asset => asset.assetClassId === targetClass.id);
+          return res.json(filteredAssets);
+        }
+        
+        // If no matching class found, return empty array
+        return res.json([]);
+      }
+      
       // Otherwise return all assets with optional limit
-      const assets = await storage.listAssets(req.user.id, limit);
-      res.json(assets);
+      if (limit && limit > 0) {
+        return res.json(allAssets.slice(0, limit));
+      }
+      
+      res.json(allAssets);
     } catch (err) {
       res.status(500).json({ message: "Failed to fetch assets" });
     }
