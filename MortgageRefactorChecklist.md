@@ -1,187 +1,160 @@
-# myAssetPlace Mortgage Refactor Checklist
+# Mortgage Refactoring Checklist
 
-## Overview
-This checklist outlines the development tasks needed to improve the mortgage asset class in myAssetPlace, ensuring proper separation of concerns between properties and mortgages while maintaining their relationship for accurate financial calculations.
+This document outlines the plan to improve the mortgage system architecture, addressing the issues identified in the current implementation.
 
-## 1. Legacy Code Identification & Analysis
+## Section 1: Legacy Code Identification & Analysis ✓
 
-### 1.1 Component Code Inventory
-- [ ] Review all property-related components for mortgage code usage
-- [ ] Identify all mortgage field references in property forms
-- [ ] Find embedded mortgage display components in property views
-- [ ] Document all mortgage-related UI elements for replacement
+1. **Identify property components with mortgage code** ✓
+   - Reviewed `property-form.tsx`: Already includes text about removing mortgage fields
+   - Reviewed `mortgage-details.tsx`: Expects property + mortgage data, handles API data
 
-### 1.2 API and Storage Code Inventory
-- [ ] Catalog all mortgage-related API endpoints 
-- [ ] Identify all storage methods that process mortgage data
-- [ ] Find outdated or unused mortgage code
-- [ ] List all mortgage calculation functions for standardization
+2. **Identify loan components that handle mortgages** ✓
+   - Reviewed `loan-form.tsx`: Has special handling for mortgages via `isMortgage` flag
+   - Includes field mapping (e.g., loanProvider → lender, originalLoanAmount → originalAmount)
+   - Has conditional endpoint for editing mortgages
 
-### 1.3 Utility Function Review
-- [ ] Review mortgage calculation utilities
-- [ ] Identify any utility functions mixing property and mortgage concerns
-- [ ] Document shared functions that need separation
-- [ ] List any dead code for removal
+3. **Review API endpoints for mortgages** ✓
+   - `/api/mortgages` endpoints exist for CRUD operations
+   - `/api/properties/:id/mortgages` endpoint for getting mortgages by property
 
-## 2. Schema and Data Model Improvements
+4. **Examine schema for legacy fields** ✓
+   - `assets` table includes legacy mortgage fields (lines 205-214)
+   - `mortgages` table exists as a separate entity
+   - Bidirectional relationship via `linkedMortgageId` in assets and `securedAssetId` in mortgages
 
-### 2.1 Property Schema Cleanup
-- [ ] Remove all mortgage-related fields from `insertPropertySchema`
-  - [ ] `hasMortgage`
-  - [ ] `mortgageAmount`
-  - [ ] `mortgageInterestRate`
-  - [ ] `mortgageTerm`
-  - [ ] `mortgageStartDate` 
-  - [ ] `mortgageLender`
-  - [ ] `mortgageType`
-  - [ ] `mortgagePaymentFrequency`
-- [ ] Only keep `mortgageId` field for backward compatibility
-- [ ] Identify and mark legacy database columns for future removal
+5. **Analyze property-mortgage relationship** ✓
+   - Properties can link to mortgages via both legacy fields and the new relationship
+   - API has migration function to convert from old to new structure
+   - Asset detail page handles both old and new relationships
 
-### 2.2 Mortgage Schema Standardization
-- [ ] Review and standardize `insertMortgageSchema` field names
-- [ ] Ensure all required fields have proper validation
-- [ ] Add computed fields for mortgage calculations
-- [ ] Strengthen relationships with properties
-- [ ] Ensure `securedAssetId` properly references property assets
+6. **Identify field naming inconsistencies** ✓
+   - Frontend: `loanProvider` vs Backend: `lender`
+   - Frontend: `originalLoanAmount` vs Backend: `originalAmount`
+   - Frontend: `termMonths` vs Backend: `loanTerm`
 
-### 2.3 Data Model Relationships
-- [ ] Fix `linkedMortgageId` in assets table or add if not present
-- [ ] Ensure bidirectional relationship between properties and mortgages
-- [ ] Verify relations are correctly defined in Drizzle schema
-- [ ] Add proper cascade/set null behavior for referential integrity
+## Section 2: Data Model Cleanup
 
-## 3. Backend API and Storage Improvements
+1. **Update schema.ts to finalize mortgage-property relationship**
+   - [x] Remove legacy mortgage fields from property schema (lines 205-214) 
+   - [x] Remove mortgageId field from insertPropertySchema
+   - [x] Strengthen relationship between mortgages and properties with clear documentation
 
-### 3.1 API Endpoint Updates
-- [ ] Review/update `/api/mortgages` endpoints
-- [ ] Create `/api/properties/:id/mortgages` endpoint
-- [ ] Add proper error handling to all endpoints
-- [ ] Include detailed logging for mortgage operations
+2. **Create migration function for existing data**
+   - [ ] Verify `migratePropertyMortgageData` works for all scenarios
+   - [ ] Add function to cleanup legacy fields after migration
 
-### 3.2 Storage Method Updates
-- [ ] Update `storage.ts` mortgage-related methods
-- [ ] Add transaction support for linked operations
-- [ ] Improve error handling in storage methods
-- [ ] Optimize data access patterns
+3. **Update asset model types**
+   - [ ] Remove mortgage fields from Asset type
+   - [ ] Update InsertProperty type to remove mortgage fields
 
-### 3.3 Migration Support
-- [ ] Create functions to handle legacy data migration
-- [ ] Add validation for migrated mortgage data
-- [ ] Create recovery mechanisms for failed migrations
-- [ ] Create database migration script to safely remove legacy columns in production
+## Section 3: Backend Implementation
 
-## 4. Frontend Component Updates
+1. **Enhance existing mortgage endpoints**
+   - [ ] Add validation to mortgage creation endpoints
+   - [ ] Improve error handling for mortgage operations
+   - [ ] Ensure proper linkage with properties
 
-### 4.1 Property Form Updates
-- [ ] Remove all mortgage input fields from property forms
-- [ ] Replace with informative mortgage section
-- [ ] Add UI to link existing mortgages to properties
-- [ ] Create "Add Mortgage" button linking to mortgage creation
+2. **Update property endpoints**
+   - [ ] Ensure property API doesn't require mortgage data
+   - [ ] Maintain backward compatibility during transition
+   - [ ] Add validation to prevent invalid mortgage data
 
-### 4.2 Mortgage Display Components
-- [ ] Create `PropertyMortgageList` component
-- [ ] Create `MortgageSummaryCard` for property views
-- [ ] Develop `MortgageDetailView` with amortization schedule
-- [ ] Create mortgage tables with payment breakdowns
+3. **Storage layer updates**
+   - [ ] Finalize the storage.linkMortgageToProperty method
+   - [ ] Update unlinkMortgageFromProperty to handle legacy data
+   - [ ] Add explicit data migration functions for batch operations
 
-### 4.3 Property Detail Page
-- [ ] Update property detail page to show linked mortgages
-- [ ] Add mortgage payment information to property cashflow 
-- [ ] Create clear navigation to mortgage details/edit pages
-- [ ] Show mortgage impact on property performance
+## Section 4: Frontend Implementation
 
-### 4.4 Navigation Flow
-- [ ] Establish clear property → mortgage navigation paths
-- [ ] Ensure mortgage forms link back to related properties
-- [ ] Add breadcrumbs for proper context
+1. **Update property form**
+   - [ ] Remove any remaining mortgage fields
+   - [ ] Update property creation/edit workflow
+   - [ ] Add clear UX for adding mortgages to properties
 
-## 5. Legacy Code Removal
+2. **Improve mortgage component**
+   - [ ] Update MortgageDetails to only use new relationship model
+   - [ ] Enhance mortgage display for multiple mortgages
+   - [ ] Add clear buttons for edit/create mortgage actions
 
-### 5.1 Component Code Cleanup
-- [ ] Remove legacy mortgage code from property components
-- [ ] Update all components to use new mortgage architecture
-- [ ] Clean up obsolete imports and constants
+3. **Update loan form for mortgages**
+   - [ ] Fix field mapping for mortgage operations
+   - [ ] Enhance UX for mortgage creation
+   - [ ] Add validation for mortgage-property relationship
 
-### 5.2 API and Storage Cleanup
-- [ ] Remove outdated mortgage functions in API routes
-- [ ] Clean up storage methods that mixed property/mortgage concerns
-- [ ] Add deprecation notices to any methods that can't be removed yet
+4. **Asset detail page updates**
+   - [ ] Update to use only the new relationship model
+   - [ ] Improve mortgage display section
+   - [ ] Handle properties with multiple mortgages
 
-### 5.3 Utility Function Cleanup
-- [ ] Refactor utility functions that mixed concerns
-- [ ] Remove dead code
-- [ ] Create new, dedicated mortgage utility functions as needed
+## Section 5: Legacy Code Removal
 
-## 6. Cashflow and Financial Calculations
+1. **Remove legacy mortgage fields**
+   - [ ] Remove hasMortgage checks from components
+   - [ ] Remove legacy API handling for mortgage data in properties
+   - [ ] Clean up any database migration code for legacy fields
 
-### 6.1 Mortgage Payment Calculations
-- [ ] Update mortgage payment calculation logic
-- [ ] Ensure consistent calculation across application
-- [ ] Support different payment frequencies
-- [ ] Create helper functions for common calculations
+2. **Clean up asset detail page**
+   - [ ] Remove conditional rendering based on hasMortgage
+   - [ ] Update property tab to reference mortgages properly
+   - [ ] Remove any references to legacy mortgage fields
 
-### 6.2 Property Cashflow Integration
-- [ ] Update property cashflow to include mortgage payments
-- [ ] Ensure mortgage expenses appear in expense breakdowns
-- [ ] Add mortgage interest/principal split to reports
-- [ ] Create offset account support if applicable
+3. **Update projections engine**
+   - [ ] Ensure projections use the new mortgage relationships
+   - [ ] Update any projection code that relied on legacy fields
 
-### 6.3 Projection Support
-- [ ] Update projection calculations to handle mortgages
-- [ ] Ensure mortgage balances decrease over projection time
-- [ ] Model refinancing scenarios if needed
-- [ ] Include mortgage in asset/liability projections
+## Section 6: Testing & Calculations
 
-## 7. Testing and Verification
+1. **Test mortgage calculations**
+   - [ ] Verify amortization schedules are correct
+   - [ ] Test interest calculation functions
+   - [ ] Ensure mortgage balance calculations are accurate
 
-### 7.1 Unit Tests
-- [ ] Create tests for mortgage calculations
-- [ ] Test mortgage schema validation
-- [ ] Verify mortgage-property relationships
-- [ ] Test edge cases (zero interest, etc.)
+2. **Test property + mortgage integration**
+   - [ ] Test property value vs mortgage balance
+   - [ ] Verify net equity calculations
+   - [ ] Test projected property + mortgage values
 
-### 7.2 Integration Tests
-- [ ] Test mortgage creation flow
-- [ ] Test linking mortgages to properties
-- [ ] Test mortgage updates
-- [ ] Verify cashflow calculations
+3. **End-to-end testing**
+   - [ ] Test property creation -> mortgage addition flow
+   - [ ] Test mortgage editing and deletion
+   - [ ] Test mortgage payments and balance updates
 
-### 7.3 UI Testing
-- [ ] Verify mortgage forms work properly
-- [ ] Test navigation between properties and mortgages
-- [ ] Check responsive design of mortgage components
-- [ ] Verify accessibility of mortgage forms
+## Section 7: Documentation
 
-## 8. Documentation and Final Cleanup
+1. **Update internal documentation**
+   - [ ] Document new mortgage-property relationship
+   - [ ] Update API documentation for mortgage endpoints
+   - [ ] Add comments to clarify relationship in code
 
-### 8.1 Code Documentation
-- [ ] Add JSDoc comments to all mortgage-related functions
-- [ ] Document mortgage data model
-- [ ] Add inline comments for complex calculations
-- [ ] Create function header documentation
+2. **User documentation**
+   - [ ] Update help text for property and mortgage forms
+   - [ ] Create guidelines for managing mortgages
+   - [ ] Document how to view and update mortgages
 
-### 8.2 User Documentation
-- [ ] Update property documentation to reference mortgage management
-- [ ] Create mortgage management documentation
-- [ ] Add examples of property-mortgage relationships
-- [ ] Document mortgage calculations
+## Section 8: Final Cleanup & Optimization
 
-### 8.3 Performance Optimization
-- [ ] Review and optimize mortgage-related queries
-- [ ] Add appropriate indexes
-- [ ] Optimize mortgage components for re-rendering
-- [ ] Ensure large mortgage lists perform well
+1. **Code optimization**
+   - [ ] Refactor any repeated code in mortgage components
+   - [ ] Optimize mortgage calculations for performance
+   - [ ] Clean up any debug logging
+
+2. **Database cleanup**
+   - [ ] Remove any unused mortgage columns from properties table
+   - [ ] Optimize mortgage-property queries
+   - [ ] Add indexes for common queries
+
+3. **Final validation**
+   - [ ] Verify all mortgage features work correctly
+   - [ ] Check calculations are accurate in all scenarios
+   - [ ] Ensure property-mortgage relationship is correctly maintained
 
 ## Implementation Order
 
-1. Legacy code identification & analysis (§1)
-2. Schema and data model improvements (§2)
-3. Backend API and storage improvements (§3)
-4. Frontend component updates (§4)
-5. Legacy code removal (§5)
-6. Cashflow and financial calculations (§6)
-7. Testing and verification (§7)
-8. Documentation and final cleanup (§8)
-
-This checklist will be used to track progress and ensure a complete implementation of the mortgage refactoring.
+1. Complete Section 1 (Legacy Code Identification) ✓
+2. Complete Section 2 (Data Model Cleanup)
+3. Complete Section 3 (Backend Implementation)
+4. Complete Section 4 (Frontend Implementation)
+5. Complete Section 5 (Legacy Code Removal)
+6. Complete Section 6 (Testing & Calculations)
+7. Complete Section 7 (Documentation)
+8. Complete Section 8 (Final Cleanup & Optimization)

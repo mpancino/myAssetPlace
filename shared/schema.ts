@@ -109,7 +109,9 @@ export const mortgages = pgTable("mortgages", {
   startDate: date("start_date").notNull(),
   endDate: date("end_date"), // calculated field
   
-  // Relationship fields
+  // Relationship fields - bidirectional with assets table
+  // Mortgage links to property via securedAssetId (primary relationship)
+  // Property can reference back via its linkedMortgageId field
   securedAssetId: integer("secured_asset_id").references(() => assets.id, { onDelete: "set null" }),
   assetHoldingTypeId: integer("asset_holding_type_id").references(() => assetHoldingTypes.id).default(1), // Default to Personal
   loanPurpose: text("loan_purpose"), // mortgage, investment, personal, etc.
@@ -199,19 +201,11 @@ export const assets = pgTable("assets", {
   propertyExpenses: json("property_expenses"), // e.g., strata, council rates, insurance, maintenance
   investmentExpenses: json("investment_expenses"), // e.g., management fees, brokerage fees, etc.
   
-  // New bidirectional relationship fields
+  // Mortgage relationship - bidirectional with mortgages table
+  // Property links to mortgage via linkedMortgageId (one property can have one primary mortgage)
+  // Mortgage links to property via securedAssetId (multiple mortgages can reference a property)
   linkedMortgageId: integer("linked_mortgage_id").references(() => mortgages.id, { onDelete: "set null" }),
-  
-  // Legacy mortgage fields - to be migrated and then removed
-  mortgageId: integer("mortgage_id"), // link to associated mortgage (if any)
-  hasMortgage: boolean("has_mortgage").default(false),
-  mortgageAmount: real("mortgage_amount"),
-  mortgageInterestRate: real("mortgage_interest_rate"),
-  mortgageTerm: integer("mortgage_term"), // In months
-  mortgageStartDate: date("mortgage_start_date"),
-  mortgageLender: text("mortgage_lender"),
-  mortgageType: text("mortgage_type"), // fixed, variable
-  mortgagePaymentFrequency: text("mortgage_payment_frequency"), // weekly, fortnightly, monthly
+  // Legacy mortgage fields have been removed - relationship is now handled via linkedMortgageId and mortgages table
   
   // Share/Stock specific fields
   ticker: text("ticker"), // Stock ticker symbol
@@ -258,12 +252,13 @@ export const assetsRelations = relations(assets, ({ one, many }) => ({
     fields: [assets.offsetLinkedLoanId],
     references: [assets.id],
   }),
-  // New bidirectional relationship with mortgages
+  // Bidirectional relationship with mortgages
+  // One property can have one primary mortgage (linkedMortgage)
   linkedMortgage: one(mortgages, {
     fields: [assets.linkedMortgageId],
     references: [mortgages.id],
   }),
-  // Relation for properties securing mortgages
+  // One property can secure multiple mortgages (securingMortgages)
   securingMortgages: many(mortgages, { relationName: "securedAsset" }),
 }));
 
@@ -468,7 +463,6 @@ export const insertPropertySchema = insertAssetSchema.extend({
   })).optional(),
   
   // Property location data
-  mortgageId: z.number().optional(), // Keeping for backward compatibility with existing records
   longitude: z.number().optional(),
   latitude: z.number().optional(),
   // Override the purchaseDate from insertAssetSchema to accept Date objects
