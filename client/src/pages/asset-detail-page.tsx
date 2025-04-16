@@ -316,7 +316,11 @@ export default function AssetDetailPage() {
   const [currentInvestmentExpenses, setCurrentInvestmentExpenses] = useState<Record<string, InvestmentExpense> | undefined>(undefined);
   
   // Fetch the asset details
-  const { data: asset, isLoading: isLoadingAsset } = useQuery<AssetWithLegacyMortgage>({
+  const { 
+    data: asset, 
+    isLoading: isLoadingAsset,
+    error: assetError 
+  } = useQuery<AssetWithLegacyMortgage>({
     queryKey: [`/api/assets/${assetId}`],
     enabled: !!assetId,
     staleTime: 0, // Disable caching for this query to always get fresh data
