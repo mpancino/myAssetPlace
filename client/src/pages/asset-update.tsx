@@ -1,11 +1,14 @@
 // This is a temporary file to help with the replacement
+// Holds examples of code replacements for asset-detail-page.tsx
 import { AssetWithLegacyMortgage } from "@shared/schema";
 
-// Replace line 539 (updateAssetMutation)
+/*
+For updateAssetMutation:
 return data as AssetWithLegacyMortgage;
 
-// Replace line 731 (saveInvestmentExpensesMutation)
+For saveInvestmentExpensesMutation:
 return data as AssetWithLegacyMortgage;
 
-// Replace line 844 (savePropertyExpensesMutation)
+For savePropertyExpensesMutation:
 return data as AssetWithLegacyMortgage;
+*/

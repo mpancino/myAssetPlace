@@ -18,6 +18,7 @@ import {
   assetClasses,
   mortgages,
   transformTaxSettings,
+  AssetWithLegacyMortgage,
   type AssetHoldingType,
   type ProjectionConfig,
   type ProjectionResult,
