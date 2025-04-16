@@ -417,6 +417,9 @@ export const insertMortgageSchema = createInsertSchema(mortgages)
     createdAt: true,
     updatedAt: true,
   })
+  .partial({
+    userId: true,
+  })
   .extend({
     value: z.number().max(0, "Mortgage value must be non-positive as it's a liability").min(-1000000000, "Mortgage value must be greater than -1 billion"),
     lender: z.string().min(1, "Mortgage lender is required"),

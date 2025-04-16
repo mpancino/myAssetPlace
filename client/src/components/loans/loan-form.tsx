@@ -106,7 +106,6 @@ export function LoanForm({
       if (isEditing && assetId && isMortgageEndpoint) {
         console.log("Editing mortgage via assets endpoint:", assetId);
         // Convert loan form data to mortgage update format - ensuring field names match DB schema exactly
-        // IMPORTANT: These field mappings must match the DB schema or updates will fail
         const mortgageData = {
           name: data.name,
           description: data.description,
@@ -124,20 +123,29 @@ export function LoanForm({
         };
         
         console.log("Updating mortgage: ", assetId, mortgageData);
-        const res = await apiRequest("PATCH", `/api/mortgages/${assetId}`, mortgageData);
-        return await res.json();
+        try {
+          const res = await apiRequest("PATCH", `/api/mortgages/${assetId}`, mortgageData);
+          return await res.json();
+        } catch (error) {
+          console.error("Error updating mortgage:", error);
+          throw new Error("Failed to update mortgage. Please try again.");
+        }
       }
       // Case 2: Editing a regular loan/asset
       else if (isEditing && assetId) {
         console.log("Editing regular loan:", assetId);
-        const res = await apiRequest("PATCH", `/api/assets/${assetId}`, data);
-        return await res.json();
+        try {
+          const res = await apiRequest("PATCH", `/api/assets/${assetId}`, data);
+          return await res.json();
+        } catch (error) {
+          console.error("Error updating loan:", error);
+          throw new Error("Failed to update loan. Please try again.");
+        }
       } 
       // Case 3: Editing a mortgage directly via mortgageId
       else if (isEditing && mortgageId) {
         console.log("Editing mortgage directly:", mortgageId);
         // Convert loan form data to mortgage update format - ensuring field names match DB schema exactly
-        // IMPORTANT: These field mappings must match the DB schema or updates will fail
         const mortgageData = {
           name: data.name,
           description: data.description,
@@ -155,14 +163,24 @@ export function LoanForm({
         };
         
         console.log("Updating mortgage directly:", mortgageId, mortgageData);
-        const res = await apiRequest("PATCH", `/api/mortgages/${mortgageId}`, mortgageData);
-        return await res.json();
+        try {
+          const res = await apiRequest("PATCH", `/api/mortgages/${mortgageId}`, mortgageData);
+          return await res.json();
+        } catch (error) {
+          console.error("Error updating mortgage:", error);
+          throw new Error("Failed to update mortgage. Please try again.");
+        }
       } 
       // Case 4: Creating a new loan/asset
       else {
         console.log("Creating new loan");
-        const res = await apiRequest("POST", "/api/assets", data);
-        return await res.json();
+        try {
+          const res = await apiRequest("POST", "/api/assets", data);
+          return await res.json();
+        } catch (error) {
+          console.error("Error creating loan:", error);
+          throw new Error("Failed to create loan. Please try again.");
+        }
       }
     },
     onSuccess: (loan: Asset) => {
@@ -560,8 +578,9 @@ export function LoanForm({
               </Button>
               <Button 
                 type="submit" 
-                disabled={mutation.isPending || !form.formState.isDirty}
+                disabled={mutation.isPending}
                 onClick={() => {
+                  // Log form state for debugging
                   console.log("Form state:", {
                     isDirty: form.formState.isDirty,
                     isValid: form.formState.isValid,
