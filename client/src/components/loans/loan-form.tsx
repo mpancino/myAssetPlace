@@ -338,6 +338,29 @@ export function LoanForm({
       data.value = -Math.abs(data.value);
     }
     
+    // Calculate payment amount if missing but we have interest rate, loan term and amount
+    if (!data.paymentAmount || data.paymentAmount === 0) {
+      if (data.interestRate > 0 && data.loanTerm > 0 && (data.originalLoanAmount || Math.abs(data.value)) > 0) {
+        const calculatedPayment = calculateLoanPayment(
+          Math.abs(data.originalLoanAmount || data.value),
+          data.interestRate / 100, // Convert percentage to decimal
+          data.loanTerm / 12, // Convert months to years
+          data.paymentFrequency === 'monthly' ? 12 : 
+            data.paymentFrequency === 'fortnightly' ? 26 : 
+            data.paymentFrequency === 'weekly' ? 52 : 12
+        );
+        console.log(`Auto-calculated payment amount: ${calculatedPayment} based on:`, {
+          principal: Math.abs(data.originalLoanAmount || data.value),
+          rate: data.interestRate / 100,
+          years: data.loanTerm / 12,
+          paymentsPerYear: data.paymentFrequency === 'monthly' ? 12 : 
+            data.paymentFrequency === 'fortnightly' ? 26 : 
+            data.paymentFrequency === 'weekly' ? 52 : 12
+        });
+        data.paymentAmount = calculatedPayment;
+      }
+    }
+    
     // Add missing userId from current user if needed
     if (!data.userId) {
       // If we're editing a mortgage, we MUST use the original user ID
@@ -700,6 +723,22 @@ export function LoanForm({
                   // Ensure value is negative for liabilities
                   if (typeof formData.value === 'number' && formData.value > 0) {
                     formData.value = -Math.abs(formData.value);
+                  }
+                  
+                  // Calculate payment amount if missing but we have interest rate, loan term and amount
+                  if (!formData.paymentAmount || formData.paymentAmount === 0) {
+                    if (formData.interestRate > 0 && formData.loanTerm > 0 && (formData.originalLoanAmount || Math.abs(formData.value)) > 0) {
+                      const calculatedPayment = calculateLoanPayment(
+                        Math.abs(formData.originalLoanAmount || formData.value),
+                        formData.interestRate / 100, // Convert percentage to decimal
+                        formData.loanTerm / 12, // Convert months to years
+                        formData.paymentFrequency === 'monthly' ? 12 : 
+                          formData.paymentFrequency === 'fortnightly' ? 26 : 
+                          formData.paymentFrequency === 'weekly' ? 52 : 12
+                      );
+                      console.log(`Auto-calculated payment amount: ${calculatedPayment}`);
+                      formData.paymentAmount = calculatedPayment;
+                    }
                   }
                   
                   // Add userId if needed - make sure it matches the original user ID
