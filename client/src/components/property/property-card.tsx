@@ -52,14 +52,17 @@ export function PropertyCard({
   
   // Format rental income to monthly basis
   const formatRentalIncome = (): string => {
-    if (!property.rentalIncome) return "N/A";
+    const rentalIncome = property.rentalIncome as number | null | undefined;
+    const rentalFrequency = property.rentalFrequency as string | null | undefined;
     
-    if (property.rentalFrequency === "weekly") {
-      return `${formatCurrency(property.rentalIncome * 4.33)} /month (${formatCurrency(property.rentalIncome)} /week)`;
-    } else if (property.rentalFrequency === "fortnightly") {
-      return `${formatCurrency(property.rentalIncome * 2.17)} /month (${formatCurrency(property.rentalIncome)} /fortnight)`;
+    if (!rentalIncome) return "N/A";
+    
+    if (rentalFrequency === "weekly") {
+      return `${formatCurrency(rentalIncome * 4.33)} /month (${formatCurrency(rentalIncome)} /week)`;
+    } else if (rentalFrequency === "fortnightly") {
+      return `${formatCurrency(rentalIncome * 2.17)} /month (${formatCurrency(rentalIncome)} /fortnight)`;
     } else {
-      return `${formatCurrency(property.rentalIncome)} /month`;
+      return `${formatCurrency(rentalIncome)} /month`;
     }
   };
 
@@ -69,7 +72,7 @@ export function PropertyCard({
   };
 
   // Get property type label
-  const getPropertyTypeLabel = (type: string | null | undefined) => {
+  const getPropertyTypeLabel = (type: string | null | undefined): string => {
     if (!type) return "Unknown";
     
     const typeMap: Record<string, string> = {
@@ -218,7 +221,7 @@ export function PropertyCard({
           {isRental && (
             <div className="flex justify-between">
               <div className="text-sm text-muted-foreground">Rental Income</div>
-              <div className="font-medium">{formatRentalIncome()}</div>
+              <div className="font-medium">{formatRentalIncome() as string}</div>
             </div>
           )}
           
