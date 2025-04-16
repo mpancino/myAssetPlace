@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
 import { PropertyCard } from "@/components/property/property-card";
 import { useAssetClassDetails } from "@/hooks/use-asset-class-details";
+import { isLegacyMortgageProperty, asLegacyAsset } from "@/lib/legacy-asset-utils";
 
 export default function AssetClassPage() {
   const { classId } = useParams<{ classId: string }>();
@@ -111,7 +112,7 @@ export default function AssetClassPage() {
           startDate: mortgage.startDate,
           endDate: mortgage.endDate,
           originalLoanAmount: mortgage.originalAmount,
-          hasMortgage: true, // Using standard property
+          // No need for hasMortgage flag - modern mortgages are identified by mortgageId
           mortgageId: mortgage.id, // Store the original mortgage ID
           securedAssetId: mortgage.securedAssetId // Add the secured asset ID for linking to property
         };
@@ -421,10 +422,13 @@ export default function AssetClassPage() {
                 const holdingType = holdingTypes?.find(ht => ht.id === asset.assetHoldingTypeId);
                 
                 // Construct a new object with mortgage information to ensure it's passed correctly
+                // Convert to legacy asset with proper mortgage properties if needed
+                const legacyAsset = asLegacyAsset(asset);
                 const propertyWithMortgage = {
                   ...asset,
-                  hasMortgage: asset.hasMortgage || (asset as any).has_mortgage, 
-                  mortgageAmount: asset.mortgageAmount || (asset as any).mortgage_amount || 0
+                  // Use utility function to check if asset has legacy mortgage data
+                  hasMortgage: isLegacyMortgageProperty(legacyAsset),
+                  mortgageAmount: legacyAsset?.mortgageAmount || 0
                 };
                 
                 // Use PropertyCard component for real estate with explicit mortgage props
