@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import {
+  AlertOctagon,
+  ArrowRight,
   Banknote,
   Building,
   Calendar,
@@ -31,26 +33,48 @@ import {
   Landmark,
   PieChart,
   RefreshCcw,
+  Wrench,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
 import { formatCurrency } from "@/lib/utils";
-import { Asset, Mortgage } from "@shared/schema";
+import { Asset, Mortgage, AssetWithLegacyMortgage } from "@shared/schema";
 import { calculateLoanPayment, calculatePrincipalAndInterest, generateAmortizationSchedule } from "@shared/calculations";
 import { Loader2 } from "lucide-react";
 import { useLocation } from "wouter";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface MortgageDetailsProps {
   property: Asset;
   mortgages?: Mortgage[];
   isLoading?: boolean;
+  onMortgageUpdated?: () => void;
 }
 
-export function MortgageDetails({ property, mortgages = [], isLoading = false }: MortgageDetailsProps) {
+export function MortgageDetails({ 
+  property, 
+  mortgages = [], 
+  isLoading = false,
+  onMortgageUpdated
+}: MortgageDetailsProps) {
   const [showAmortizationTable, setShowAmortizationTable] = useState(false);
   const [page, setPage] = useState(1);
   const pageSize = 12; // Show 1 year of payments
   const [, navigate] = useLocation();
+  const { toast } = useToast();
   
   // First check if the mortgage data is still loading
   if (isLoading) {
@@ -71,15 +95,18 @@ export function MortgageDetails({ property, mortgages = [], isLoading = false }:
     );
   }
   
-  // Add debug logging for the mortgage data
   console.log("MortgageDetails component received:", {
     propertyId: property.id,
     mortgages: mortgages,
     mortgagesCount: mortgages.length,
-    isLoading: isLoading
+    propertyObject: property
   });
   
-  // Get the primary mortgage (should be only one for now, but could be multiple in the future)
+  // Check if this is a legacy property with built-in mortgage data
+  const propertyWithLegacy = property as AssetWithLegacyMortgage;
+  const hasLegacyMortgage = propertyWithLegacy.hasMortgage === true;
+  
+  // Get the primary mortgage from the linked mortgages array
   const mortgage = mortgages.length > 0 ? mortgages[0] : null;
   
   // Debug log the mortgage details
@@ -88,21 +115,51 @@ export function MortgageDetails({ property, mortgages = [], isLoading = false }:
       id: mortgage.id,
       originalAmount: mortgage.originalAmount,
       interestRate: mortgage.interestRate,
-      loanTerm: mortgage.loanTerm, // Field name in DB is loanTerm, not termMonths
+      loanTerm: mortgage.loanTerm,
       startDate: mortgage.startDate,
       interestRateType: mortgage.interestRateType
     });
   }
   
-  // Extract mortgage details 
-  const mortgageAmount = mortgage ? mortgage.originalAmount : 0;
-  const interestRate = mortgage ? mortgage.interestRate : 0;
-  const termInMonths = mortgage ? mortgage.loanTerm : 0; // Changed from termMonths to loanTerm
-  const termInYears = termInMonths / 12;
-  const startDate = mortgage ? mortgage.startDate : property.purchaseDate;
+  // New migration mutation for properties with legacy mortgage data
+  const migrateMortgage = useMutation({
+    mutationFn: async (propertyId: number) => {
+      const res = await apiRequest(
+        "POST", 
+        `/api/properties/${propertyId}/migrate-mortgage`,
+        { cleanupLegacyData: true }
+      );
+      return await res.json();
+    },
+    onSuccess: (data) => {
+      console.log("Migration successful:", data);
+      toast({
+        title: "Mortgage migrated successfully",
+        description: "Legacy mortgage data has been converted to the new format",
+        variant: "default"
+      });
+      // Refresh the property and mortgage data
+      if (onMortgageUpdated) {
+        onMortgageUpdated();
+      }
+      // Invalidate any cached property and mortgage data
+      queryClient.invalidateQueries({ queryKey: [`/api/assets/${property.id}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/properties/${property.id}/mortgages`] });
+    },
+    onError: (error) => {
+      console.error("Migration failed:", error);
+      toast({
+        title: "Migration failed",
+        description: "There was an error migrating the mortgage data. Please try again.",
+        variant: "destructive"
+      });
+    }
+  });
   
-  // Check if mortgage exists
-  const hasMortgage = mortgage !== null && mortgageAmount > 0 && interestRate > 0 && termInMonths > 0;
+  // Function to handle mortgage migration
+  const handleMigrateMortgage = () => {
+    migrateMortgage.mutate(property.id);
+  };
   
   // Function to navigate to add a new mortgage
   const handleAddNewMortgage = () => {
@@ -125,6 +182,82 @@ export function MortgageDetails({ property, mortgages = [], isLoading = false }:
     }
   };
   
+  // Special case: Legacy mortgage data that hasn't been migrated yet
+  if (hasLegacyMortgage && !property.linkedMortgageId) {
+    const legacyMortgageAmount = propertyWithLegacy.mortgageAmount || 0;
+    const legacyInterestRate = propertyWithLegacy.mortgageInterestRate || 0;
+    
+    return (
+      <Card className="col-span-1 md:col-span-2">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <AlertOctagon className="mr-2 h-4 w-4 text-amber-500" /> Legacy Mortgage Data
+          </CardTitle>
+          <CardDescription>
+            This property has mortgage data in the old format that needs to be migrated
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-md p-4 mb-4">
+            <h4 className="font-medium text-amber-800 dark:text-amber-400 flex items-center mb-2">
+              <Wrench className="mr-2 h-4 w-4" /> Migration Required
+            </h4>
+            <p className="text-amber-700 dark:text-amber-300 text-sm mb-3">
+              This property has mortgage data in the legacy format. To take advantage of enhanced mortgage features, 
+              please migrate this mortgage to the new data structure.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+              <div className="p-3 bg-white dark:bg-amber-950/30 rounded border border-amber-100 dark:border-amber-800">
+                <div className="text-xs font-medium mb-1 text-amber-700 dark:text-amber-400">Mortgage Amount</div>
+                <div className="font-medium">{formatCurrency(legacyMortgageAmount, '$', false)}</div>
+              </div>
+              <div className="p-3 bg-white dark:bg-amber-950/30 rounded border border-amber-100 dark:border-amber-800">
+                <div className="text-xs font-medium mb-1 text-amber-700 dark:text-amber-400">Interest Rate</div>
+                <div className="font-medium">{legacyInterestRate.toFixed(2)}%</div>
+              </div>
+            </div>
+            
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="default" 
+                  className="bg-amber-600 hover:bg-amber-700 text-white"
+                  disabled={migrateMortgage.isPending}
+                >
+                  {migrateMortgage.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <ArrowRight className="mr-2 h-4 w-4" />
+                  )}
+                  Migrate Mortgage Data
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Migrate Mortgage Data</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will convert the legacy mortgage data attached to this property into a separate mortgage entity.
+                    The mortgage will still be linked to this property, but will be stored in a more structured format.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleMigrateMortgage}>
+                    Migrate Data
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  // Check if there is a linked mortgage through the new relationship
+  const hasMortgage = mortgage !== null && mortgage.originalAmount > 0 && mortgage.interestRate > 0 && mortgage.loanTerm > 0;
+  
+  // If there's no mortgage information
   if (!hasMortgage) {
     return (
       <Card className="col-span-1 md:col-span-2">
@@ -149,6 +282,13 @@ export function MortgageDetails({ property, mortgages = [], isLoading = false }:
       </Card>
     );
   }
+  
+  // Extract mortgage details 
+  const mortgageAmount = mortgage.originalAmount;
+  const interestRate = mortgage.interestRate;
+  const termInMonths = mortgage.loanTerm;
+  const termInYears = termInMonths / 12;
+  const startDate = mortgage.startDate || property.purchaseDate;
   
   // Calculate monthly payment
   const monthlyPayment = calculateLoanPayment(
