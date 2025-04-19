@@ -67,17 +67,13 @@ import {
 } from "@/components/ui/alert-dialog";
 
 // Import shared types
-import type { PropertyExpense } from "@shared/schema";
-
-// Investment expense interface (similar structure to PropertyExpense)
-export interface InvestmentExpense {
-  id: string;
-  categoryId: string;
-  name: string;
-  amount: number;
-  frequency: 'monthly' | 'quarterly' | 'annually';  
-  notes?: string;
-}
+import type { Expense, ExpenseCategory } from "../shared/schema";
+import { 
+  parseExpenses, 
+  convertStorageExpenseToComponent, 
+  convertComponentExpenseToStorage,
+  calculateAnnualAmount
+} from "../shared/expense-utils";
 
 // Component-specific expense type from investment-expenses.tsx
 interface ComponentInvestmentExpense {
@@ -89,65 +85,35 @@ interface ComponentInvestmentExpense {
   annualTotal: number;
 }
 
-// Convert from page format to component format
-function convertPageToComponentExpense(expense: InvestmentExpense): ComponentInvestmentExpense {
-  // Calculate annualTotal based on frequency
-  const frequencyMultiplier = expense.frequency === 'monthly' ? 12 : 
-                              expense.frequency === 'quarterly' ? 4 : 1;
-  const annualTotal = expense.amount * frequencyMultiplier;
-  
-  return {
-    id: expense.id,
-    category: expense.categoryId,
-    description: expense.name || '',
-    amount: expense.amount,
-    frequency: expense.frequency,
-    annualTotal: annualTotal
-  };
-}
-
-// Convert from component format to page format
-function convertComponentToPageExpense(expense: ComponentInvestmentExpense): InvestmentExpense {
-  return {
-    id: expense.id,
-    categoryId: expense.category,
-    name: expense.description,
-    amount: expense.amount,
-    frequency: expense.frequency as 'monthly' | 'quarterly' | 'annually',
-    notes: ''
-  };
-}
-
-// Convert a collection of page expenses to component expenses
-function convertPageExpensesToComponent(expenses: Record<string, InvestmentExpense>): Record<string, ComponentInvestmentExpense> {
+// Convert a collection of storage expenses to component expenses
+function convertStorageExpensesToComponent(expenses: Record<string, Expense>): Record<string, ComponentInvestmentExpense> {
   if (!expenses) return {};
   
   const result: Record<string, ComponentInvestmentExpense> = {};
   
   Object.entries(expenses).forEach(([id, expense]) => {
-    result[id] = convertPageToComponentExpense(expense);
+    result[id] = convertStorageExpenseToComponent(expense) as ComponentInvestmentExpense;
   });
   
   return result;
 }
 
-// Convert a collection of component expenses to page expenses
-function convertComponentExpensesToPage(expenses: Record<string, ComponentInvestmentExpense>): Record<string, InvestmentExpense> {
+// Convert a collection of component expenses to storage expenses
+function convertComponentExpensesToStorage(expenses: Record<string, ComponentInvestmentExpense>): Record<string, Expense> {
   if (!expenses) return {};
   
-  const result: Record<string, InvestmentExpense> = {};
+  const result: Record<string, Expense> = {};
   
   Object.entries(expenses).forEach(([id, expense]) => {
-    result[id] = convertComponentToPageExpense(expense);
+    result[id] = convertComponentExpenseToStorage(expense);
   });
   
   return result;
 }
 
-// Helper function to safely parse investment expenses data
-function parseInvestmentExpenses(data: any): Record<string, InvestmentExpense> {
-  try {
-    // Create a hash from the data for a more stable identifier that won't change on every call
+// Helper function to safely parse investment expenses data using shared utility
+function parseInvestmentExpenses(data: any): Record<string, Expense> {
+  return parseExpenses(data);
     const valueStr = typeof data === 'string' ? data : JSON.stringify(data || {});
     const hashCode = Array.from(valueStr).reduce((s, c) => Math.imul(31, s) + c.charCodeAt(0) | 0, 0).toString().slice(-4);
     const parseId = `${hashCode}`;

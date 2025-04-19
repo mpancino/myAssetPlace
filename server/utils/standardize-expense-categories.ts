@@ -1,11 +1,16 @@
+/**
+ * Utility to standardize expense categories across the application
+ * 
+ * This utility ensures that all expense categories for asset classes
+ * follow a consistent structure and format.
+ */
 import { db } from "../db";
-import { assetClasses } from "@shared/schema";
+import { assetClasses, type ExpenseCategory } from "../../shared/schema";
 import { eq } from "drizzle-orm";
-import crypto from "crypto";
+import { v4 as uuidv4 } from "uuid";
 
 /**
- * This utility standardizes all expense categories in the database to a consistent format
- * The standard format is an array of objects with id, name, description, and defaultFrequency
+ * Standardize expense categories for all asset classes
  */
 export async function standardizeExpenseCategories() {
   try {
@@ -13,118 +18,102 @@ export async function standardizeExpenseCategories() {
     
     // Fetch all asset classes
     const allAssetClasses = await db.select().from(assetClasses);
-    
-    let standardizedCount = 0;
-    let unchangedCount = 0;
+    let updatedCount = 0;
+    const results: Record<string, any> = {};
     
     for (const assetClass of allAssetClasses) {
       try {
-        if (!assetClass.expenseCategories) {
-          console.log(`Asset class ${assetClass.id} (${assetClass.name}) has no expense categories, skipping.`);
-          continue;
-        }
-        
-        const expenseCategoriesString = String(assetClass.expenseCategories);
-        let currentCategories: any[] = [];
-        let needsStandardization = false;
-        
-        // Try to parse current categories
-        try {
-          currentCategories = JSON.parse(expenseCategoriesString);
+        // Process expense categories field
+        if (assetClass.expenseCategories) {
+          let categories: any[] = [];
           
-          // If it's not an array, convert it
-          if (!Array.isArray(currentCategories)) {
-            currentCategories = [currentCategories];
-            needsStandardization = true;
-          }
-          
-          // Check if all items have the required properties in the standard format
-          for (const category of currentCategories) {
-            if (typeof category === 'string') {
-              needsStandardization = true;
-              break;
-            }
-            
-            if (typeof category === 'object') {
-              if (!category.id || !category.name || category.description === undefined || !category.defaultFrequency) {
-                needsStandardization = true;
-                break;
+          // Convert from string to object if needed
+          if (typeof assetClass.expenseCategories === 'string') {
+            try {
+              // Try to parse as JSON
+              categories = JSON.parse(assetClass.expenseCategories);
+              
+              // If the result is not an array, wrap it in one
+              if (!Array.isArray(categories)) {
+                categories = [categories];
+              }
+            } catch (parseError) {
+              // If JSON parse fails, it might be a comma-separated string
+              if (assetClass.expenseCategories.includes(',')) {
+                // Split by comma and create basic category objects
+                categories = assetClass.expenseCategories
+                  .split(',')
+                  .map((name: string) => ({
+                    id: uuidv4(),
+                    name: name.trim(),
+                    description: '',
+                    defaultFrequency: 'monthly'
+                  }));
+              } else {
+                // Single value
+                categories = [{
+                  id: uuidv4(),
+                  name: assetClass.expenseCategories.trim(),
+                  description: '',
+                  defaultFrequency: 'monthly'
+                }];
               }
             }
+          } else if (Array.isArray(assetClass.expenseCategories)) {
+            // It's already an array, use it as is
+            categories = assetClass.expenseCategories;
+          } else if (typeof assetClass.expenseCategories === 'object') {
+            // It's an object, wrap it in an array
+            categories = [assetClass.expenseCategories];
           }
-        } catch (parseError) {
-          // If it can't be parsed as JSON, it definitely needs standardization
-          needsStandardization = true;
           
-          // Create categories based on string format
-          if (expenseCategoriesString.includes(',')) {
-            // Comma-separated list
-            currentCategories = expenseCategoriesString.split(',').map(item => item.trim());
-          } else {
-            // Single value
-            currentCategories = [expenseCategoriesString];
-          }
-        }
-        
-        if (needsStandardization) {
-          // Convert all categories to the standard format
-          const standardizedCategories = currentCategories.map(category => {
+          // Standardize each category in the array
+          const standardizedCategories = categories.map((category: any) => {
+            // If it's a string, convert to full object
             if (typeof category === 'string') {
               return {
-                id: crypto.randomUUID(),
-                name: category,
-                description: "",
-                defaultFrequency: "monthly"
-              };
-            } else if (typeof category === 'object') {
-              return {
-                id: category.id || crypto.randomUUID(),
-                name: category.name || "Unknown Category",
-                description: category.description || "",
-                defaultFrequency: category.defaultFrequency || "monthly"
+                id: uuidv4(),
+                name: category.trim(),
+                description: '',
+                defaultFrequency: 'monthly'
               };
             }
             
-            // Fallback (should never happen)
+            // Otherwise ensure all required properties exist
             return {
-              id: crypto.randomUUID(),
-              name: "Unknown Category",
-              description: "",
-              defaultFrequency: "monthly"
+              id: category.id || uuidv4(),
+              name: category.name || 'Unnamed Category',
+              description: category.description || '',
+              defaultFrequency: category.defaultFrequency || 'monthly'
             };
           });
           
           // Update the asset class with standardized categories
-          await db
-            .update(assetClasses)
-            .set({ 
-              expenseCategories: JSON.stringify(standardizedCategories)
-            })
+          await db.update(assetClasses)
+            .set({ expenseCategories: JSON.stringify(standardizedCategories) })
             .where(eq(assetClasses.id, assetClass.id));
           
-          console.log(`Standardized ${standardizedCategories.length} categories for asset class ${assetClass.id} (${assetClass.name})`);
-          standardizedCount++;
-        } else {
-          console.log(`Asset class ${assetClass.id} (${assetClass.name}) already has standardized expense categories.`);
-          unchangedCount++;
+          console.log(`Updated asset class ${assetClass.id} (${assetClass.name}) with ${standardizedCategories.length} standardized categories`);
+          results[assetClass.name] = standardizedCategories.map(c => c.name);
+          updatedCount++;
         }
-      } catch (assetClassError) {
-        console.error(`Error standardizing expense categories for asset class ${assetClass.id}:`, assetClassError);
+      } catch (error) {
+        console.error(`Error standardizing categories for asset class ${assetClass.id}:`, error);
+        results[assetClass.name] = { error: String(error) };
       }
     }
     
-    console.log(`Expense category standardization complete. Standardized ${standardizedCount} asset classes. ${unchangedCount} were already standardized.`);
-    return {
-      success: true,
-      standardizedCount,
-      unchangedCount,
-      totalProcessed: standardizedCount + unchangedCount,
+    console.log(`Successfully standardized expense categories for ${updatedCount} asset classes`);
+    return { 
+      success: true, 
+      updatedCount,
+      results
     };
   } catch (error) {
     console.error("Error standardizing expense categories:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
+    return { 
+      success: false, 
+      error: String(error) 
     };
   }
 }

@@ -4,13 +4,20 @@
  * This file provides standardized utility functions for handling expense data
  * consistently across the application (both frontend and backend).
  */
-import { Expense } from './schema';
+import type { Expense } from "./schema";
+import { v4 as uuidv4 } from "uuid";
 
-// Frequency multipliers for annual total calculation
+/**
+ * Constants for frequency multipliers to calculate annual amounts
+ */
 export const FREQUENCY_MULTIPLIERS: Record<string, number> = {
-  monthly: 12,
-  quarterly: 4,
-  annually: 1,
+  'daily': 365,
+  'weekly': 52,
+  'fortnightly': 26,
+  'monthly': 12,
+  'quarterly': 4,
+  'semi-annual': 2,
+  'annually': 1
 };
 
 /**
@@ -19,23 +26,28 @@ export const FREQUENCY_MULTIPLIERS: Record<string, number> = {
  * @returns A record of expense objects
  */
 export function parseExpenses(data: any): Record<string, Expense> {
-  if (!data) return {};
-  
   try {
-    // If it's a string, try to parse it as JSON
+    // If null or undefined, return empty object
+    if (!data) return {};
+    
+    // If it's a string, try to parse it
     if (typeof data === 'string') {
+      // Handle empty string
       if (data.trim() === '') return {};
-      return JSON.parse(data) as Record<string, Expense>;
+      
+      // Try to parse as JSON
+      return JSON.parse(data);
     }
     
-    // If it's already an object, create a deep clone to avoid reference issues
+    // If it's already an object, create a deep clone
     if (typeof data === 'object') {
-      return JSON.parse(JSON.stringify(data)) as Record<string, Expense>;
+      return JSON.parse(JSON.stringify(data));
     }
     
+    // Fallback for unexpected formats
     return {};
-  } catch (err) {
-    console.error('Error parsing expenses:', err);
+  } catch (error) {
+    console.error('Error parsing expenses:', error);
     return {};
   }
 }
@@ -46,9 +58,8 @@ export function parseExpenses(data: any): Record<string, Expense> {
  * @returns The annual amount
  */
 export function calculateAnnualAmount(expense: Expense): number {
-  if (!expense?.amount || !expense?.frequency) return 0;
-  
-  const multiplier = FREQUENCY_MULTIPLIERS[expense.frequency] || 12;
+  const frequency = expense.frequency || 'monthly';
+  const multiplier = FREQUENCY_MULTIPLIERS[frequency] || 12; // Default to monthly if frequency is not recognized
   return expense.amount * multiplier;
 }
 
@@ -58,8 +69,6 @@ export function calculateAnnualAmount(expense: Expense): number {
  * @returns Total annual amount
  */
 export function calculateTotalAnnualExpenses(expenses: Record<string, Expense>): number {
-  if (!expenses) return 0;
-  
   return Object.values(expenses).reduce((total, expense) => {
     return total + calculateAnnualAmount(expense);
   }, 0);
@@ -71,6 +80,7 @@ export function calculateTotalAnnualExpenses(expenses: Record<string, Expense>):
  * @returns Monthly expense amount
  */
 export function getMonthlyExpenseBreakdown(expenses: Record<string, Expense>): number {
+  // Calculate annual total and divide by 12 to get monthly average
   return calculateTotalAnnualExpenses(expenses) / 12;
 }
 
@@ -80,18 +90,20 @@ export function getMonthlyExpenseBreakdown(expenses: Record<string, Expense>): n
  * @returns Grouped expenses by category
  */
 export function groupExpensesByCategory(expenses: Record<string, Expense>): Record<string, number> {
-  if (!expenses) return {};
+  const groupedExpenses: Record<string, number> = {};
   
-  return Object.values(expenses).reduce((grouped: Record<string, number>, expense) => {
-    const categoryKey = expense.categoryId;
-    if (!categoryKey) return grouped;
+  Object.values(expenses).forEach(expense => {
+    const categoryId = expense.categoryId;
+    const annualAmount = calculateAnnualAmount(expense);
     
-    const yearlyAmount = calculateAnnualAmount(expense);
-    
-    if (!grouped[categoryKey]) grouped[categoryKey] = 0;
-    grouped[categoryKey] += yearlyAmount;
-    return grouped;
-  }, {});
+    if (groupedExpenses[categoryId]) {
+      groupedExpenses[categoryId] += annualAmount;
+    } else {
+      groupedExpenses[categoryId] = annualAmount;
+    }
+  });
+  
+  return groupedExpenses;
 }
 
 /**
@@ -101,10 +113,10 @@ export function groupExpensesByCategory(expenses: Record<string, Expense>): Reco
  * @returns The expense-to-value ratio as a percentage
  */
 export function calculateExpenseToValueRatio(expenses: Record<string, Expense>, assetValue: number): number {
-  if (!expenses || !assetValue || assetValue <= 0) return 0;
+  if (!assetValue || assetValue === 0) return 0;
   
-  const annualExpenses = calculateTotalAnnualExpenses(expenses);
-  return (annualExpenses / assetValue) * 100;
+  const totalAnnualExpenses = calculateTotalAnnualExpenses(expenses);
+  return (totalAnnualExpenses / assetValue) * 100;
 }
 
 /**
@@ -113,7 +125,6 @@ export function calculateExpenseToValueRatio(expenses: Record<string, Expense>, 
  * @returns Number of expenses
  */
 export function getExpenseCount(expenses: Record<string, Expense>): number {
-  if (!expenses) return 0;
   return Object.keys(expenses).length;
 }
 
@@ -122,7 +133,7 @@ export function getExpenseCount(expenses: Record<string, Expense>): number {
  * @returns A unique ID string
  */
 export function generateExpenseId(): string {
-  return Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
+  return uuidv4();
 }
 
 /**
@@ -137,31 +148,17 @@ export function generateExpenseId(): string {
  * @returns The monthly interest expense amount in currency units
  */
 export function calculateMonthlyInterestExpense(asset: any): number {
-  // If we have a mortgage with its own interest rate and amount
-  if (asset.mortgageInterestRate && asset.mortgageAmount) {
-    return (asset.mortgageInterestRate / 100) * asset.mortgageAmount / 12;
-  }
+  // Extract mortgage data from either legacy fields or via relation
+  const mortgageAmount = asset.mortgageAmount || 0;
+  const interestRate = asset.mortgageInterestRate || 0;
   
-  // If we have a loan with interest rate and value
-  if (asset.interestRate && Math.abs(asset.value) > 0) {
-    // Use the absolute value of the loan amount since liabilities can be stored as negative values
-    return (asset.interestRate / 100) * Math.abs(asset.value) / 12;
-  }
+  if (!mortgageAmount || !interestRate) return 0;
   
-  // Special case for loans with interest rate but zero payment amount
-  if (asset.interestRate && asset.originalAmount) {
-    return (asset.interestRate / 100) * asset.originalAmount / 12;
-  }
+  // Convert annual interest rate to monthly (divide by 12)
+  const monthlyInterestRate = interestRate / 100 / 12;
   
-  // Fallback to an estimation if there's a payment amount but no explicit interest data
-  if (asset.isLiability && asset.paymentAmount) {
-    // Use a default rate of 5% for estimation purposes
-    const estimatedInterestRate = 5;
-    return (estimatedInterestRate / 100) * (Math.abs(asset.value) || asset.paymentAmount * 12) / 12;
-  }
-  
-  // No interest expense
-  return 0;
+  // Calculate monthly interest expense
+  return mortgageAmount * monthlyInterestRate;
 }
 
 /**
@@ -170,17 +167,24 @@ export function calculateMonthlyInterestExpense(asset: any): number {
  * @returns A standardized expense object
  */
 export function standardizeExpense(expense: any): Expense {
-  if (!expense) throw new Error('Cannot standardize undefined expense');
+  // Ensure we have an object to work with
+  if (!expense || typeof expense !== 'object') {
+    return {
+      id: generateExpenseId(),
+      categoryId: 'uncategorized',
+      name: 'Unknown Expense',
+      amount: 0,
+      frequency: 'monthly'
+    };
+  }
   
-  // Create a standardized expense object
+  // Map legacy or component fields to standard format
   return {
     id: expense.id || generateExpenseId(),
-    categoryId: expense.categoryId || expense.category || '',
-    name: expense.name || expense.description || '',
+    categoryId: expense.categoryId || expense.category || 'uncategorized',
+    name: expense.name || expense.description || 'Untitled Expense',
     amount: typeof expense.amount === 'number' ? expense.amount : 0,
-    frequency: ['monthly', 'quarterly', 'annually'].includes(expense.frequency) 
-      ? expense.frequency as 'monthly' | 'quarterly' | 'annually'
-      : 'monthly',
+    frequency: expense.frequency || 'monthly',
     notes: expense.notes || ''
   };
 }
@@ -191,14 +195,14 @@ export function standardizeExpense(expense: any): Expense {
  * @returns Standardized expense
  */
 export function convertComponentExpenseToStorage(expense: any): Expense {
-  return standardizeExpense({
-    id: expense.id,
-    categoryId: expense.category,
-    name: expense.description,
-    amount: expense.amount,
-    frequency: expense.frequency,
-    notes: expense.notes
-  });
+  return {
+    id: expense.id || generateExpenseId(),
+    categoryId: expense.category || 'uncategorized',
+    name: expense.description || 'Untitled Expense',
+    amount: typeof expense.amount === 'number' ? expense.amount : 0,
+    frequency: expense.frequency || 'monthly',
+    notes: expense.notes || ''
+  };
 }
 
 /**
@@ -207,13 +211,16 @@ export function convertComponentExpenseToStorage(expense: any): Expense {
  * @returns Component-compatible expense object
  */
 export function convertStorageExpenseToComponent(expense: Expense): any {
+  // Calculate annual total based on frequency
+  const annualTotal = calculateAnnualAmount(expense);
+  
   return {
     id: expense.id,
     category: expense.categoryId,
     description: expense.name,
     amount: expense.amount,
     frequency: expense.frequency,
-    annualTotal: calculateAnnualAmount(expense),
+    annualTotal: annualTotal,
     notes: expense.notes
   };
 }
