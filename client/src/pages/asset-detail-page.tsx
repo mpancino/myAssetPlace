@@ -14,6 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import { MortgageDetails } from "@/components/property/mortgage-details";
 import { PropertyExpenses, PropertyExpenseAnalysis } from "@/components/property/property-expenses";
 import { InvestmentExpenses, InvestmentExpenseAnalysis } from "@/components/expense/investment-expenses";
@@ -1329,7 +1330,7 @@ export default function AssetDetailPage() {
               
               <TabsContent value="overview" className="space-y-4 pt-4">
                 {/* Property-specific overview with mortgage information */}
-                {selectedClass?.name?.toLowerCase() === "real estate" && (asset ? isLegacyMortgageProperty(asLegacyAsset(asset)) : false) && !isEditing && (
+                {selectedClass?.name?.toLowerCase() === "real estate" && !isEditing && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <Card className="col-span-1 bg-gradient-to-br from-primary/5 to-primary/10">
                       <CardHeader className="pb-2">
@@ -1344,47 +1345,93 @@ export default function AssetDetailPage() {
                             <div className="text-xl font-semibold">{formatCurrency(asset?.value || 0)}</div>
                           </div>
                           
-                          <div>
-                            <div className="text-sm text-muted-foreground mb-1">Mortgage Balance</div>
-                            <div className="text-xl font-semibold text-destructive">
-                              {formatCurrency(asset?.mortgageAmount || 0)}
-                            </div>
-                          </div>
+                          {/* Get mortgage amount either from new mortgage system or legacy */}
+                          {(() => {
+                            // Determine mortgage amount from either propertyMortgages or legacy data
+                            const mortgageBalance = propertyMortgages && propertyMortgages.length > 0 
+                              ? Math.abs(propertyMortgages[0].value || 0)
+                              : asset?.mortgageAmount || 0;
+                              
+                            // Calculate total equity
+                            const totalEquity = (asset?.value || 0) - mortgageBalance;
+                            
+                            // Calculate equity percentage
+                            const equityPercentage = asset?.value && asset.value > 0
+                              ? (totalEquity / asset.value) * 100
+                              : 0;
+                              
+                            return (
+                              <>
+                                <div>
+                                  <div className="text-sm text-muted-foreground mb-1">Mortgage Balance</div>
+                                  <div className="text-xl font-semibold text-destructive">
+                                    {formatCurrency(mortgageBalance)}
+                                  </div>
+                                </div>
+                                
+                                <div>
+                                  <div className="text-sm text-muted-foreground mb-1">Total Equity</div>
+                                  <div className="text-xl font-semibold text-green-600">
+                                    {formatCurrency(totalEquity)}
+                                  </div>
+                                </div>
+                                
+                                <div>
+                                  <div className="text-sm text-muted-foreground mb-1">Equity %</div>
+                                  <div className="text-xl font-semibold text-green-600">
+                                    {equityPercentage.toFixed(1)}%
+                                  </div>
+                                </div>
+                                
+                                <div>
+                                  <div className="text-sm text-muted-foreground mb-1">LVR</div>
+                                  <div className="text-xl font-semibold">
+                                    {asset?.value ? 
+                                      `${((mortgageBalance / asset.value) * 100).toFixed(1)}%` 
+                                      : "N/A"}
+                                  </div>
+                                </div>
+                              </>
+                            );
+                          })()}
                           
-                          <div>
-                            <div className="text-sm text-muted-foreground mb-1">Equity</div>
-                            <div className="text-xl font-semibold text-green-600">
-                              {formatCurrency((asset?.value || 0) - (asset?.mortgageAmount || 0))}
-                            </div>
-                          </div>
-                          
-                          {(asset ? isLegacyMortgageProperty(asLegacyAsset(asset)) : false) && asset?.mortgageInterestRate && asset?.mortgageAmount && (
-                            <div>
-                              <div className="text-sm text-muted-foreground mb-1">Monthly Interest Expense</div>
-                              <div className="text-xl font-semibold text-amber-600">
-                                {formatCurrency((asset.mortgageInterestRate / 100) * (asset.mortgageAmount) / 12)}
+                          {/* Purchase information and capital gain */}
+                          {asset?.purchasePrice && asset?.purchaseDate && (
+                            <>
+                              <div>
+                                <div className="text-sm text-muted-foreground mb-1">Purchase Price</div>
+                                <div className="text-base font-medium">
+                                  {formatCurrency(asset.purchasePrice)}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {new Date(asset.purchaseDate).toLocaleDateString()}
+                                </div>
                               </div>
-                            </div>
+                              
+                              <div>
+                                <div className="text-sm text-muted-foreground mb-1">Capital Gain</div>
+                                <div className={`text-base font-medium ${(asset.value - asset.purchasePrice) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                  {formatCurrency(asset.value - asset.purchasePrice)}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {asset.purchasePrice > 0 ? ((asset.value - asset.purchasePrice) / asset.purchasePrice * 100).toFixed(1) : 0}% total
+                                </div>
+                              </div>
+                            </>
                           )}
-                          
-                          <div>
-                            <div className="text-sm text-muted-foreground mb-1">Loan-to-Value Ratio</div>
-                            <div className="text-xl font-semibold">
-                              {asset?.value ? 
-                                `${(((asset?.mortgageAmount || 0) / asset?.value) * 100).toFixed(1)}%` 
-                                : "N/A"}
-                            </div>
-                          </div>
                         </div>
                         
+                        {/* Equity progress bar */}
                         <div className="mt-4">
                           <div className="text-sm text-muted-foreground mb-1">Equity Percentage</div>
                           <div className="w-full bg-muted rounded-full h-2.5 dark:bg-gray-700 mt-1 mb-3">
                             <div 
                               className="bg-green-600 h-2.5 rounded-full"
                               style={{ 
-                                width: `${asset?.value ? 
-                                  Math.min(100, 100 - (((asset?.mortgageAmount || 0) / asset?.value) * 100)) : 0}%` 
+                                width: `${asset?.value && asset.value > 0 ? 
+                                  Math.min(100, 100 - (((propertyMortgages && propertyMortgages.length > 0 
+                                    ? Math.abs(propertyMortgages[0].value || 0) 
+                                    : asset?.mortgageAmount || 0) / asset?.value) * 100)) : 0}%` 
                               }}
                             ></div>
                           </div>
@@ -1400,81 +1447,206 @@ export default function AssetDetailPage() {
                     <Card className="col-span-1 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20">
                       <CardHeader className="pb-2">
                         <CardTitle className="flex items-center text-lg">
-                          <CreditCard className="mr-2 h-5 w-5 text-blue-600" /> Mortgage Details
+                          <CreditCard className="mr-2 h-5 w-5 text-blue-600" /> Mortgage Information
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <div className="text-sm text-muted-foreground mb-1">Lender</div>
-                            <div className="text-base font-medium">
-                              {asset?.mortgageLender || "Not specified"}
+                        {isLoadingMortgages ? (
+                          <div className="flex items-center justify-center p-4">
+                            <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
+                            <span>Loading mortgage details...</span>
+                          </div>
+                        ) : propertyMortgages && propertyMortgages.length > 0 ? (
+                          <div className="space-y-4">
+                            {/* Modern mortgage information */}
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <div className="text-sm text-muted-foreground mb-1">Lender</div>
+                                <div className="text-base font-medium">
+                                  {propertyMortgages[0].lender || "Not specified"}
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <div className="text-sm text-muted-foreground mb-1">Interest Rate</div>
+                                <div className="text-base font-medium flex items-center">
+                                  {propertyMortgages[0].interestRate ? 
+                                    `${propertyMortgages[0].interestRate}%` : "Not specified"}
+                                  {propertyMortgages[0].interestRateType && (
+                                    <Badge variant="outline" className="ml-2">
+                                      {propertyMortgages[0].interestRateType}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <div className="text-sm text-muted-foreground mb-1">Monthly Payment</div>
+                                <div className="text-base font-medium">
+                                  {propertyMortgages[0].paymentAmount 
+                                    ? formatCurrency(propertyMortgages[0].paymentAmount) 
+                                    : (propertyMortgages[0].value && propertyMortgages[0].interestRate && propertyMortgages[0].loanTerm
+                                      ? formatCurrency(
+                                          calculateLoanPayment(
+                                            Math.abs(propertyMortgages[0].value),
+                                            propertyMortgages[0].interestRate / 100,
+                                            propertyMortgages[0].loanTerm / 12
+                                          ))
+                                      : "Not available")}
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <div className="text-sm text-muted-foreground mb-1">Interest Expense</div>
+                                <div className="text-base font-medium text-amber-600">
+                                  {formatCurrency((propertyMortgages[0].interestRate / 100) * Math.abs(propertyMortgages[0].value || 0) / 12)}
+                                  <span className="text-xs text-muted-foreground ml-1">/ month</span>
+                                </div>
+                              </div>
+                              
+                              {/* Show fixed rate period information if applicable */}
+                              {propertyMortgages[0].interestRateType === "fixed" && propertyMortgages[0].fixedRateEndDate && (
+                                <div className="col-span-2">
+                                  <div className="text-sm text-muted-foreground mb-1">Fixed Rate Period</div>
+                                  <div className="text-base">
+                                    <span className="font-medium">Until: </span> 
+                                    {new Date(propertyMortgages[0].fixedRateEndDate).toLocaleDateString()}
+                                    {propertyMortgages[0].variableRateAfterFixed && (
+                                      <span className="text-muted-foreground ml-2">
+                                        Then {propertyMortgages[0].variableRateAfterFixed}% variable
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            
+                            {/* Loan progress information */}
+                            {propertyMortgages[0].startDate && propertyMortgages[0].loanTerm && (
+                              <div>
+                                <div className="text-sm text-muted-foreground mb-2">Loan Progress</div>
+                                <div className="w-full bg-muted rounded-full h-2.5 dark:bg-gray-700 mt-1 mb-3">
+                                  {(() => {
+                                    const startDate = new Date(propertyMortgages[0].startDate);
+                                    const loanTermMonths = propertyMortgages[0].loanTerm;
+                                    const endDate = new Date(startDate);
+                                    endDate.setMonth(startDate.getMonth() + loanTermMonths);
+                                    
+                                    const now = new Date();
+                                    const totalLoanDuration = endDate.getTime() - startDate.getTime();
+                                    const elapsedDuration = now.getTime() - startDate.getTime();
+                                    
+                                    const percentComplete = totalLoanDuration > 0
+                                      ? Math.min(100, (elapsedDuration / totalLoanDuration) * 100)
+                                      : 0;
+                                      
+                                    return (
+                                      <div 
+                                        className="bg-blue-600 h-2.5 rounded-full"
+                                        style={{ width: `${percentComplete}%` }}
+                                      ></div>
+                                    );
+                                  })()}
+                                </div>
+                                <div className="flex justify-between text-xs">
+                                  <span className="text-muted-foreground">
+                                    Started: {new Date(propertyMortgages[0].startDate).toLocaleDateString()}
+                                  </span>
+                                  <span className="text-muted-foreground">
+                                    {(() => {
+                                      const startDate = new Date(propertyMortgages[0].startDate);
+                                      const loanTermMonths = propertyMortgages[0].loanTerm;
+                                      const endDate = new Date(startDate);
+                                      endDate.setMonth(startDate.getMonth() + loanTermMonths);
+                                      return `Ends: ${endDate.toLocaleDateString()}`
+                                    })()}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ) : (asset ? isLegacyMortgageProperty(asLegacyAsset(asset)) : false) ? (
+                          // Legacy mortgage information as fallback
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <div className="text-sm text-muted-foreground mb-1">Lender</div>
+                              <div className="text-base font-medium">
+                                {asset?.mortgageLender || "Not specified"}
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <div className="text-sm text-muted-foreground mb-1">Interest Rate</div>
+                              <div className="text-base font-medium">
+                                {asset?.mortgageInterestRate ? `${asset.mortgageInterestRate}%` : "Not specified"}
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <div className="text-sm text-muted-foreground mb-1">Monthly Payment</div>
+                              <div className="text-base font-medium">
+                                {asset?.mortgageAmount && asset?.mortgageInterestRate && asset?.mortgageTerm ?
+                                  formatCurrency(
+                                    calculateLoanPayment(
+                                      asset.mortgageAmount,
+                                      asset.mortgageInterestRate / 100,
+                                      asset.mortgageTerm / 12
+                                    )
+                                  ) : "Not available"}
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <div className="text-sm text-muted-foreground mb-1">Monthly Interest</div>
+                              <div className="text-base font-medium text-amber-600">
+                                {asset?.mortgageAmount && asset?.mortgageInterestRate ?
+                                  formatCurrency((asset.mortgageInterestRate / 100) * (asset.mortgageAmount) / 12)
+                                  : "Not available"}
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <div className="text-sm text-muted-foreground mb-1">Type</div>
+                              <div className="text-base font-medium capitalize">
+                                {asset?.mortgageType || "Not specified"}
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <div className="text-sm text-muted-foreground mb-1">Term</div>
+                              <div className="text-base font-medium">
+                                {asset?.mortgageTerm ? 
+                                  `${(asset.mortgageTerm / 12).toFixed(0)} years (${asset.mortgageTerm} months)` 
+                                  : "Not specified"}
+                              </div>
                             </div>
                           </div>
-                          
-                          <div>
-                            <div className="text-sm text-muted-foreground mb-1">Interest Rate</div>
-                            <div className="text-base font-medium">
-                              {asset?.mortgageInterestRate ? `${asset.mortgageInterestRate}%` : "Not specified"}
-                            </div>
+                        ) : (
+                          // No mortgage information
+                          <div className="text-center p-4">
+                            <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                            <p className="text-muted-foreground mb-4">No mortgage information available for this property.</p>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setActiveTab("mortgage")}
+                            >
+                              <Plus className="mr-2 h-4 w-4" /> Add Mortgage
+                            </Button>
                           </div>
-                          
-                          <div>
-                            <div className="text-sm text-muted-foreground mb-1">Monthly Payment</div>
-                            <div className="text-base font-medium">
-                              {asset?.mortgageAmount && asset?.mortgageInterestRate && asset?.mortgageTerm ?
-                                formatCurrency(
-                                  calculateLoanPayment(
-                                    asset.mortgageAmount,
-                                    asset.mortgageInterestRate / 100,
-                                    asset.mortgageTerm / 12
-                                  )
-                                ) : "Not available"}
-                            </div>
-                          </div>
-                          
-                          <div>
-                            <div className="text-sm text-muted-foreground mb-1">Monthly Interest</div>
-                            <div className="text-base font-medium text-amber-600">
-                              {asset?.mortgageAmount && asset?.mortgageInterestRate && asset?.mortgageTerm ?
-                                (() => {
-                                  const monthlyPayment = calculateLoanPayment(
-                                    asset.mortgageAmount,
-                                    asset.mortgageInterestRate / 100,
-                                    asset.mortgageTerm / 12
-                                  );
-                                  const { interest } = calculatePrincipalAndInterest(
-                                    asset.mortgageAmount,
-                                    asset.mortgageInterestRate / 100,
-                                    monthlyPayment
-                                  );
-                                  return formatCurrency(interest);
-                                })() : "Not available"}
-                            </div>
-                          </div>
-                          
-                          <div>
-                            <div className="text-sm text-muted-foreground mb-1">Type</div>
-                            <div className="text-base font-medium capitalize">
-                              {asset?.mortgageType || "Not specified"}
-                            </div>
-                          </div>
-                          
-                          <div>
-                            <div className="text-sm text-muted-foreground mb-1">Term</div>
-                            <div className="text-base font-medium">
-                              {asset?.mortgageTerm ? 
-                                `${(asset.mortgageTerm / 12).toFixed(0)} years (${asset.mortgageTerm} months)` 
-                                : "Not specified"}
-                            </div>
-                          </div>
-                          
-                          <div>
-                            <div className="text-sm text-muted-foreground mb-1">Payment Frequency</div>
-                            <div className="text-base font-medium capitalize">
-                              {asset?.mortgagePaymentFrequency || "Not specified"}
-                            </div>
-                          </div>
+                        )}
+                        
+                        <Separator className="my-4" />
+                        
+                        <div className="flex justify-between items-center mt-2">
+                          <div className="text-sm text-muted-foreground">View full details</div>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setActiveTab("mortgage")}
+                          >
+                            <CreditCard className="mr-2 h-4 w-4" /> Mortgage Tab
+                          </Button>
                         </div>
                       </CardContent>
                     </Card>
