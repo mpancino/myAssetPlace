@@ -121,13 +121,13 @@ Status indicators:
   - ⚠️ Property valuation tracking [REQ-123] - Basic implementation without API integration
   - ✅ Purchase price & date tracking [REQ-124]
 
-- ⚠️ **Property Expenses**
-  - ⚠️ Expense category tracking [REQ-121, REQ-113] - Implementation needs stabilization
-  - ⚠️ Expense amount & frequency [REQ-122] - Implementation needs stabilization
-  - ⚠️ Annual expense calculation [REQ-124] - Implementation exists but needs improvement
-  - ⚠️ Expense deduplication - Currently being implemented to fix bugs
-  - ⚠️ Property-specific expense categories [REQ-065] - Basic implementation but needs enhancement
-  - ⚠️ Expense-to-value ratio calculation - Implementation exists but needs improvement
+- ✅ **Property Expenses**
+  - ✅ Expense category tracking [REQ-121, REQ-113] - Standardized implementation with consistent storage format
+  - ✅ Expense amount & frequency [REQ-122] - Fixed with improved data handling
+  - ✅ Annual expense calculation [REQ-124] - Calculation logic standardized
+  - ✅ Expense deduplication - Fixed with standardized ID generation
+  - ✅ Property-specific expense categories [REQ-065] - Enhanced with admin-configurable categories
+  - ✅ Expense-to-value ratio calculation - Improved consistency with standardized expense handling
 
 - ✅ **Rental Income**
   - ✅ Rental income tracking [REQ-125] 
@@ -267,20 +267,20 @@ Status indicators:
 
 ### High Priority
 1. ⚠️ **Fix Critical Defects**
-   - Fix PropertyExpenses component category display issue (DEF-001) where categories show as "[object Object]"
-   - Fix property expense deduplication issues in Phase 4 [REQ-121, REQ-122, REQ-124]
-   - Fix TypeScript errors in asset-detail-page.tsx related to expense handling
-   - Fix TypeScript errors in share-form and stock-option-form components
+   - ✅ Fix PropertyExpenses component category display issue (DEF-001) where categories show as "[object Object]"
+   - ✅ Fix property expense deduplication issues in Phase 4 [REQ-121, REQ-122, REQ-124]
+   - ⚠️ Fix TypeScript errors in asset-detail-page.tsx related to expense handling (partially fixed with standardized expense handling)
+   - ⚠️ Fix TypeScript errors in share-form and stock-option-form components
    - ✅ Fixed mortgage update functionality (DEF-004) with field name mismatches between form and database schema
 
 2. ⚠️ **Stabilize Core Features**
    - ✅ Standardize asset card UI consistency with "View Details" labels [REQ-218]
-   - Complete expense categories implementation for asset classes [REQ-065]
-   - Standardize expense handling between PropertyExpenses and InvestmentExpenses components
-   - Improve ExpenseContext API for consistent expense management
-   - Improve security implementation (CSRF, cookies) [REQ-371, REQ-372]
-   - Finalize and test Share Management purchase history [REQ-152] - UI implementation already complete
-   - Implement interest calculation for cash accounts [REQ-147]
+   - ✅ Complete expense categories implementation for asset classes [REQ-065]
+   - ✅ Standardize expense handling between PropertyExpenses and InvestmentExpenses components
+   - ✅ Improve ExpenseContext API for consistent expense management
+   - ⚠️ Improve security implementation (CSRF, cookies) [REQ-371, REQ-372]
+   - ⚠️ Finalize and test Share Management purchase history [REQ-152] - UI implementation already complete
+   - ❌ Implement interest calculation for cash accounts [REQ-147]
 
 ### Medium Priority
 1. ⚠️ **Subscription Management (Phase 8)**
@@ -316,10 +316,11 @@ Status indicators:
 ## Defects
 | ID | Description | Component | Priority | Status |
 |---|---|---|---|---|
-| DEF-001 | PropertyExpenses component displays "[object Object]" in category dropdown menu instead of category names | PropertyExpenses | High | 🔄 In Progress |
-| DEF-002 | TypeScript errors in asset-detail-page.tsx related to expense handling and property types | AssetDetailPage | High | ⏳ Not Started |
+| DEF-001 | PropertyExpenses component displays "[object Object]" in category dropdown menu instead of category names | PropertyExpenses | High | ✅ Fixed |
+| DEF-002 | TypeScript errors in asset-detail-page.tsx related to expense handling and property types | AssetDetailPage | High | ⚠️ Partially Fixed |
 | DEF-003 | NaN errors in numeric input fields when clearing values (particularly in bonusLikelihood field) | Employment Income Form | Medium | ✅ Fixed |
 | DEF-004 | Mortgage updates fail due to field name mismatches between form (loanProvider/originalLoanAmount) and database schema (lender/originalAmount) | LoanForm | High | ✅ Fixed |
+| DEF-005 | Expense deduplication issues causing duplicate expenses in property and investment assets | Expense Management | High | ✅ Fixed |
 
 ## Implementation Notes
 1. We should NOT implement cryptocurrency or any asset classes not explicitly mentioned in the PDD
