@@ -20,7 +20,7 @@ import {
   CreditCard, 
   Settings,
   Palette,
-  WrenchIcon
+  Wrench
 } from "lucide-react";
 
 export default function AdminPage() {
@@ -89,7 +89,7 @@ export default function AdminPage() {
               <span className="hidden sm:inline">Login Screen</span>
             </TabsTrigger>
             <TabsTrigger value="maintenance" className="data-[state=active]:bg-background rounded-md flex items-center gap-2">
-              <WrenchIcon className="h-4 w-4" />
+              <Wrench className="h-4 w-4" />
               <span className="hidden sm:inline">Maintenance</span>
             </TabsTrigger>
           </TabsList>
