@@ -139,18 +139,13 @@ export function PropertyExpenses({
   
   // Use the asset class expense categories if available, or fall back to defaults
   const availableCategories = expenseCategories && expenseCategories.length > 0
-    ? expenseCategories.map((cat) => {
-        // Handle different types of categories
-        if (typeof cat === 'string') {
-          return cat;
-        } else if (cat && typeof cat === 'object') {
-          const objCat = cat as Record<string, any>; // Type assertion for safety
-          return objCat.name ? String(objCat.name) : String(cat);
-        } else {
-          return String(cat);
-        }
-      })
-    : DEFAULT_EXPENSE_CATEGORIES;
+    ? expenseCategories 
+    : DEFAULT_EXPENSE_CATEGORIES.map(category => ({
+        id: category,
+        name: category,
+        description: '',
+        defaultFrequency: 'monthly'
+      }));
   
   // Core state
   const [expenses, setExpenses] = useState<Record<string, PropertyExpense>>({});
@@ -246,6 +241,17 @@ export function PropertyExpenses({
     setEditingId(null);
     setIsAddingNew(false);
   }, []);
+  
+  // Helper to find the category name from ID
+  const getCategoryNameFromId = useCallback((categoryId: string): string => {
+    const category = availableCategories.find(cat => 
+      (typeof cat === 'string' && cat === categoryId) || 
+      (typeof cat === 'object' && cat.id === categoryId)
+    );
+    
+    if (!category) return categoryId; // Fallback to ID if not found
+    return typeof category === 'string' ? category : category.name;
+  }, [availableCategories]);
 
   // Start editing an expense
   const handleStartEdit = useCallback((expense: PropertyExpense) => {
@@ -287,7 +293,7 @@ export function PropertyExpenses({
       
       const newExpense: PropertyExpense = {
         id,
-        category: newCategory,
+        category: getCategoryNameFromId(newCategory),
         description: newDescription,
         amount,
         frequency: newFrequency,
@@ -321,7 +327,7 @@ export function PropertyExpenses({
         variant: "destructive",
       });
     }
-  }, [newCategory, newDescription, newAmount, newFrequency, expenses, onChange, calculateAnnualTotal, resetForm, toast, setContextExpenses]);
+  }, [newCategory, newDescription, newAmount, newFrequency, expenses, onChange, calculateAnnualTotal, resetForm, toast, setContextExpenses, getCategoryNameFromId]);
   
   // Update an existing expense
   const handleUpdateExpense = useCallback(() => {
@@ -359,7 +365,7 @@ export function PropertyExpenses({
       
       const updatedExpense: PropertyExpense = {
         ...existingExpense,
-        category: newCategory,
+        category: getCategoryNameFromId(newCategory),
         description: newDescription,
         amount,
         frequency: newFrequency,
@@ -391,7 +397,7 @@ export function PropertyExpenses({
         variant: "destructive",
       });
     }
-  }, [editingId, newCategory, newDescription, newAmount, newFrequency, expenses, onChange, calculateAnnualTotal, resetForm, toast, setContextExpenses]);
+  }, [editingId, newCategory, newDescription, newAmount, newFrequency, expenses, onChange, calculateAnnualTotal, resetForm, toast, setContextExpenses, getCategoryNameFromId]);
   
   // Delete an expense
   const handleDeleteExpense = useCallback((id: string) => {
@@ -524,25 +530,12 @@ export function PropertyExpenses({
                   </SelectTrigger>
                   <SelectContent>
                     {availableCategories.map((category) => {
-                      // Handle both string categories and standardized category objects
-                      let categoryName = '';
-                      let categoryValue = '';
-                      
-                      if (typeof category === 'string') {
-                        categoryName = category;
-                        categoryValue = category;
-                      } else if (category && typeof category === 'object') {
-                        // For objects, safely extract properties
-                        const objCategory = category as any; // Type assertion for safety
-                        categoryName = objCategory.name ? String(objCategory.name) : String(category);
-                        categoryValue = categoryName; // Use name as value too
-                      } else {
-                        categoryName = String(category);
-                        categoryValue = categoryName;
-                      }
+                      // Get the category ID and name
+                      const categoryId = typeof category === 'string' ? category : category.id;
+                      const categoryName = typeof category === 'string' ? category : category.name;
                         
                       return (
-                        <SelectItem key={categoryValue} value={categoryValue}>
+                        <SelectItem key={categoryId} value={categoryId}>
                           {categoryName}
                         </SelectItem>
                       );
