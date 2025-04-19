@@ -357,6 +357,33 @@ export const loginUserSchema = z.object({
   password: z.string().min(6),
 });
 
+// Standard expense interfaces
+export interface Expense {
+  id: string;
+  categoryId: string;  // Reference to a category defined in asset class
+  name: string;        // User-friendly description
+  amount: number;
+  frequency: 'monthly' | 'quarterly' | 'annually';
+  notes?: string;
+}
+
+export interface ExpenseCategory {
+  id: string;
+  name: string;
+  description: string;
+  defaultFrequency: 'monthly' | 'quarterly' | 'annually';
+}
+
+// Expense validation schema
+export const expenseSchema = z.object({
+  id: z.string(),
+  categoryId: z.string(),
+  name: z.string(),
+  amount: z.number().min(0),
+  frequency: z.enum(['monthly', 'quarterly', 'annually']),
+  notes: z.string().optional()
+});
+
 export const insertAssetSchema = createInsertSchema(assets)
   .omit({
     id: true,
@@ -365,14 +392,9 @@ export const insertAssetSchema = createInsertSchema(assets)
   })
   .extend({
     value: z.number().min(-1000000000, "Asset value must be greater than -1 billion").max(1000000000, "Asset value cannot exceed 1 billion"),
-    investmentExpenses: z.record(z.string(), z.object({
-      id: z.string(),
-      category: z.string(),
-      description: z.string(),
-      amount: z.number(),
-      frequency: z.string(),
-      annualTotal: z.number()
-    })).optional(),
+    expenses: z.record(z.string(), expenseSchema).optional(),
+    propertyExpenses: z.record(z.string(), expenseSchema).optional(),
+    investmentExpenses: z.record(z.string(), expenseSchema).optional(),
   });
 
 export const insertCashAccountSchema = insertAssetSchema.extend({

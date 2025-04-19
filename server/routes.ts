@@ -41,6 +41,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Serve scripts directory
   app.use('/scripts', express.static(path.join(process.cwd(), 'scripts')));
   
+  // Standardize expenses across all assets (admin only)
+  app.get('/api/admin/standardize-expenses', async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        success: false, 
+        message: "Only admins can run standardization" 
+      });
+    }
+    
+    try {
+      // Import the standardization function
+      const { standardizeExpenseData } = await import('../scripts/standardize-expenses');
+      
+      // Run the standardization
+      const result = await standardizeExpenseData();
+      
+      return res.json({
+        success: true,
+        message: `Standardized expenses for ${result.updatedCount} assets`,
+        result
+      });
+      
+    } catch (error: unknown) {
+      console.error('Error standardizing expenses:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      return res.status(500).json({
+        success: false,
+        message: `Failed to standardize expenses: ${errorMessage}`
+      });
+    }
+  });
+  
+  // Standardize expenses for a specific asset (admin only)
+  app.get('/api/admin/standardize-expenses/:assetId', async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== 'admin') {
+      return res.status(403).json({ 
+        success: false, 
+        message: "Only admins can run standardization" 
+      });
+    }
+    
+    try {
+      const assetId = parseInt(req.params.assetId);
+      
+      if (isNaN(assetId)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid asset ID"
+        });
+      }
+      
+      // Import the standardization function
+      const { standardizeAssetExpenses } = await import('../scripts/standardize-expenses');
+      
+      // Run the standardization
+      const result = await standardizeAssetExpenses(assetId);
+      
+      return res.json({
+        success: true,
+        message: `Standardized expenses for asset ${assetId}`,
+        result
+      });
+      
+    } catch (error: unknown) {
+      console.error('Error standardizing expenses:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      
+      return res.status(500).json({
+        success: false,
+        message: `Failed to standardize expenses: ${errorMessage}`
+      });
+    }
+  });
+  
   // Run update expenses script
   app.post('/api/run-update-expenses', async (req, res) => {
     if (!req.isAuthenticated()) {
