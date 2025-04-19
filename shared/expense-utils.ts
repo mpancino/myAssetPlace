@@ -26,28 +26,68 @@ export const FREQUENCY_MULTIPLIERS: Record<string, number> = {
  * @returns A record of expense objects
  */
 export function parseExpenses(data: any): Record<string, Expense> {
+  const traceId = Math.floor(Math.random() * 10000);
+  console.log(`\n[PARSE:${traceId}] ===== PARSE EXPENSES =====`);
+  console.log(`[PARSE:${traceId}] Input type:`, typeof data);
+  
   try {
     // If null or undefined, return empty object
-    if (!data) return {};
+    if (!data) {
+      console.log(`[PARSE:${traceId}] Input value: null/undefined`);
+      console.log(`[PARSE:${traceId}] Call stack:`, new Error().stack?.split('\n').slice(2, 5).join('\n'));
+      console.log(`[PARSE:${traceId}] Returning empty object`);
+      console.log(`[PARSE:${traceId}] ===== END PARSE =====\n`);
+      return {};
+    }
     
     // If it's a string, try to parse it
     if (typeof data === 'string') {
       // Handle empty string
-      if (data.trim() === '') return {};
+      if (data.trim() === '') {
+        console.log(`[PARSE:${traceId}] Input value: empty string`);
+        console.log(`[PARSE:${traceId}] Call stack:`, new Error().stack?.split('\n').slice(2, 5).join('\n'));
+        console.log(`[PARSE:${traceId}] Returning empty object`);
+        console.log(`[PARSE:${traceId}] ===== END PARSE =====\n`);
+        return {};
+      }
+      
+      console.log(`[PARSE:${traceId}] Input value: string of length ${data.length}`);
+      console.log(`[PARSE:${traceId}] String preview:`, 
+        data.length > 100 ? data.substring(0, 100) + '...' : data);
+      console.log(`[PARSE:${traceId}] Call stack:`, new Error().stack?.split('\n').slice(2, 5).join('\n'));
       
       // Try to parse as JSON
-      return JSON.parse(data);
+      const parsed = JSON.parse(data);
+      console.log(`[PARSE:${traceId}] Successfully parsed string to object with ${Object.keys(parsed).length} keys`);
+      console.log(`[PARSE:${traceId}] Keys:`, Object.keys(parsed));
+      console.log(`[PARSE:${traceId}] ===== END PARSE =====\n`);
+      return parsed;
     }
     
     // If it's already an object, create a deep clone
     if (typeof data === 'object') {
-      return JSON.parse(JSON.stringify(data));
+      console.log(`[PARSE:${traceId}] Input value: object with ${Object.keys(data).length} keys`);
+      console.log(`[PARSE:${traceId}] Keys:`, Object.keys(data));
+      console.log(`[PARSE:${traceId}] Call stack:`, new Error().stack?.split('\n').slice(2, 5).join('\n'));
+      
+      // Create a deep clone to ensure we're not affected by reference issues
+      const cloned = JSON.parse(JSON.stringify(data));
+      console.log(`[PARSE:${traceId}] Created deep clone with ${Object.keys(cloned).length} keys`);
+      console.log(`[PARSE:${traceId}] ===== END PARSE =====\n`);
+      return cloned;
     }
     
     // Fallback for unexpected formats
+    console.log(`[PARSE:${traceId}] Unhandled input format: ${typeof data}`);
+    console.log(`[PARSE:${traceId}] Call stack:`, new Error().stack?.split('\n').slice(2, 5).join('\n'));
+    console.log(`[PARSE:${traceId}] Returning empty object`);
+    console.log(`[PARSE:${traceId}] ===== END PARSE =====\n`);
     return {};
   } catch (error) {
-    console.error('Error parsing expenses:', error);
+    console.error(`[PARSE:${traceId}] Error parsing expenses:`, error);
+    console.log(`[PARSE:${traceId}] Call stack:`, new Error().stack?.split('\n').slice(2, 5).join('\n'));
+    console.log(`[PARSE:${traceId}] Returning empty object due to error`);
+    console.log(`[PARSE:${traceId}] ===== END PARSE =====\n`);
     return {};
   }
 }

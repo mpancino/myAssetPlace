@@ -8,6 +8,7 @@ import LoginSplashConfig from "@/components/admin/login-splash-config";
 import SubscriptionPlans from "@/components/admin/subscription-plans";
 import SystemSettings from "@/components/admin/system-settings";
 import AdminDashboard from "@/components/admin/admin-dashboard";
+import { ExpenseStandardizer } from "@/components/admin/expense-standardizer";
 import { useAuth } from "@/hooks/use-auth";
 import { Redirect } from "wouter";
 import { useState } from "react";
@@ -18,7 +19,8 @@ import {
   BarChart3, 
   CreditCard, 
   Settings,
-  Palette
+  Palette,
+  WrenchIcon
 } from "lucide-react";
 
 export default function AdminPage() {
@@ -86,6 +88,10 @@ export default function AdminPage() {
               <Palette className="h-4 w-4" />
               <span className="hidden sm:inline">Login Screen</span>
             </TabsTrigger>
+            <TabsTrigger value="maintenance" className="data-[state=active]:bg-background rounded-md flex items-center gap-2">
+              <WrenchIcon className="h-4 w-4" />
+              <span className="hidden sm:inline">Maintenance</span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard">
@@ -114,6 +120,21 @@ export default function AdminPage() {
           
           <TabsContent value="loginSplash">
             <LoginSplashConfig />
+          </TabsContent>
+          
+          <TabsContent value="maintenance">
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-xl font-semibold mb-2">System Maintenance</h2>
+                <p className="text-muted-foreground mb-6">
+                  Perform system maintenance tasks such as data standardization and cleanup.
+                </p>
+                
+                <div className="grid grid-cols-1 gap-6">
+                  <ExpenseStandardizer />
+                </div>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
