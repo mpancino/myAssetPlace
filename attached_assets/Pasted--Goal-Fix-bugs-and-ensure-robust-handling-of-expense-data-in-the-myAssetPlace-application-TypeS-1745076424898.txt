@@ -1,0 +1,37 @@
+**Goal:** Fix bugs and ensure robust handling of expense data in the myAssetPlace application (TypeScript/React/Node.js/PostgreSQL/Drizzle).
+
+**Context:**
+myAssetPlace is a personal finance application for tracking assets and projecting wealth. We're encountering issues with how expenses associated with assets are stored, calculated, and displayed. The relevant tech stack includes React (frontend), Node.js/Express (backend), TypeScript (both), PostgreSQL (database), and Drizzle ORM.
+
+**Problem:**
+The current expense handling is unstable, leading to incorrect calculations and display issues, specifically:
+1.  **DEF-001:** Expense categories are not displaying correctly in the UI (details might be needed from specific components, but the root might be in data storage or parsing).
+2.  **DEF-002:** Expense calculations (likely summing up expenses per asset or for projections) are incorrect.
+
+There's evidence of complexity and potential inconsistencies:
+* `client/src/lib/expense-utils.ts` contains functions like `convertExpenseObjectToArray`, `convertExpenseArrayToObject`, `parseExpensesInput`, and `calculateTotalAnnualExpenses`, suggesting multiple formats might be involved or conversions are necessary.
+* Scripts like `server/utils/standardize-expense-categories.ts` and `scripts/update-assets-with-expenses.js` suggest past or ongoing efforts to clean up or migrate expense data, hinting at underlying data structure or consistency problems.
+
+**Relevant Files:**
+Please analyze the following files to understand the current implementation and identify the root causes:
+* `shared/schema.ts`: Check how expenses are defined in the database schema (e.g., structure within the `assets` table, data type like JSONB or text).
+* `client/src/lib/expense-utils.ts`: Review the logic for parsing, calculating, and converting expense data on the frontend.
+* `server/storage.ts`: Examine how expense data is saved to and retrieved from the database.
+* `server/routes.ts`: Check the API endpoints (especially those for creating/updating assets) to see how expense data is received and processed.
+* `server/utils/standardize-expense-categories.ts` & `scripts/update-assets-with-expenses.js`: Understand the purpose of these scripts regarding expense data handling.
+* *(Optionally, if known)*: Point to specific React components involved in displaying or inputting expense data.
+
+**Requirements & Expected Outcome:**
+The goal is to refactor the expense handling logic to be:
+1.  **Correct:** Ensure expense calculations (total annual, projected, etc.) are accurate.
+2.  **Consistent:** Store and retrieve expense data in a well-defined, standardized format (likely structured JSON in the database). Eliminate problematic format conversions if possible.
+3.  **Robust:** Handle various expense inputs reliably (e.g., different frequencies, types).
+4.  **Displayable:** Ensure expense categories and values can be correctly and consistently displayed in the UI.
+5.  **Tested:** Implement unit and potentially integration tests for the core expense parsing, calculation, and storage logic.
+6.  **Aligned:** Meet the PDD requirements for expense tracking (REQ-113) and configuration (REQ-065).
+
+**Request:**
+1.  Analyze the provided files to pinpoint the root causes of DEF-001 and DEF-002.
+2.  Propose specific code changes (e.g., updates to schema, utility functions, API handlers, storage logic) to fix the bugs and meet the requirements above. Please provide code snippets or diffs where possible.
+3.  Recommend a standardized structure for storing expense data.
+4.  Suggest necessary unit/integration tests to verify the fix and prevent regressions.
