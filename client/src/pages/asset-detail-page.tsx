@@ -2945,6 +2945,14 @@ export default function AssetDetailPage() {
                 <Button 
                   type="submit"
                   disabled={updateAssetMutation.isPending}
+                  onClick={() => {
+                    console.log("Submit button clicked", new Date().toISOString());
+                    console.log("Current form state:", form.getValues());
+                    console.log("Is form valid:", form.formState.isValid);
+                    console.log("Current asset ID:", assetId);
+                    console.log("Current property expenses in state:", currentPropertyExpenses);
+                    console.log("Current investment expenses in state:", currentInvestmentExpenses);
+                  }}
                 >
                   {updateAssetMutation.isPending ? "Saving..." : "Save Changes"}
                 </Button>
