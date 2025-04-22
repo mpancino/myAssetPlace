@@ -285,7 +285,7 @@ export function PropertyExpenses({
         console.log('Cannot extract name from nested object, checking alternatives');
         if (category.description && category.description.length > 0) {
           return category.description;
-        } else if (category.category) {
+        } else if ('category' in category && category.category) {
           return String(category.category);
         } else if (category.defaultFrequency) {
           const frequency = category.defaultFrequency.charAt(0).toUpperCase() + category.defaultFrequency.slice(1);
@@ -301,7 +301,7 @@ export function PropertyExpenses({
       // Try other properties for display
       if (category.description && category.description.length > 0) {
         return category.description;
-      } else if (category.category) {
+      } else if ('category' in category && category.category) {
         return String(category.category);
       } else if (category.defaultFrequency) {
         const frequency = category.defaultFrequency.charAt(0).toUpperCase() + category.defaultFrequency.slice(1);
