@@ -246,19 +246,31 @@ export function PropertyExpenses({
     
     if (!category) return categoryId; // Fallback to ID if not found
     
+    // Handle string categories
     if (typeof category === 'string') {
       return category;
     } 
     
-    // Handle potentially nested objects in category name
-    let categoryName = category.name;
-    if (categoryName && typeof categoryName === 'object') {
-      // Try to extract name from nested object with type assertion
-      categoryName = (categoryName as any).name || String(categoryName);
-      console.log('Fixed nested category name in getCategoryNameFromId:', categoryName);
+    // Handle missing name property
+    if (category.name === undefined || category.name === null) {
+      return categoryId;
     }
     
-    return String(categoryName);
+    // Handle nested objects in category name
+    if (typeof category.name === 'object') {
+      // Try to extract name from nested object
+      if (category.name && 'name' in category.name) {
+        const extractedName = String((category.name as any).name);
+        console.log('Fixed nested category name in getCategoryNameFromId:', extractedName);
+        return extractedName;
+      } else {
+        // Fallback if we can't extract a name
+        return "Category " + categoryId;
+      }
+    }
+    
+    // Normal case
+    return String(category.name);
   }, [availableCategories]);
 
   // Start editing an expense
@@ -540,18 +552,32 @@ export function PropertyExpenses({
                     {availableCategories.map((category) => {
                       // Get the category ID and name
                       const categoryId = typeof category === 'string' ? category : category.id;
-                      let categoryName = typeof category === 'string' ? category : category.name;
                       
-                      // Handle nested objects in category name (backend issue)
-                      if (categoryName && typeof categoryName === 'object') {
-                        // Try to extract name from nested object
-                        categoryName = (categoryName as any).name || String(categoryName);
+                      // Safely handle category name, ensuring it's always a string
+                      let categoryName: string;
+                      
+                      if (typeof category === 'string') {
+                        categoryName = category;
+                      } else if (category.name === undefined || category.name === null) {
+                        // Fallback to ID if name is not available
+                        categoryName = String(categoryId);
+                      } else if (typeof category.name === 'object') {
+                        // Handle nested objects in category name
+                        if (category.name && typeof category.name === 'object' && 'name' in category.name) {
+                          categoryName = String((category.name as any).name);
+                        } else {
+                          // Last resort fallback - convert object to string representation
+                          categoryName = "Category " + categoryId;
+                        }
                         console.log('Fixed nested category name:', categoryName);
+                      } else {
+                        // Normal case
+                        categoryName = String(category.name);
                       }
-                        
+                      
                       return (
                         <SelectItem key={categoryId} value={categoryId}>
-                          {String(categoryName)}
+                          {categoryName}
                         </SelectItem>
                       );
                     })}
