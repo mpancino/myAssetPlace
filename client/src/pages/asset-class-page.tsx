@@ -422,10 +422,25 @@ export default function AssetClassPage() {
                                 // Normal case - name is a string or primitive
                                 // Double-check for [object Object] string to directly handle the issue
                                 const nameStr = String(category.name);
-                                categoryDisplay = nameStr === "[object Object]" 
-                                  ? `Expense ${index + 1}` 
-                                  : nameStr;
-                                console.log(`[CATEGORY_BADGE] Final category name: ${categoryDisplay}`);
+                                if (nameStr === "[object Object]") {
+                                  // Try to use a more descriptive name from other properties
+                                  if (category.description && category.description.length > 0) {
+                                    categoryDisplay = category.description;
+                                  } else if ('category' in category && category.category) {
+                                    categoryDisplay = String(category.category);
+                                  } else if (category.defaultFrequency) {
+                                    const frequency = category.defaultFrequency.charAt(0).toUpperCase() + 
+                                      category.defaultFrequency.slice(1);
+                                    categoryDisplay = `${frequency} Expense`;
+                                  } else {
+                                    // Last resort with ID fragment
+                                    categoryDisplay = `Expense ${category.id?.substring(0, 4) || index + 1}`;
+                                  }
+                                  console.log(`[CATEGORY_BADGE] Fixed [object Object] to: ${categoryDisplay}`);
+                                } else {
+                                  categoryDisplay = nameStr;
+                                  console.log(`[CATEGORY_BADGE] Normal category name: ${categoryDisplay}`);
+                                }
                               }
                             } else {
                               // Fallback for unexpected types

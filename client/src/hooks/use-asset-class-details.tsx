@@ -133,9 +133,25 @@ function parseExpenseCategories(expenseCategories: any): StandardizedExpenseCate
           // Normal case - string or primitive
           const nameStr = String(cat.name);
           // Check if we're getting [object Object] and provide meaningful replacement
-          cleanCategory.name = nameStr === "[object Object]" 
-            ? `${cat.defaultFrequency || 'Monthly'} Expense` 
-            : nameStr;
+          if (nameStr === "[object Object]") {
+            // Try to extract a name that makes sense based on other properties
+            if (cat.description && cat.description.length > 0) {
+              // Use the description as name if available
+              cleanCategory.name = cat.description;
+            } else if (cat.category) {
+              // Use the category if available
+              cleanCategory.name = String(cat.category);
+            } else if (cat.defaultFrequency) {
+              // Use properly capitalized frequency as last resort
+              const frequency = cat.defaultFrequency.charAt(0).toUpperCase() + cat.defaultFrequency.slice(1);
+              cleanCategory.name = `${frequency} Expense`;
+            } else {
+              // Fallback to some default
+              cleanCategory.name = "Property Expense";
+            }
+          } else {
+            cleanCategory.name = nameStr;
+          }
           console.log('[EXPENSE_CATEGORY_PARSE] Using normal name property:', cleanCategory.name);
         }
         

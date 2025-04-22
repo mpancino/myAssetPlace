@@ -281,15 +281,38 @@ export function PropertyExpenses({
         console.log('Extracted nested category name:', extractedName);
         return extractedName;
       } else {
-        // Fallback if we can't extract a name
-        console.log('Cannot extract name from nested object, using fallback');
+        // Fallback if we can't extract a name - try other properties
+        console.log('Cannot extract name from nested object, checking alternatives');
+        if (category.description && category.description.length > 0) {
+          return category.description;
+        } else if (category.category) {
+          return String(category.category);
+        } else if (category.defaultFrequency) {
+          const frequency = category.defaultFrequency.charAt(0).toUpperCase() + category.defaultFrequency.slice(1);
+          return `${frequency} Expense`;
+        }
         return "Category " + stringCategoryId;
       }
     }
     
+    // Check for [object Object] string
+    const nameStr = String(category.name);
+    if (nameStr === "[object Object]") {
+      // Try other properties for display
+      if (category.description && category.description.length > 0) {
+        return category.description;
+      } else if (category.category) {
+        return String(category.category);
+      } else if (category.defaultFrequency) {
+        const frequency = category.defaultFrequency.charAt(0).toUpperCase() + category.defaultFrequency.slice(1);
+        return `${frequency} Expense`;
+      }
+      return `Category ${stringCategoryId}`;
+    }
+    
     // Normal case
-    console.log('Using normal category name:', String(category.name));
-    return String(category.name);
+    console.log('Using normal category name:', nameStr);
+    return nameStr;
   }, [availableCategories]);
 
   // Start editing an expense
