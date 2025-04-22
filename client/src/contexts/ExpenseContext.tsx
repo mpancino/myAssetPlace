@@ -86,13 +86,26 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
         Object.keys(parsedExpenses).length, 'items');
       
       // Update the expenses by asset ID to maintain isolation
-      setExpensesByAsset(prev => ({
-        ...prev,
-        [targetAssetId]: {
-          ...prev[targetAssetId] || {},
-          investmentExpenses: parsedExpenses
+      setExpensesByAsset(prev => {
+        // Create a safe copy of the previous state
+        const newState = { ...prev };
+        
+        // Initialize the asset entry if it doesn't exist
+        if (!newState[targetAssetId]) {
+          newState[targetAssetId] = {
+            investmentExpenses: {},
+            propertyExpenses: {}
+          };
         }
-      }));
+        
+        // Update the investment expenses
+        newState[targetAssetId] = {
+          ...newState[targetAssetId],
+          investmentExpenses: parsedExpenses
+        };
+        
+        return newState;
+      });
     } catch (error) {
       console.error(`[EXPENSE_CONTEXT:${traceId}] Error parsing investment expenses:`, error);
     }
@@ -116,13 +129,26 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
         Object.keys(parsedExpenses).length, 'items');
       
       // Update the expenses by asset ID to maintain isolation
-      setExpensesByAsset(prev => ({
-        ...prev,
-        [targetAssetId]: {
-          ...prev[targetAssetId] || {},
-          propertyExpenses: parsedExpenses
+      setExpensesByAsset(prev => {
+        // Create a safe copy of the previous state
+        const newState = { ...prev };
+        
+        // Initialize the asset entry if it doesn't exist
+        if (!newState[targetAssetId]) {
+          newState[targetAssetId] = {
+            investmentExpenses: {},
+            propertyExpenses: {}
+          };
         }
-      }));
+        
+        // Update the property expenses
+        newState[targetAssetId] = {
+          ...newState[targetAssetId],
+          propertyExpenses: parsedExpenses
+        };
+        
+        return newState;
+      });
     } catch (error) {
       console.error(`[EXPENSE_CONTEXT:${traceId}] Error parsing property expenses:`, error);
     }
