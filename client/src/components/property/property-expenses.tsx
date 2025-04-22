@@ -35,7 +35,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAssetClassDetails, StandardizedExpenseCategory } from "@/hooks/use-asset-class-details";
 import { formatCurrency } from "@/lib/utils";
-import { parseExpenses, FREQUENCY_MULTIPLIERS } from '@/lib/expense-utils';
+import { parseExpenses, FREQUENCY_MULTIPLIERS, standardizeExpenseFields } from '@/lib/expense-utils';
 
 // Default expense categories as fallback with standardized structure
 const DEFAULT_EXPENSE_CATEGORIES: StandardizedExpenseCategory[] = [
@@ -403,8 +403,9 @@ export function PropertyExpenses({
     }
     
     try {
-      console.log('[PROP_EXPENSES] Adding new expense');
-      console.log('[PROP_EXPENSES] Current asset ID:', assetId);
+      const traceId = Math.floor(Math.random() * 10000000);
+      console.log(`[PROP_EXPENSES:${traceId}] Adding new expense`);
+      console.log(`[PROP_EXPENSES:${traceId}] Current asset ID:`, assetId);
       
       // Create a new expense object
       const id = uuidv4();
@@ -415,9 +416,11 @@ export function PropertyExpenses({
         ? annualTotal 
         : amount * (FREQUENCY_MULTIPLIERS[newFrequency] || 12);
       
+      const categoryName = getCategoryNameFromId(newCategory);
+      
       const newExpense: PropertyExpense = {
         id,
-        category: getCategoryNameFromId(newCategory),
+        category: categoryName,
         description: newDescription,
         amount,
         frequency: newFrequency,
@@ -427,31 +430,51 @@ export function PropertyExpenses({
         name: newDescription
       };
       
+      console.log(`[PROP_EXPENSES:${traceId}] New expense:`, newExpense);
+      
       // Create updated expenses with the new one
       const updatedExpenses = {
         ...expenses,
         [id]: newExpense
       };
       
-      console.log('[PROP_EXPENSES] New expenses collection:', updatedExpenses);
+      console.log(`[PROP_EXPENSES:${traceId}] New expenses collection:`, updatedExpenses);
+      console.log(`[PROP_EXPENSES:${traceId}] Number of expenses: ${Object.keys(updatedExpenses).length}`);
       
-      // Update local state
+      // Update local state first to provide immediate feedback
       setExpenses(updatedExpenses);
       
-      // Update global context - explicitly pass the asset ID to ensure proper association
-      if (assetId) {
-        console.log(`[PROP_EXPENSES] Updating expenses context with asset ID: ${assetId}`);
-        setContextExpenses(updatedExpenses, assetId);
-      } else {
-        console.log('[PROP_EXPENSES] Warning: No asset ID available for context update');
-        setContextExpenses(updatedExpenses);
-      }
-      
-      // Notify parent component
-      onChange(updatedExpenses);
+      // Use a setTimeout to ensure the UI updates before we continue with context updates
+      // This helps prevent race conditions
+      setTimeout(() => {
+        // Standardize the expenses to ensure proper format for storage
+        const standardizedExpenses = standardizeExpenseFields(updatedExpenses);
+        console.log(`[PROP_EXPENSES:${traceId}] Standardized expenses:`, standardizedExpenses);
+        
+        // Update global context - explicitly pass the asset ID to ensure proper association
+        if (assetId) {
+          console.log(`[PROP_EXPENSES:${traceId}] Updating expenses context with asset ID: ${assetId}`);
+          setContextExpenses(standardizedExpenses, assetId);
+          
+          // Notify parent component with standardized expenses
+          console.log(`[PROP_EXPENSES:${traceId}] Notifying parent component of changes`);
+          onChange(standardizedExpenses);
+        } else {
+          console.log(`[PROP_EXPENSES:${traceId}] Warning: No asset ID available for context update`);
+          setContextExpenses(standardizedExpenses);
+          onChange(standardizedExpenses);
+        }
+      }, 10);  // Small delay to ensure UI updates first
       
       // Reset form
       resetForm();
+      
+      // Show success message
+      toast({
+        title: "Success",
+        description: "Expense added successfully",
+        variant: "default",
+      });
     } catch (err) {
       console.error('[PROP_EXPENSES] Error adding expense:', err);
       toast({
@@ -485,8 +508,9 @@ export function PropertyExpenses({
     }
     
     try {
-      console.log('[PROP_EXPENSES] Updating expense with id:', editingId);
-      console.log('[PROP_EXPENSES] Using asset ID:', assetId);
+      const traceId = Math.floor(Math.random() * 10000000);
+      console.log(`[PROP_EXPENSES:${traceId}] Updating expense with id:`, editingId);
+      console.log(`[PROP_EXPENSES:${traceId}] Using asset ID:`, assetId);
       
       // Get the existing expense
       const existingExpense = expenses[editingId];
@@ -502,9 +526,11 @@ export function PropertyExpenses({
         ? annualTotal 
         : amount * (FREQUENCY_MULTIPLIERS[newFrequency] || 12);
       
+      const categoryName = getCategoryNameFromId(newCategory);
+      
       const updatedExpense: PropertyExpense = {
         ...existingExpense,
-        category: getCategoryNameFromId(newCategory),
+        category: categoryName,
         description: newDescription,
         amount,
         frequency: newFrequency,
@@ -514,31 +540,51 @@ export function PropertyExpenses({
         name: newDescription
       };
       
-      // Create updated expenses with the modified one
-      // annualTotal is already calculated and set correctly above
+      console.log(`[PROP_EXPENSES:${traceId}] Updated expense:`, updatedExpense);
       
+      // Create updated expenses with the modified one
       const updatedExpenses = {
         ...expenses,
         [editingId]: updatedExpense
       };
       
-      // Update local state
+      console.log(`[PROP_EXPENSES:${traceId}] New expenses collection:`, updatedExpenses);
+      console.log(`[PROP_EXPENSES:${traceId}] Number of expenses: ${Object.keys(updatedExpenses).length}`);
+      
+      // Update local state first to provide immediate feedback
       setExpenses(updatedExpenses);
       
-      // Update global context - explicitly pass the asset ID to ensure proper association
-      if (assetId) {
-        console.log(`[PROP_EXPENSES] Updating expenses context with asset ID: ${assetId}`);
-        setContextExpenses(updatedExpenses, assetId);
-      } else {
-        console.log('[PROP_EXPENSES] Warning: No asset ID available for context update');
-        setContextExpenses(updatedExpenses);
-      }
-      
-      // Notify parent component
-      onChange(updatedExpenses);
+      // Use a setTimeout to ensure the UI updates before we continue with context updates
+      // This helps prevent race conditions
+      setTimeout(() => {
+        // Standardize the expenses to ensure proper format for storage
+        const standardizedExpenses = standardizeExpenseFields(updatedExpenses);
+        console.log(`[PROP_EXPENSES:${traceId}] Standardized expenses:`, standardizedExpenses);
+        
+        // Update global context - explicitly pass the asset ID to ensure proper association
+        if (assetId) {
+          console.log(`[PROP_EXPENSES:${traceId}] Updating expenses context with asset ID: ${assetId}`);
+          setContextExpenses(standardizedExpenses, assetId);
+          
+          // Notify parent component with standardized expenses
+          console.log(`[PROP_EXPENSES:${traceId}] Notifying parent component of changes`);
+          onChange(standardizedExpenses);
+        } else {
+          console.log(`[PROP_EXPENSES:${traceId}] Warning: No asset ID available for context update`);
+          setContextExpenses(standardizedExpenses);
+          onChange(standardizedExpenses);
+        }
+      }, 10);  // Small delay to ensure UI updates first
       
       // Reset form
       resetForm();
+      
+      // Show success message
+      toast({
+        title: "Success",
+        description: "Expense updated successfully",
+        variant: "default",
+      });
     } catch (err) {
       console.error('[PROP_EXPENSES] Error updating expense:', err);
       toast({
@@ -552,8 +598,9 @@ export function PropertyExpenses({
   // Delete an expense
   const handleDeleteExpense = useCallback((id: string) => {
     try {
-      console.log('[PROP_EXPENSES] Deleting expense with id:', id);
-      console.log('[PROP_EXPENSES] Using asset ID:', assetId);
+      const traceId = Math.floor(Math.random() * 10000000);
+      console.log(`[PROP_EXPENSES:${traceId}] Deleting expense with id:`, id);
+      console.log(`[PROP_EXPENSES:${traceId}] Using asset ID:`, assetId);
       
       // Check if expense exists
       if (!expenses[id]) {
@@ -563,22 +610,40 @@ export function PropertyExpenses({
       // Create a copy without the deleted expense
       const { [id]: _, ...updatedExpenses } = expenses;
       
-      console.log('[PROP_EXPENSES] Updated expenses after deletion:', updatedExpenses);
+      console.log(`[PROP_EXPENSES:${traceId}] Updated expenses after deletion:`, updatedExpenses);
+      console.log(`[PROP_EXPENSES:${traceId}] Number of expenses: ${Object.keys(updatedExpenses).length}`);
       
-      // Update local state
+      // Update local state first to provide immediate feedback
       setExpenses(updatedExpenses);
       
-      // Update global context - explicitly pass the asset ID to ensure proper association
-      if (assetId) {
-        console.log(`[PROP_EXPENSES] Updating expenses context with asset ID: ${assetId}`);
-        setContextExpenses(updatedExpenses, assetId);
-      } else {
-        console.log('[PROP_EXPENSES] Warning: No asset ID available for context update');
-        setContextExpenses(updatedExpenses);
-      }
+      // Use a setTimeout to ensure the UI updates before we continue with context updates
+      // This helps prevent race conditions
+      setTimeout(() => {
+        // Standardize the expenses to ensure proper format for storage
+        const standardizedExpenses = standardizeExpenseFields(updatedExpenses);
+        console.log(`[PROP_EXPENSES:${traceId}] Standardized expenses:`, standardizedExpenses);
+        
+        // Update global context - explicitly pass the asset ID to ensure proper association
+        if (assetId) {
+          console.log(`[PROP_EXPENSES:${traceId}] Updating expenses context with asset ID: ${assetId}`);
+          setContextExpenses(standardizedExpenses, assetId);
+          
+          // Notify parent component with standardized expenses
+          console.log(`[PROP_EXPENSES:${traceId}] Notifying parent component of changes`);
+          onChange(standardizedExpenses);
+        } else {
+          console.log(`[PROP_EXPENSES:${traceId}] Warning: No asset ID available for context update`);
+          setContextExpenses(standardizedExpenses);
+          onChange(standardizedExpenses);
+        }
+      }, 10);  // Small delay to ensure UI updates first
       
-      // Notify parent component
-      onChange(updatedExpenses);
+      // Show success message
+      toast({
+        title: "Success",
+        description: "Expense deleted successfully",
+        variant: "default",
+      });
     } catch (err) {
       console.error('[PROP_EXPENSES] Error deleting expense:', err);
       toast({
