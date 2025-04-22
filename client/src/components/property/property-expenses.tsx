@@ -116,6 +116,7 @@ export function PropertyExpenseAnalysis({
 interface PropertyExpensesProps {
   value: Record<string, PropertyExpense> | string | null | undefined;
   onChange: (value: Record<string, PropertyExpense>) => void;
+  assetId?: number; // Asset ID for correctly storing expenses
   assetClassId?: number;
   isEditMode?: boolean;
   isSaving?: boolean;
@@ -124,6 +125,7 @@ interface PropertyExpensesProps {
 export function PropertyExpenses({
   value,
   onChange,
+  assetId,
   assetClassId,
   isEditMode = true,
   isSaving = false,
@@ -398,6 +400,7 @@ export function PropertyExpenses({
     
     try {
       console.log('[PROP_EXPENSES] Adding new expense');
+      console.log('[PROP_EXPENSES] Current asset ID:', assetId);
       
       // Create a new expense object
       const id = uuidv4();
@@ -423,8 +426,14 @@ export function PropertyExpenses({
       // Update local state
       setExpenses(updatedExpenses);
       
-      // Update global context
-      setContextExpenses(updatedExpenses);
+      // Update global context - explicitly pass the asset ID to ensure proper association
+      if (assetId) {
+        console.log(`[PROP_EXPENSES] Updating expenses context with asset ID: ${assetId}`);
+        setContextExpenses(updatedExpenses, assetId);
+      } else {
+        console.log('[PROP_EXPENSES] Warning: No asset ID available for context update');
+        setContextExpenses(updatedExpenses);
+      }
       
       // Notify parent component
       onChange(updatedExpenses);
@@ -439,7 +448,7 @@ export function PropertyExpenses({
         variant: "destructive",
       });
     }
-  }, [newCategory, newDescription, newAmount, newFrequency, expenses, onChange, calculateAnnualTotal, resetForm, toast, setContextExpenses, getCategoryNameFromId]);
+  }, [newCategory, newDescription, newAmount, newFrequency, expenses, onChange, calculateAnnualTotal, resetForm, toast, setContextExpenses, getCategoryNameFromId, assetId]);
   
   // Update an existing expense
   const handleUpdateExpense = useCallback(() => {
@@ -465,6 +474,7 @@ export function PropertyExpenses({
     
     try {
       console.log('[PROP_EXPENSES] Updating expense with id:', editingId);
+      console.log('[PROP_EXPENSES] Using asset ID:', assetId);
       
       // Get the existing expense
       const existingExpense = expenses[editingId];
@@ -493,8 +503,14 @@ export function PropertyExpenses({
       // Update local state
       setExpenses(updatedExpenses);
       
-      // Update global context
-      setContextExpenses(updatedExpenses);
+      // Update global context - explicitly pass the asset ID to ensure proper association
+      if (assetId) {
+        console.log(`[PROP_EXPENSES] Updating expenses context with asset ID: ${assetId}`);
+        setContextExpenses(updatedExpenses, assetId);
+      } else {
+        console.log('[PROP_EXPENSES] Warning: No asset ID available for context update');
+        setContextExpenses(updatedExpenses);
+      }
       
       // Notify parent component
       onChange(updatedExpenses);
@@ -509,12 +525,13 @@ export function PropertyExpenses({
         variant: "destructive",
       });
     }
-  }, [editingId, newCategory, newDescription, newAmount, newFrequency, expenses, onChange, calculateAnnualTotal, resetForm, toast, setContextExpenses, getCategoryNameFromId]);
+  }, [editingId, newCategory, newDescription, newAmount, newFrequency, expenses, onChange, calculateAnnualTotal, resetForm, toast, setContextExpenses, getCategoryNameFromId, assetId]);
   
   // Delete an expense
   const handleDeleteExpense = useCallback((id: string) => {
     try {
       console.log('[PROP_EXPENSES] Deleting expense with id:', id);
+      console.log('[PROP_EXPENSES] Using asset ID:', assetId);
       
       // Check if expense exists
       if (!expenses[id]) {
@@ -529,8 +546,14 @@ export function PropertyExpenses({
       // Update local state
       setExpenses(updatedExpenses);
       
-      // Update global context
-      setContextExpenses(updatedExpenses);
+      // Update global context - explicitly pass the asset ID to ensure proper association
+      if (assetId) {
+        console.log(`[PROP_EXPENSES] Updating expenses context with asset ID: ${assetId}`);
+        setContextExpenses(updatedExpenses, assetId);
+      } else {
+        console.log('[PROP_EXPENSES] Warning: No asset ID available for context update');
+        setContextExpenses(updatedExpenses);
+      }
       
       // Notify parent component
       onChange(updatedExpenses);
@@ -542,7 +565,7 @@ export function PropertyExpenses({
         variant: "destructive",
       });
     }
-  }, [expenses, onChange, toast, setContextExpenses]);
+  }, [expenses, onChange, toast, setContextExpenses, assetId]);
   
   // Calculate the total annual expenses
   const totalAnnualExpenses = Object.values(expenses).reduce(
