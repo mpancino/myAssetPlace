@@ -55,6 +55,10 @@ export interface PropertyExpense {
   amount: number;
   frequency: string;
   annualTotal: number;
+  
+  // These fields may also be present depending on where the data comes from
+  categoryId?: string;
+  name?: string;
 }
 
 // Basic property expense analysis component
@@ -418,6 +422,9 @@ export function PropertyExpenses({
         amount,
         frequency: newFrequency,
         annualTotal: calculatedAnnualTotal,
+        // Add storage format fields to ensure both formats work
+        categoryId: newCategory,
+        name: newDescription
       };
       
       // Create updated expenses with the new one
@@ -502,6 +509,9 @@ export function PropertyExpenses({
         amount,
         frequency: newFrequency,
         annualTotal: calculatedAnnualTotal,
+        // Add storage format fields to ensure both formats work
+        categoryId: newCategory,
+        name: newDescription
       };
       
       // Create updated expenses with the modified one
