@@ -395,31 +395,25 @@ export default function AssetClassPage() {
                                 categoryDisplay = `Category ${index + 1}`;
                                 console.log(`[CATEGORY_BADGE] No name property, using fallback: ${categoryDisplay}`);
                               } else if (typeof category.name === 'object') {
-                                // Handle case where name is an object (this is the primary bug)
-                                try {
-                                  // First try to access a name property if this is a nested object
-                                  if (category.name !== null && 'name' in (category.name as any)) {
-                                    categoryDisplay = String((category.name as any).name);
-                                    console.log(`[CATEGORY_BADGE] Extracted nested name property: ${categoryDisplay}`);
-                                  } else if (category.defaultFrequency) {
-                                    // Use frequency-based name as fallback
-                                    const frequencyMap: Record<string, string> = {
-                                      'monthly': 'Monthly Expense',
-                                      'quarterly': 'Quarterly Expense',
-                                      'annually': 'Annual Expense',
-                                      'weekly': 'Weekly Expense',
-                                      'daily': 'Daily Expense'
-                                    };
-                                    categoryDisplay = frequencyMap[category.defaultFrequency] || 'Regular Expense';
-                                    console.log(`[CATEGORY_BADGE] Replacing [object Object] with frequency-based name: ${categoryDisplay}`);
-                                  } else {
-                                    // Provide a more meaningful name than [object Object]
-                                    categoryDisplay = `Category ${index + 1}`;
-                                    console.log(`[CATEGORY_BADGE] Replacing [object Object] with indexed name: ${categoryDisplay}`);
-                                  }
-                                } catch (e) {
-                                  categoryDisplay = `Category ${index + 1}`;
-                                  console.log(`[CATEGORY_BADGE] Error handling object name: ${e}`);
+                                // Handle case where name is an object (this is the bug)
+                                if (category.name !== null && typeof category.name === 'object' && 'name' in (category.name as any)) {
+                                  // Extract nested name property if it exists
+                                  categoryDisplay = String((category.name as any).name);
+                                  console.log(`[CATEGORY_BADGE] Extracted nested name: ${categoryDisplay}`);
+                                } else if (category.defaultFrequency) {
+                                  // Use category type/frequency as fallback
+                                  const frequencyMap: Record<string, string> = {
+                                    'monthly': 'Monthly Expense',
+                                    'quarterly': 'Quarterly Expense',
+                                    'annually': 'Annual Expense',
+                                    'weekly': 'Weekly Expense'
+                                  };
+                                  categoryDisplay = frequencyMap[category.defaultFrequency as keyof typeof frequencyMap] || 'Expense Category';
+                                  console.log(`[CATEGORY_BADGE] Using frequency for display: ${categoryDisplay}`);
+                                } else {
+                                  // Last resort fallback with index
+                                  categoryDisplay = `Expense ${index + 1}`;
+                                  console.log(`[CATEGORY_BADGE] Using index-based fallback: ${categoryDisplay}`);
                                 }
                               } else {
                                 // Normal case - name is a string or primitive

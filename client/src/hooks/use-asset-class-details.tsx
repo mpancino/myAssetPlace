@@ -103,20 +103,30 @@ function parseExpenseCategories(expenseCategories: any): StandardizedExpenseCate
           cleanCategory.name = String(cat.value || cat.category || 'Unnamed Category');
           console.log('[EXPENSE_CATEGORY_PARSE] Using alternative property for name:', cleanCategory.name);
         } else if (typeof cat.name === 'object') {
-          // Handle nested object in name property
+          // Handle case where name is an object (root cause of "[object Object]" display)
           try {
-            if (cat.name && typeof cat.name === 'object' && 'name' in cat.name) {
+            if (cat.name !== null && 'name' in cat.name) {
+              // Extract the name property from the nested object
               cleanCategory.name = String(cat.name.name);
-              console.log('[EXPENSE_CATEGORY_PARSE] Extracted nested name:', cleanCategory.name);
+              console.log('[EXPENSE_CATEGORY_PARSE] Extracted nested name property:', cleanCategory.name);
+            } else if (cat.defaultFrequency) {
+              // Use a frequency-based name if available
+              const frequencyMap: Record<string, string> = {
+                'monthly': 'Monthly Expense',
+                'quarterly': 'Quarterly Expense', 
+                'annually': 'Annual Expense',
+                'weekly': 'Weekly Expense'
+              };
+              cleanCategory.name = frequencyMap[cat.defaultFrequency] || 'Expense Category';
+              console.log('[EXPENSE_CATEGORY_PARSE] Using frequency-based name:', cleanCategory.name);
             } else {
-              // If we can't extract a proper name, use a stringify preview
-              const preview = JSON.stringify(cat.name).substring(0, 20);
-              cleanCategory.name = `Category ${preview}...`;
-              console.log('[EXPENSE_CATEGORY_PARSE] Created preview name from object:', cleanCategory.name);
+              // Create a more meaningful name than [object Object]
+              cleanCategory.name = `Expense Category`;
+              console.log('[EXPENSE_CATEGORY_PARSE] Created generic name:', cleanCategory.name);
             }
           } catch (e) {
-            cleanCategory.name = 'Complex Category';
-            console.error('[EXPENSE_CATEGORY_PARSE] Error extracting nested name:', e);
+            cleanCategory.name = 'Expense Category';
+            console.error('[EXPENSE_CATEGORY_PARSE] Error handling object name:', e);
           }
         } else {
           // Normal case - string or primitive
