@@ -116,6 +116,7 @@ export function InvestmentExpenseAnalysis({
 interface InvestmentExpensesProps {
   value: Record<string, InvestmentExpense> | string | null | undefined;
   onChange: (value: Record<string, InvestmentExpense>) => void;
+  assetId?: number; // Asset ID for correctly storing expenses
   assetClassId?: number;
   isEditMode?: boolean;
   isSaving?: boolean;
@@ -124,6 +125,7 @@ interface InvestmentExpensesProps {
 export function InvestmentExpenses({
   value,
   onChange,
+  assetId,
   assetClassId,
   isEditMode = true,
   isSaving = false,
