@@ -389,8 +389,8 @@ export default function AssetClassPage() {
                                 categoryName = `Category ${index + 1}`;
                               } else if (typeof category.name === 'object') {
                                 // Handle nested objects in category.name
-                                if (category.name && 'name' in category.name && typeof category.name.name === 'string') {
-                                  categoryName = category.name.name;
+                                if (category.name && typeof category.name === 'object' && 'name' in (category.name as any) && typeof (category.name as any).name === 'string') {
+                                  categoryName = (category.name as any).name;
                                 } else {
                                   // Cannot extract name from nested object
                                   categoryName = `Category ${index + 1}`;

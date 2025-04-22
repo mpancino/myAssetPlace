@@ -276,11 +276,28 @@ export function PropertyExpenses({
   // Start editing an expense
   const handleStartEdit = useCallback((expense: PropertyExpense) => {
     setEditingId(expense.id);
-    setNewCategory(expense.category);
+    // Find category ID by name to ensure we use proper ID for selection
+    const categoryObject = availableCategories.find(cat => {
+      const catName = typeof cat === 'string' ? cat : 
+        (typeof cat.name === 'string' ? cat.name : String(cat.name));
+      return catName === expense.category;
+    });
+    
+    // Use the found category ID or the string itself as fallback
+    if (categoryObject) {
+      const catId = typeof categoryObject === 'string' ? categoryObject : categoryObject.id;
+      console.log('Found category ID for', expense.category, ':', catId);
+      setNewCategory(catId);
+    } else {
+      // If we can't find the category, use the category string directly
+      console.log('Could not find category ID for', expense.category, 'using it directly');
+      setNewCategory(expense.category);
+    }
+    
     setNewDescription(expense.description);
     setNewAmount(expense.amount);
     setNewFrequency(expense.frequency);
-  }, []);
+  }, [availableCategories]);
   
   // Add a new expense
   const handleAddExpense = useCallback(() => {
