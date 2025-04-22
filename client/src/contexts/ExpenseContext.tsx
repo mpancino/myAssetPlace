@@ -123,8 +123,15 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
     const traceId = Math.floor(Math.random() * 10000);
     console.log(`[EXPENSE_CONTEXT:${traceId}] Setting property expenses for asset ${targetAssetId}:`, 
       typeof expenses === 'object' ? Object.keys(expenses).length : typeof expenses, 'items');
+    console.log(`[EXPENSE_CONTEXT:${traceId}] Current asset ID: ${currentAssetId}, Target asset ID: ${targetAssetId}`);
     
     try {
+      // Check if expenses is not a valid object
+      if (!expenses || typeof expenses !== 'object') {
+        console.error(`[EXPENSE_CONTEXT:${traceId}] Invalid expenses format:`, expenses);
+        return;
+      }
+      
       const parsedExpenses = parseExpenses(expenses);
       console.log(`[EXPENSE_CONTEXT:${traceId}] Parsed property expenses:`, 
         Object.keys(parsedExpenses).length, 'items');
@@ -133,13 +140,17 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
       setExpensesByAsset(prev => {
         // Create a safe copy of the previous state
         const newState = { ...prev };
+        console.log(`[EXPENSE_CONTEXT:${traceId}] Previous state assets:`, Object.keys(newState));
         
         // Initialize the asset entry if it doesn't exist
         if (!newState[targetAssetId]) {
+          console.log(`[EXPENSE_CONTEXT:${traceId}] Creating new entry for asset ${targetAssetId}`);
           newState[targetAssetId] = {
             investmentExpenses: {},
             propertyExpenses: {}
           };
+        } else {
+          console.log(`[EXPENSE_CONTEXT:${traceId}] Updating existing entry for asset ${targetAssetId}`);
         }
         
         // Update the property expenses
@@ -147,6 +158,10 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
           ...newState[targetAssetId],
           propertyExpenses: parsedExpenses
         };
+        
+        console.log(`[EXPENSE_CONTEXT:${traceId}] Updated state assets:`, Object.keys(newState));
+        console.log(`[EXPENSE_CONTEXT:${traceId}] Updated property expenses for asset ${targetAssetId}:`, 
+          Object.keys(newState[targetAssetId].propertyExpenses).length, 'items');
         
         return newState;
       });

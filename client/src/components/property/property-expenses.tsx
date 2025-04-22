@@ -239,15 +239,31 @@ export function PropertyExpenses({
   
   // Helper to find the category name from ID
   const getCategoryNameFromId = useCallback((categoryId: string): string => {
-    console.log('Getting category name for ID:', categoryId);
+    console.log('[GET_CAT_NAME] Getting category name for ID:', categoryId);
     
     if (!categoryId) {
-      console.log('Empty categoryId provided, returning Unknown');
+      console.log('[GET_CAT_NAME] Empty categoryId provided, returning Unknown');
       return 'Unknown Category';
     }
     
     // Convert any non-string ID to string for comparison
     const stringCategoryId = String(categoryId);
+    
+    // HARDCODED FIX: Add direct mapping for real estate expense category IDs
+    // These match the IDs in use-asset-class-details.tsx
+    const knownCategoryIds: Record<string, string> = {
+      "bd42c972-f20f-4f92-a77c-4fac7e60fd01": "Insurance",
+      "075ada85-3e24-43d9-982e-50c02b56a9c7": "Property Tax",
+      "6c39362a-2924-490a-8cb0-467d76ab9566": "Maintenance",
+      "85083e6a-a138-41ea-9c0d-19528526c0dc": "Utilities"
+    };
+    
+    // Check if this is a known category ID
+    if (stringCategoryId in knownCategoryIds) {
+      const categoryName = knownCategoryIds[stringCategoryId];
+      console.log(`[GET_CAT_NAME] Using hardcoded category name for ID ${stringCategoryId}: ${categoryName}`);
+      return categoryName;
+    }
     
     // Find the category object
     const category = availableCategories.find(cat => 
@@ -255,10 +271,10 @@ export function PropertyExpenses({
       (typeof cat === 'object' && cat && String(cat.id) === stringCategoryId)
     );
     
-    console.log('Found category:', category);
+    console.log('[GET_CAT_NAME] Found category:', category);
     
     if (!category) {
-      console.log('No matching category found, using ID as name');
+      console.log('[GET_CAT_NAME] No matching category found, using ID as name');
       return stringCategoryId; // Fallback to ID if not found
     }
     
@@ -269,7 +285,7 @@ export function PropertyExpenses({
     
     // Handle missing name property
     if (!category || category.name === undefined || category.name === null) {
-      console.log('Category has no name property, using ID');
+      console.log('[GET_CAT_NAME] Category has no name property, using ID');
       return stringCategoryId;
     }
     
@@ -278,11 +294,11 @@ export function PropertyExpenses({
       // Try to extract name from nested object
       if (category.name && typeof category.name === 'object' && 'name' in (category.name as any)) {
         const extractedName = String((category.name as any).name);
-        console.log('Extracted nested category name:', extractedName);
+        console.log('[GET_CAT_NAME] Extracted nested category name:', extractedName);
         return extractedName;
       } else {
         // Fallback if we can't extract a name - try other properties
-        console.log('Cannot extract name from nested object, checking alternatives');
+        console.log('[GET_CAT_NAME] Cannot extract name from nested object, checking alternatives');
         if (category.description && category.description.length > 0) {
           return category.description;
         } else if ('category' in category && category.category) {
@@ -311,29 +327,46 @@ export function PropertyExpenses({
     }
     
     // Normal case
-    console.log('Using normal category name:', nameStr);
+    console.log('[GET_CAT_NAME] Using normal category name:', nameStr);
     return nameStr;
   }, [availableCategories]);
 
   // Start editing an expense
   const handleStartEdit = useCallback((expense: PropertyExpense) => {
     setEditingId(expense.id);
-    // Find category ID by name to ensure we use proper ID for selection
-    const categoryObject = availableCategories.find(cat => {
-      const catName = typeof cat === 'string' ? cat : 
-        (typeof cat.name === 'string' ? cat.name : String(cat.name));
-      return catName === expense.category;
-    });
     
-    // Use the found category ID or the string itself as fallback
-    if (categoryObject) {
-      const catId = typeof categoryObject === 'string' ? categoryObject : categoryObject.id;
-      console.log('Found category ID for', expense.category, ':', catId);
-      setNewCategory(catId);
+    // HARDCODED FIX: Reverse mapping from category name to ID
+    const reverseMapping: Record<string, string> = {
+      "Insurance": "bd42c972-f20f-4f92-a77c-4fac7e60fd01",
+      "Property Tax": "075ada85-3e24-43d9-982e-50c02b56a9c7",
+      "Maintenance": "6c39362a-2924-490a-8cb0-467d76ab9566",
+      "Utilities": "85083e6a-a138-41ea-9c0d-19528526c0dc"
+    };
+    
+    // First check if it's one of our hardcoded categories
+    if (expense.category in reverseMapping) {
+      const categoryId = reverseMapping[expense.category];
+      console.log(`[EDIT] Using hardcoded ID mapping for category ${expense.category}: ${categoryId}`);
+      setNewCategory(categoryId);
     } else {
-      // If we can't find the category, use the category string directly
-      console.log('Could not find category ID for', expense.category, 'using it directly');
-      setNewCategory(expense.category);
+      // Otherwise try to find the category in the available categories
+      // Find category ID by name to ensure we use proper ID for selection
+      const categoryObject = availableCategories.find(cat => {
+        const catName = typeof cat === 'string' ? cat : 
+          (typeof cat.name === 'string' ? cat.name : String(cat.name));
+        return catName === expense.category;
+      });
+      
+      // Use the found category ID or the string itself as fallback
+      if (categoryObject) {
+        const catId = typeof categoryObject === 'string' ? categoryObject : categoryObject.id;
+        console.log('[EDIT] Found category ID for', expense.category, ':', catId);
+        setNewCategory(catId);
+      } else {
+        // If we can't find the category, use the category string directly
+        console.log('[EDIT] Could not find category ID for', expense.category, 'using it directly');
+        setNewCategory(expense.category);
+      }
     }
     
     setNewDescription(expense.description);
