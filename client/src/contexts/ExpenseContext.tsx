@@ -1,77 +1,148 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { parseExpenses, convertToComponentFormat } from '@/lib/expense-utils';
 
+// Define the structure of the ExpenseContext
 interface ExpenseContextType {
   investmentExpenses: Record<string, any>;
   propertyExpenses: Record<string, any>;
-  setInvestmentExpenses: (expenses: Record<string, any>) => void;
-  setPropertyExpenses: (expenses: Record<string, any>) => void;
+  currentAssetId: number | null;
+  setInvestmentExpenses: (expenses: Record<string, any>, assetId?: number) => void;
+  setPropertyExpenses: (expenses: Record<string, any>, assetId?: number) => void;
   clearExpenses: () => void;
+  setCurrentAssetId: (assetId: number | null) => void;
   getInvestmentExpensesForDisplay: () => Record<string, any>;
   getPropertyExpensesForDisplay: () => Record<string, any>;
 }
 
-// Create context with default values
+// Create expense context with default values
 const ExpenseContext = createContext<ExpenseContextType>({
   investmentExpenses: {},
   propertyExpenses: {},
+  currentAssetId: null,
   setInvestmentExpenses: () => {},
   setPropertyExpenses: () => {},
   clearExpenses: () => {},
+  setCurrentAssetId: () => {},
   getInvestmentExpensesForDisplay: () => ({}),
   getPropertyExpensesForDisplay: () => ({}),
 });
 
 // Provider component
 export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [investmentExpenses, setInvestmentExpensesState] = useState<Record<string, any>>({});
-  const [propertyExpenses, setPropertyExpensesState] = useState<Record<string, any>>({});
+  // Store expenses by asset ID to prevent cross-contamination between properties
+  const [expensesByAsset, setExpensesByAsset] = useState<Record<number, {
+    investmentExpenses: Record<string, any>,
+    propertyExpenses: Record<string, any>
+  }>>({});
+  
+  // Track the current asset being viewed/edited
+  const [currentAssetId, setCurrentAssetId] = useState<number | null>(null);
+  
+  // Get current asset's expenses or empty objects if not available
+  const investmentExpenses = currentAssetId && expensesByAsset[currentAssetId] 
+    ? expensesByAsset[currentAssetId].investmentExpenses 
+    : {};
+    
+  const propertyExpenses = currentAssetId && expensesByAsset[currentAssetId] 
+    ? expensesByAsset[currentAssetId].propertyExpenses 
+    : {};
 
-  // Debug on changes
+  // Log changes to expenses for debugging
   useEffect(() => {
-    console.log('[EXPENSE_CONTEXT] Investment expenses updated:', 
-      Object.keys(investmentExpenses).length, 'items');
-  }, [investmentExpenses]);
+    if (currentAssetId) {
+      console.log(`[EXPENSE_CONTEXT] Investment expenses for asset ${currentAssetId} updated:`, 
+        Object.keys(investmentExpenses).length, 'items');
+    }
+  }, [investmentExpenses, currentAssetId]);
 
   useEffect(() => {
-    console.log('[EXPENSE_CONTEXT] Property expenses updated:', 
-      Object.keys(propertyExpenses).length, 'items');
-  }, [propertyExpenses]);
+    if (currentAssetId) {
+      console.log(`[EXPENSE_CONTEXT] Property expenses for asset ${currentAssetId} updated:`, 
+        Object.keys(propertyExpenses).length, 'items');
+    }
+  }, [propertyExpenses, currentAssetId]);
 
-  const setInvestmentExpenses = (expenses: Record<string, any>) => {
+  // Update the current asset ID
+  const handleSetCurrentAssetId = (assetId: number | null) => {
+    console.log(`[EXPENSE_CONTEXT] Setting current asset ID to:`, assetId);
+    setCurrentAssetId(assetId);
+  };
+
+  // Set investment expenses for current asset or specified asset
+  const handleSetInvestmentExpenses = (expenses: Record<string, any>, assetId?: number) => {
+    const targetAssetId = assetId || currentAssetId;
+    if (!targetAssetId) {
+      console.error(`[EXPENSE_CONTEXT] Cannot set investment expenses without an asset ID`);
+      return;
+    }
+    
     const traceId = Math.floor(Math.random() * 10000);
-    console.log(`[EXPENSE_CONTEXT:${traceId}] Setting investment expenses:`, 
+    console.log(`[EXPENSE_CONTEXT:${traceId}] Setting investment expenses for asset ${targetAssetId}:`, 
       typeof expenses === 'object' ? Object.keys(expenses).length : typeof expenses, 'items');
     
     try {
       const parsedExpenses = parseExpenses(expenses);
       console.log(`[EXPENSE_CONTEXT:${traceId}] Parsed investment expenses:`, 
         Object.keys(parsedExpenses).length, 'items');
-      setInvestmentExpensesState(parsedExpenses);
+      
+      // Update the expenses by asset ID to maintain isolation
+      setExpensesByAsset(prev => ({
+        ...prev,
+        [targetAssetId]: {
+          ...prev[targetAssetId] || {},
+          investmentExpenses: parsedExpenses
+        }
+      }));
     } catch (error) {
       console.error(`[EXPENSE_CONTEXT:${traceId}] Error parsing investment expenses:`, error);
     }
   };
 
-  const setPropertyExpenses = (expenses: Record<string, any>) => {
+  // Set property expenses for current asset or specified asset
+  const handleSetPropertyExpenses = (expenses: Record<string, any>, assetId?: number) => {
+    const targetAssetId = assetId || currentAssetId;
+    if (!targetAssetId) {
+      console.error(`[EXPENSE_CONTEXT] Cannot set property expenses without an asset ID`);
+      return;
+    }
+    
     const traceId = Math.floor(Math.random() * 10000);
-    console.log(`[EXPENSE_CONTEXT:${traceId}] Setting property expenses:`, 
+    console.log(`[EXPENSE_CONTEXT:${traceId}] Setting property expenses for asset ${targetAssetId}:`, 
       typeof expenses === 'object' ? Object.keys(expenses).length : typeof expenses, 'items');
     
     try {
       const parsedExpenses = parseExpenses(expenses);
       console.log(`[EXPENSE_CONTEXT:${traceId}] Parsed property expenses:`, 
         Object.keys(parsedExpenses).length, 'items');
-      setPropertyExpensesState(parsedExpenses);
+      
+      // Update the expenses by asset ID to maintain isolation
+      setExpensesByAsset(prev => ({
+        ...prev,
+        [targetAssetId]: {
+          ...prev[targetAssetId] || {},
+          propertyExpenses: parsedExpenses
+        }
+      }));
     } catch (error) {
       console.error(`[EXPENSE_CONTEXT:${traceId}] Error parsing property expenses:`, error);
     }
   };
 
-  const clearExpenses = () => {
-    console.log('[EXPENSE_CONTEXT] Clearing all expenses');
-    setInvestmentExpensesState({});
-    setPropertyExpensesState({});
+  // Clear expenses for the current asset
+  const handleClearExpenses = () => {
+    if (!currentAssetId) {
+      console.error(`[EXPENSE_CONTEXT] Cannot clear expenses without a current asset ID`);
+      return;
+    }
+    
+    console.log(`[EXPENSE_CONTEXT] Clearing all expenses for asset ${currentAssetId}`);
+    
+    setExpensesByAsset(prev => {
+      // Create a copy without the current asset's expenses
+      const newExpensesByAsset = { ...prev };
+      delete newExpensesByAsset[currentAssetId];
+      return newExpensesByAsset;
+    });
   };
 
   // Get expenses in component-friendly format
@@ -88,9 +159,11 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
       value={{
         investmentExpenses,
         propertyExpenses,
-        setInvestmentExpenses,
-        setPropertyExpenses,
-        clearExpenses,
+        currentAssetId,
+        setInvestmentExpenses: handleSetInvestmentExpenses,
+        setPropertyExpenses: handleSetPropertyExpenses,
+        clearExpenses: handleClearExpenses,
+        setCurrentAssetId: handleSetCurrentAssetId,
         getInvestmentExpensesForDisplay,
         getPropertyExpensesForDisplay,
       }}

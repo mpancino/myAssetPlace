@@ -311,6 +311,13 @@ export default function AssetDetailPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   
+  // Get the expense context for asset-specific expense management
+  const { 
+    setCurrentAssetId, 
+    setPropertyExpenses, 
+    setInvestmentExpenses 
+  } = useExpenses();
+  
   // View states
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
@@ -368,9 +375,22 @@ export default function AssetDetailPage() {
   console.log("Selected class:", selectedClass);
   console.log("Is Real Estate?", selectedClass?.name === "Real Estate");
   
-  // Add debug Effect to track property expenses after asset loads/updates
+  // Update current asset ID in the expense context when asset changes
   useEffect(() => {
-    if (asset?.propertyExpenses && !isLoadingAsset) {
+    if (assetId && !isLoadingAsset) {
+      console.log("Setting current asset ID in expense context:", assetId);
+      setCurrentAssetId(assetId);
+    }
+    
+    return () => {
+      // Clear the current asset ID when unmounting
+      setCurrentAssetId(null);
+    };
+  }, [assetId, isLoadingAsset, setCurrentAssetId]);
+
+  // Add effect to track property expenses after asset loads/updates and update context
+  useEffect(() => {
+    if (asset?.propertyExpenses && !isLoadingAsset && assetId) {
       try {
         // Use our utility function to get a properly parsed version of the expenses
         const parsedExpenses = parsePropertyExpenses(asset.propertyExpenses);
@@ -382,12 +402,15 @@ export default function AssetDetailPage() {
         // Set the current expenses state when asset data changes
         if (Object.keys(parsedExpenses).length > 0) {
           setCurrentPropertyExpenses(parsedExpenses);
+          
+          // Update the expense context with asset ID for isolation
+          setPropertyExpenses(parsedExpenses, assetId);
         }
       } catch (err) {
         console.error("Error parsing property expenses in debug effect:", err);
       }
     }
-  }, [asset, isLoadingAsset]);
+  }, [asset, isLoadingAsset, assetId, setPropertyExpenses]);
   
   // Add debug Effect to track investment expenses after asset loads/updates
   useEffect(() => {
