@@ -72,6 +72,57 @@ import {
 // Import shared types
 import type { PropertyExpense } from "@shared/schema";
 
+/**
+ * Standardizes expense fields to ensure only one format is used.
+ * If both component format (category, description) and page format (categoryId, name)
+ * properties exist on the same expense object, this function normalizes it to use only
+ * the page format (categoryId, name) to avoid data corruption.
+ * 
+ * @param expenses Record of expense objects that might have duplicate field formats
+ * @returns Standardized expenses with only one field format per property
+ */
+function standardizeExpenseFields<T extends Record<string, any>>(expenses: Record<string, T>): Record<string, T> {
+  if (!expenses) return {};
+  
+  const result: Record<string, any> = {};
+  const now = Date.now();
+  console.log(`[STANDARDIZE:${now}] Standardizing ${Object.keys(expenses).length} expenses`);
+  
+  Object.entries(expenses).forEach(([id, expense]) => {
+    // Create a new expense object without any format duplications
+    result[id] = { ...expense };
+    
+    // Handle category/categoryId duplication
+    if ('category' in expense && 'categoryId' in expense) {
+      // Prefer categoryId and remove category
+      result[id].categoryId = expense.categoryId || expense.category;
+      delete result[id].category;
+      console.log(`[STANDARDIZE:${now}] Expense ${id}: Removed duplicate 'category' field`);
+    } else if ('category' in expense && !('categoryId' in expense)) {
+      // If only category exists, rename it to categoryId
+      result[id].categoryId = expense.category;
+      delete result[id].category;
+      console.log(`[STANDARDIZE:${now}] Expense ${id}: Converted 'category' to 'categoryId'`);
+    }
+    
+    // Handle description/name duplication
+    if ('description' in expense && 'name' in expense) {
+      // Prefer name and remove description
+      result[id].name = expense.name || expense.description;
+      delete result[id].description;
+      console.log(`[STANDARDIZE:${now}] Expense ${id}: Removed duplicate 'description' field`);
+    } else if ('description' in expense && !('name' in expense)) {
+      // If only description exists, rename it to name
+      result[id].name = expense.description;
+      delete result[id].description;
+      console.log(`[STANDARDIZE:${now}] Expense ${id}: Converted 'description' to 'name'`);
+    }
+  });
+  
+  console.log(`[STANDARDIZE:${now}] Standardized ${Object.keys(result).length} expenses`);
+  return result as Record<string, T>;
+}
+
 // Investment expense interface (similar structure to PropertyExpense)
 export interface InvestmentExpense {
   id: string;
