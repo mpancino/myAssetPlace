@@ -819,9 +819,15 @@ export default function AssetDetailPage() {
             Object.keys(currentInvestmentExpenses || {}).length} items`);
           setCurrentInvestmentExpenses(parsedExpenses);
           form.setValue('investmentExpenses', parsedExpenses);
+          
+          // Update expense context with parsed expenses and asset ID for isolation
+          if (assetId) {
+            setInvestmentExpenses(parsedExpenses, assetId);
+          }
+          
           console.log(`After update: form.getValues().investmentExpenses has ${
             Object.keys(form.getValues().investmentExpenses || {}).length} items`);
-          console.log('[DIRECT SAVE INV] Updated local and form state with parsed expenses');
+          console.log('[DIRECT SAVE INV] Updated local, form state and context with parsed expenses');
           
           // Manually update the cache with this fresh data
           console.log(`[SEQUENCE:${Date.now()}] 7. UPDATING CACHE with fresh data`);
@@ -845,6 +851,11 @@ export default function AssetDetailPage() {
             const parsedExpenses = parseInvestmentExpenses(updatedAsset.investmentExpenses);
             setCurrentInvestmentExpenses(parsedExpenses);
             form.setValue('investmentExpenses', parsedExpenses);
+            
+            // Update expense context with parsed expenses and asset ID for isolation
+            if (assetId) {
+              setInvestmentExpenses(parsedExpenses, assetId);
+            }
           }
           
           // Use the query client to refresh
@@ -910,7 +921,13 @@ export default function AssetDetailPage() {
           // Update our local state - both component state and form state
           setCurrentPropertyExpenses(parsedExpenses);
           form.setValue('propertyExpenses', parsedExpenses);
-          console.log('[DIRECT SAVE] Updated local and form state with parsed expenses');
+          
+          // Update expense context to maintain isolation between assets
+          if (assetId) {
+            setPropertyExpenses(parsedExpenses, assetId);
+          }
+          
+          console.log('[DIRECT SAVE] Updated local, form state and context with parsed expenses');
           
           // Manually update the cache with this fresh data
           console.log('[DIRECT SAVE] Setting query data with fresh data...');
@@ -934,6 +951,11 @@ export default function AssetDetailPage() {
             const parsedExpenses = parsePropertyExpenses(updatedAsset.propertyExpenses);
             setCurrentPropertyExpenses(parsedExpenses);
             form.setValue('propertyExpenses', parsedExpenses);
+            
+            // Update expense context to maintain isolation between assets
+            if (assetId) {
+              setPropertyExpenses(parsedExpenses, assetId);
+            }
           }
           
           // Use the query client to refresh
@@ -1096,6 +1118,13 @@ export default function AssetDetailPage() {
     }
     
     console.log("[FORM SUBMIT] Triggering update mutation with final data...");
+    
+    // Update expense context with the final data for isolation
+    if (assetId) {
+      setPropertyExpenses(finalPropertyExpenses, assetId);
+      setInvestmentExpenses(finalInvestmentExpenses, assetId);
+      console.log("[FORM SUBMIT] Updated expense context with final data for asset ID:", assetId);
+    }
     
     // Now trigger the actual save with our isolated copies
     updateAssetMutation.mutate({
