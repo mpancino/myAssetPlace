@@ -376,16 +376,40 @@ export default function AssetClassPage() {
                         </div>
                       ) : expenseCategories && expenseCategories.length > 0 ? (
                         <div className="flex flex-wrap gap-2">
-                          {expenseCategories.map((category, index) => (
-                            <Badge key={index} variant="outline">
-                              {typeof category === 'string' ? 
-                                category : 
-                                (typeof category === 'object' && category !== null && 'name' in category && typeof category.name === 'string') ? 
-                                  category.name : 
-                                  'Expense Category'
+                          {expenseCategories.map((category, index) => {
+                            // Safely extract category name
+                            let categoryName: string;
+                            
+                            if (typeof category === 'string') {
+                              // Simple string category
+                              categoryName = category;
+                            } else if (typeof category === 'object' && category !== null) {
+                              if (!category.name) {
+                                // No name property, use a fallback
+                                categoryName = `Category ${index + 1}`;
+                              } else if (typeof category.name === 'object') {
+                                // Handle nested objects in category.name
+                                if (category.name && 'name' in category.name && typeof category.name.name === 'string') {
+                                  categoryName = category.name.name;
+                                } else {
+                                  // Cannot extract name from nested object
+                                  categoryName = `Category ${index + 1}`;
+                                }
+                              } else {
+                                // Normal case
+                                categoryName = String(category.name);
                               }
-                            </Badge>
-                          ))}
+                            } else {
+                              // Fallback for unexpected types
+                              categoryName = `Category ${index + 1}`;
+                            }
+                            
+                            return (
+                              <Badge key={index} variant="outline">
+                                {categoryName}
+                              </Badge>
+                            );
+                          })}
                         </div>
                       ) : (
                         <p className="text-sm text-muted-foreground">No expense categories defined.</p>
