@@ -10,6 +10,31 @@ import { eq } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 
 /**
+ * Deduplicate expense categories based on name
+ * This prevents duplicates of the same category from appearing in the UI
+ * 
+ * @param categories Array of expense categories to deduplicate
+ * @returns Array of unique expense categories
+ */
+function deduplicateCategories(categories: ExpenseCategory[]): ExpenseCategory[] {
+  // Use a Map to track unique categories by name (case-insensitive)
+  const uniqueMap = new Map<string, ExpenseCategory>();
+  
+  for (const category of categories) {
+    const normalizedName = category.name.toLowerCase().trim();
+    
+    // Only add if not already in the map, or replace if this one has more data
+    if (!uniqueMap.has(normalizedName) || 
+        (!uniqueMap.get(normalizedName)?.description && category.description)) {
+      uniqueMap.set(normalizedName, category);
+    }
+  }
+  
+  // Convert map values back to array
+  return Array.from(uniqueMap.values());
+}
+
+/**
  * Standardize expense categories for all asset classes
  */
 export async function standardizeExpenseCategories() {
@@ -88,13 +113,17 @@ export async function standardizeExpenseCategories() {
             };
           });
           
-          // Update the asset class with standardized categories
+          // Deduplicate categories based on name to prevent duplicates
+          const uniqueCategories = deduplicateCategories(standardizedCategories);
+          console.log(`Deduplicated ${standardizedCategories.length - uniqueCategories.length} duplicate categories`);
+          
+          // Update the asset class with standardized and deduplicated categories
           await db.update(assetClasses)
-            .set({ expenseCategories: JSON.stringify(standardizedCategories) })
+            .set({ expenseCategories: JSON.stringify(uniqueCategories) })
             .where(eq(assetClasses.id, assetClass.id));
           
-          console.log(`Updated asset class ${assetClass.id} (${assetClass.name}) with ${standardizedCategories.length} standardized categories`);
-          results[assetClass.name] = standardizedCategories.map(c => c.name);
+          console.log(`Updated asset class ${assetClass.id} (${assetClass.name}) with ${uniqueCategories.length} standardized categories (${standardizedCategories.length - uniqueCategories.length} duplicates removed)`);
+          results[assetClass.name] = uniqueCategories.map(c => c.name);
           updatedCount++;
         }
       } catch (error) {
