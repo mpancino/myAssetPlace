@@ -117,6 +117,22 @@ function standardizeExpenseFields<T extends Record<string, any>>(expenses: Recor
       delete result[id].description;
       console.log(`[STANDARDIZE:${now}] Expense ${id}: Converted 'description' to 'name'`);
     }
+    
+    // CRITICAL FIX: Make sure each expense has an annualTotal field
+    if (!('annualTotal' in result[id]) && 'amount' in result[id] && 'frequency' in result[id]) {
+      // Calculate annual total based on frequency
+      const frequency = String(result[id].frequency || 'monthly');
+      // Use a safer lookup approach to avoid TypeScript errors
+      const frequencyMultipliers: Record<string, number> = {
+        monthly: 12,
+        quarterly: 4,
+        annually: 1
+      };
+      const multiplier = frequencyMultipliers[frequency] || 12;
+      
+      result[id].annualTotal = result[id].amount * multiplier;
+      console.log(`[STANDARDIZE:${now}] Expense ${id}: Added missing annualTotal: ${result[id].annualTotal}`);
+    }
   });
   
   console.log(`[STANDARDIZE:${now}] Standardized ${Object.keys(result).length} expenses`);

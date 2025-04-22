@@ -202,8 +202,8 @@ export function PropertyExpenses({
         // Create a normalized expense object
         normalizedExpenses[id] = {
           id,
-          category: expense.category || '',
-          description: expense.description || '',
+          category: expense.category || expense.categoryId || '',
+          description: expense.description || expense.name || '',
           amount,
           frequency,
           annualTotal,
@@ -406,13 +406,18 @@ export function PropertyExpenses({
       const id = uuidv4();
       const annualTotal = calculateAnnualTotal(amount, newFrequency);
       
+      // Ensure we always have an annualTotal value
+      const calculatedAnnualTotal = (typeof annualTotal === 'number' && !isNaN(annualTotal)) 
+        ? annualTotal 
+        : amount * (FREQUENCY_MULTIPLIERS[newFrequency] || 12);
+      
       const newExpense: PropertyExpense = {
         id,
         category: getCategoryNameFromId(newCategory),
         description: newDescription,
         amount,
         frequency: newFrequency,
-        annualTotal,
+        annualTotal: calculatedAnnualTotal,
       };
       
       // Create updated expenses with the new one
@@ -485,16 +490,23 @@ export function PropertyExpenses({
       // Create updated expense
       const annualTotal = calculateAnnualTotal(amount, newFrequency);
       
+      // Ensure we always have an annualTotal value
+      const calculatedAnnualTotal = (typeof annualTotal === 'number' && !isNaN(annualTotal)) 
+        ? annualTotal 
+        : amount * (FREQUENCY_MULTIPLIERS[newFrequency] || 12);
+      
       const updatedExpense: PropertyExpense = {
         ...existingExpense,
         category: getCategoryNameFromId(newCategory),
         description: newDescription,
         amount,
         frequency: newFrequency,
-        annualTotal,
+        annualTotal: calculatedAnnualTotal,
       };
       
       // Create updated expenses with the modified one
+      // annualTotal is already calculated and set correctly above
+      
       const updatedExpenses = {
         ...expenses,
         [editingId]: updatedExpense
