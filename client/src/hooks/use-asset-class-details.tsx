@@ -73,89 +73,148 @@ function parseExpenseCategories(expenseCategories: any): StandardizedExpenseCate
       return [];
     }
     
+    // Standard property expense categories we want to use
+    const standardCategories = [
+      'Insurance', 'Property Tax', 'Maintenance', 
+      'Utilities', 'Management', 'Repairs',
+      'Strata Fees', 'Council Rates', 'Body Corporate'
+    ];
+
     // Normalize each item to the standardized format
     return parsedCategories.map(cat => {
       // If it's a string, create a simple category object
       if (typeof cat === 'string') {
         return {
-          id: crypto.randomUUID?.() || `cat-${Math.random().toString(36).substring(2, 9)}`, // Generate an ID with fallback
+          id: crypto.randomUUID?.() || `cat-${Math.random().toString(36).substring(2, 9)}`, 
           name: cat,
           description: '',
           defaultFrequency: 'monthly'
         };
       }
       
-      // If it's already a standardized object, use it as is
+      // If it's an object
       if (typeof cat === 'object' && cat !== null) {
         console.log('[EXPENSE_CATEGORY_PARSE] Processing object category:', cat);
         
-        // Create a fresh object to avoid modifying the original which might be deeply nested
-        const cleanCategory = {
+        // Create clean category with defaults
+        const cleanCategory: StandardizedExpenseCategory = {
           id: cat.id || crypto.randomUUID?.() || `cat-${Math.random().toString(36).substring(2, 9)}`,
-          name: '',
+          name: 'Property Expense', // Default fallback
           description: cat.description || '',
           defaultFrequency: cat.defaultFrequency || 'monthly'
         };
         
-        // First, check if name is actually an object before anything else
-        if (cat.name !== null && typeof cat.name === 'object') {
-          // This is specifically for the [object Object] case
-          console.log('[EXPENSE_CATEGORY_PARSE] Detected object name:', JSON.stringify(cat.name));
-          try {
-            if ('name' in cat.name) {
-              // Extract the name property from the nested object
-              cleanCategory.name = String(cat.name.name);
-              console.log('[EXPENSE_CATEGORY_PARSE] Extracted nested name property:', cleanCategory.name);
-            } else if (cat.defaultFrequency) {
-              // Use a frequency-based name if available
-              const frequencyMap: Record<string, string> = {
-                'monthly': 'Monthly Expense',
-                'quarterly': 'Quarterly Expense', 
-                'annually': 'Annual Expense',
-                'weekly': 'Weekly Expense'
-              };
-              cleanCategory.name = frequencyMap[cat.defaultFrequency] || 'Expense Category';
-              console.log('[EXPENSE_CATEGORY_PARSE] Using frequency-based name:', cleanCategory.name);
-            } else {
-              // Create a more meaningful name than [object Object]
-              cleanCategory.name = `Expense Category ${cat.id?.substring(0, 4) || ''}`;
-              console.log('[EXPENSE_CATEGORY_PARSE] Created generic name:', cleanCategory.name);
-            }
-          } catch (e) {
-            cleanCategory.name = 'Expense Category';
-            console.error('[EXPENSE_CATEGORY_PARSE] Error handling object name:', e);
+        // Hard-code categories for real estate - prioritize exact property expense types
+        // Check for standard category names in any property
+        for (const stdCat of standardCategories) {
+          // Check the type property first (most specific)
+          if (cat.type && typeof cat.type === 'string' && 
+              cat.type.toLowerCase().includes(stdCat.toLowerCase())) {
+            cleanCategory.name = stdCat;
+            console.log(`[EXPENSE_CATEGORY_PARSE] Matched standard category from type: ${stdCat}`);
+            break;
           }
-        } else if (cat.name === undefined || cat.name === null) {
-          // Use alternative property if name doesn't exist
-          cleanCategory.name = String(cat.value || cat.category || 'Unnamed Category');
-          console.log('[EXPENSE_CATEGORY_PARSE] Using alternative property for name:', cleanCategory.name);
-        } else {
-          // Normal case - string or primitive
-          const nameStr = String(cat.name);
-          // Check if we're getting [object Object] and provide meaningful replacement
-          if (nameStr === "[object Object]") {
-            // Try to extract a name that makes sense based on other properties
-            if (cat.description && cat.description.length > 0) {
-              // Use the description as name if available
-              cleanCategory.name = cat.description;
-            } else if (cat.category) {
-              // Use the category if available
-              cleanCategory.name = String(cat.category);
-            } else if (cat.defaultFrequency) {
-              // Use properly capitalized frequency as last resort
-              const frequency = cat.defaultFrequency.charAt(0).toUpperCase() + cat.defaultFrequency.slice(1);
-              cleanCategory.name = `${frequency} Expense`;
-            } else {
-              // Fallback to some default
-              cleanCategory.name = "Property Expense";
-            }
-          } else {
-            cleanCategory.name = nameStr;
+          
+          // Check category property next
+          if (cat.category && typeof cat.category === 'string' && 
+              cat.category.toLowerCase().includes(stdCat.toLowerCase())) {
+            cleanCategory.name = stdCat;
+            console.log(`[EXPENSE_CATEGORY_PARSE] Matched standard category from category: ${stdCat}`);
+            break;
           }
-          console.log('[EXPENSE_CATEGORY_PARSE] Using normal name property:', cleanCategory.name);
+          
+          // Then check name property
+          if (cat.name && typeof cat.name === 'string' && 
+              !cat.name.includes('[object Object]') &&
+              cat.name.toLowerCase().includes(stdCat.toLowerCase())) {
+            cleanCategory.name = stdCat;
+            console.log(`[EXPENSE_CATEGORY_PARSE] Matched standard category from name: ${stdCat}`);
+            break;
+          }
+          
+          // Check description next
+          if (cat.description && typeof cat.description === 'string' && 
+              cat.description.toLowerCase().includes(stdCat.toLowerCase())) {
+            cleanCategory.name = stdCat;
+            console.log(`[EXPENSE_CATEGORY_PARSE] Matched standard category from description: ${stdCat}`);
+            break;
+          }
         }
         
-        console.log('[EXPENSE_CATEGORY_PARSE] Returning standardized category:', cleanCategory);
+        // If we have already identified a standard category, return it
+        if (cleanCategory.name !== 'Property Expense') {
+          console.log(`[EXPENSE_CATEGORY_PARSE] Using standard category: ${cleanCategory.name}`);
+          return cleanCategory;
+        }
+        
+        // If name isn't set yet, use the best available option
+        
+        // 1. Try type property directly (most specific for expenses)
+        if (cat.type && typeof cat.type === 'string') {
+          cleanCategory.name = cat.type;
+          console.log('[EXPENSE_CATEGORY_PARSE] Using type property:', cleanCategory.name);
+          return cleanCategory;
+        }
+        
+        // 2. Try category property 
+        if (cat.category && typeof cat.category === 'string') {
+          cleanCategory.name = cat.category;
+          console.log('[EXPENSE_CATEGORY_PARSE] Using category property:', cleanCategory.name);
+          return cleanCategory;
+        }
+        
+        // 3. Try name property if not [object Object]
+        if (cat.name && typeof cat.name === 'string' && cat.name !== "[object Object]") {
+          cleanCategory.name = cat.name;
+          console.log('[EXPENSE_CATEGORY_PARSE] Using name property:', cleanCategory.name);
+          return cleanCategory;
+        }
+        
+        // 4. For object name properties or [object Object], try to extract nested properties
+        if (cat.name !== null && (typeof cat.name === 'object' || String(cat.name) === "[object Object]")) {
+          // Try to extract from nested object properties
+          if (typeof cat.name === 'object') {
+            // Look for type in nested object first
+            if ('type' in cat.name && typeof cat.name.type === 'string') {
+              cleanCategory.name = cat.name.type;
+              console.log('[EXPENSE_CATEGORY_PARSE] Using nested type property:', cleanCategory.name);
+              return cleanCategory;
+            }
+            
+            // Look for category in nested object
+            if ('category' in cat.name && typeof cat.name.category === 'string') {
+              cleanCategory.name = cat.name.category;
+              console.log('[EXPENSE_CATEGORY_PARSE] Using nested category property:', cleanCategory.name);
+              return cleanCategory;
+            }
+            
+            // Look for name in nested object
+            if ('name' in cat.name && typeof cat.name.name === 'string') {
+              cleanCategory.name = cat.name.name;
+              console.log('[EXPENSE_CATEGORY_PARSE] Using nested name property:', cleanCategory.name);
+              return cleanCategory;
+            }
+          }
+          
+          // If we reached here, we couldn't extract a good name from the nested object
+          
+          // 5. Use description if available and meaningful
+          if (cat.description && typeof cat.description === 'string' && cat.description.length > 3) {
+            cleanCategory.name = cat.description;
+            console.log('[EXPENSE_CATEGORY_PARSE] Using description as name:', cleanCategory.name);
+            return cleanCategory;
+          }
+          
+          // 6. Use properly named frequency-based fallback
+          const frequency = cat.defaultFrequency.charAt(0).toUpperCase() + cat.defaultFrequency.slice(1);
+          const categoryName = `${frequency} Expense`;
+          cleanCategory.name = categoryName;
+          console.log('[EXPENSE_CATEGORY_PARSE] Using frequency-based fallback:', cleanCategory.name);
+          return cleanCategory;
+        }
+        
+        // At this point, we've exhausted our options, so return the default
+        console.log('[EXPENSE_CATEGORY_PARSE] Using default name:', cleanCategory.name);
         return cleanCategory;
       }
       
