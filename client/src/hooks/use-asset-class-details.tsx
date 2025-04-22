@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { AssetClass } from "@shared/schema";
+import { useEffect } from "react";
 
 /**
  * Standardized expense category type
@@ -25,6 +26,16 @@ export function useAssetClassDetails(assetClassId?: number) {
     queryKey: [`/api/asset-classes/${assetClassId}`],
     enabled: !!assetClassId,
   });
+
+  // Log the raw expense categories for debugging
+  useEffect(() => {
+    if (assetClass?.expenseCategories) {
+      console.log('[RAW_ASSET_CLASS] Raw expense categories:', 
+                 typeof assetClass.expenseCategories === 'string' 
+                 ? assetClass.expenseCategories 
+                 : JSON.stringify(assetClass.expenseCategories));
+    }
+  }, [assetClass]);
 
   // Parse expense categories from the asset class
   const expenseCategories = assetClass?.expenseCategories 
@@ -73,12 +84,22 @@ function parseExpenseCategories(expenseCategories: any): StandardizedExpenseCate
       return [];
     }
     
+    // Direct mapping for property expense category names
+    const categoryMappings: Record<string, string> = {
+      "insurance": "Insurance",
+      "property_tax": "Property Tax",
+      "propertytax": "Property Tax",
+      "maintenance": "Maintenance", 
+      "utilities": "Utilities",
+      "management": "Management",
+      "repairs": "Repairs",
+      "strata": "Strata Fees",
+      "council": "Council Rates",
+      "body_corporate": "Body Corporate"
+    };
+    
     // Standard property expense categories we want to use
-    const standardCategories = [
-      'Insurance', 'Property Tax', 'Maintenance', 
-      'Utilities', 'Management', 'Repairs',
-      'Strata Fees', 'Council Rates', 'Body Corporate'
-    ];
+    const standardCategories = Object.values(categoryMappings);
 
     // Normalize each item to the standardized format
     return parsedCategories.map(cat => {
@@ -103,6 +124,24 @@ function parseExpenseCategories(expenseCategories: any): StandardizedExpenseCate
           description: cat.description || '',
           defaultFrequency: cat.defaultFrequency || 'monthly'
         };
+        
+        // HARDCODED FIX: Add standard names for known real estate expense categories
+        // These are predefined in the database and we'll map them directly
+        if (cat.id) {
+          // Real Estate expense categories - direct mapping by known IDs
+          const knownCategoryIds: Record<string, string> = {
+            "bd42c972-f20f-4f92-a77c-4fac7e60fd01": "Insurance",
+            "075ada85-3e24-43d9-982e-50c02b56a9c7": "Property Tax",
+            "6c39362a-2924-490a-8cb0-467d76ab9566": "Maintenance",
+            "85083e6a-a138-41ea-9c0d-19528526c0dc": "Utilities"
+          };
+          
+          if (cat.id in knownCategoryIds) {
+            cleanCategory.name = knownCategoryIds[cat.id];
+            console.log(`[EXPENSE_CATEGORY_PARSE] Using hardcoded category name for ID ${cat.id}: ${cleanCategory.name}`);
+            return cleanCategory;
+          }
+        }
         
         // Hard-code categories for real estate - prioritize exact property expense types
         // Check for standard category names in any property
