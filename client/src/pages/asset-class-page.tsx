@@ -395,29 +395,34 @@ export default function AssetClassPage() {
                                 categoryDisplay = `Category ${index + 1}`;
                                 console.log(`[CATEGORY_BADGE] No name property, using fallback: ${categoryDisplay}`);
                               } else if (typeof category.name === 'object') {
-                                // Handle nested objects in category.name
-                                if (category.name && typeof category.name === 'object') {
-                                  try {
-                                    if ('name' in (category.name as any) && (category.name as any).name) {
-                                      categoryDisplay = String((category.name as any).name);
-                                      console.log(`[CATEGORY_BADGE] Extracted deeply nested name: ${categoryDisplay}`);
-                                    } else {
-                                      // Try to stringify the object and display a preview
-                                      const json = JSON.stringify(category.name).slice(0, 20);
-                                      categoryDisplay = `Complex Category ${index + 1}`;
-                                      console.log(`[CATEGORY_BADGE] Complex object name (${json}), using fallback: ${categoryDisplay}`);
-                                    }
-                                  } catch (e) {
+                                // Handle case where name is an object (this is the primary bug)
+                                try {
+                                  // First try to access a name property if this is a nested object
+                                  if (category.name !== null && 'name' in (category.name as any)) {
+                                    categoryDisplay = String((category.name as any).name);
+                                    console.log(`[CATEGORY_BADGE] Extracted nested name property: ${categoryDisplay}`);
+                                  } else if (category.defaultFrequency) {
+                                    // Use frequency-based name as fallback
+                                    const frequencyMap: Record<string, string> = {
+                                      'monthly': 'Monthly Expense',
+                                      'quarterly': 'Quarterly Expense',
+                                      'annually': 'Annual Expense',
+                                      'weekly': 'Weekly Expense',
+                                      'daily': 'Daily Expense'
+                                    };
+                                    categoryDisplay = frequencyMap[category.defaultFrequency] || 'Regular Expense';
+                                    console.log(`[CATEGORY_BADGE] Replacing [object Object] with frequency-based name: ${categoryDisplay}`);
+                                  } else {
+                                    // Provide a more meaningful name than [object Object]
                                     categoryDisplay = `Category ${index + 1}`;
-                                    console.log(`[CATEGORY_BADGE] Error extracting name: ${e}`);
+                                    console.log(`[CATEGORY_BADGE] Replacing [object Object] with indexed name: ${categoryDisplay}`);
                                   }
-                                } else {
-                                  // Cannot extract name from nested object
+                                } catch (e) {
                                   categoryDisplay = `Category ${index + 1}`;
-                                  console.log(`[CATEGORY_BADGE] Unexpected nested structure, using fallback: ${categoryDisplay}`);
+                                  console.log(`[CATEGORY_BADGE] Error handling object name: ${e}`);
                                 }
                               } else {
-                                // Normal case
+                                // Normal case - name is a string or primitive
                                 categoryDisplay = String(category.name);
                                 console.log(`[CATEGORY_BADGE] Normal category name: ${categoryDisplay}`);
                               }
