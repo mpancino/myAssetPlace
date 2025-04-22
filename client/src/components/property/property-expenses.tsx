@@ -38,7 +38,7 @@ import { formatCurrency } from "@/lib/utils";
 import { parseExpenses, FREQUENCY_MULTIPLIERS } from '@/lib/expense-utils';
 
 // Default expense categories as fallback with standardized structure
-const DEFAULT_EXPENSE_CATEGORIES = [
+const DEFAULT_EXPENSE_CATEGORIES: StandardizedExpenseCategory[] = [
   { id: "insurance", name: "Insurance" },
   { id: "property-tax", name: "Property Tax" },
   { id: "maintenance", name: "Maintenance" },
@@ -245,7 +245,20 @@ export function PropertyExpenses({
     );
     
     if (!category) return categoryId; // Fallback to ID if not found
-    return typeof category === 'string' ? category : category.name;
+    
+    if (typeof category === 'string') {
+      return category;
+    } 
+    
+    // Handle potentially nested objects in category name
+    let categoryName = category.name;
+    if (categoryName && typeof categoryName === 'object') {
+      // Try to extract name from nested object with type assertion
+      categoryName = (categoryName as any).name || String(categoryName);
+      console.log('Fixed nested category name in getCategoryNameFromId:', categoryName);
+    }
+    
+    return String(categoryName);
   }, [availableCategories]);
 
   // Start editing an expense
@@ -527,11 +540,18 @@ export function PropertyExpenses({
                     {availableCategories.map((category) => {
                       // Get the category ID and name
                       const categoryId = typeof category === 'string' ? category : category.id;
-                      const categoryName = typeof category === 'string' ? category : category.name;
+                      let categoryName = typeof category === 'string' ? category : category.name;
+                      
+                      // Handle nested objects in category name (backend issue)
+                      if (categoryName && typeof categoryName === 'object') {
+                        // Try to extract name from nested object
+                        categoryName = (categoryName as any).name || String(categoryName);
+                        console.log('Fixed nested category name:', categoryName);
+                      }
                         
                       return (
                         <SelectItem key={categoryId} value={categoryId}>
-                          {categoryName}
+                          {String(categoryName)}
                         </SelectItem>
                       );
                     })}
