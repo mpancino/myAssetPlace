@@ -963,9 +963,13 @@ export default function AssetDetailPage() {
       if (!assetId) return null;
       
       // Create a minimal update payload with just the expenses
-      // Standardize the expense format to ensure consistent field naming
+      // Use our new standardizeExpenseFields function to ensure both formats are preserved
+      // This prevents [object Object] display issues by maintaining both formats
+      const standardizedExpenses = standardizeExpenseFields(expenses);
+      console.log("[DIRECT SAVE] Standardized expenses:", standardizedExpenses);
+      
       const dataToSend = {
-        propertyExpenses: standardizeExpenseFields(expenses)
+        propertyExpenses: standardizedExpenses
       };
       
       console.log("[DIRECT SAVE] Saving expenses to database:", Object.keys(expenses).length);

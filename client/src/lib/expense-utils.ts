@@ -10,6 +10,59 @@ export const FREQUENCY_MULTIPLIERS: Record<string, number> = {
 };
 
 /**
+ * Standardize expense fields to ensure both UI display and API storage formats exist
+ * This function preserves both formats (category/description and categoryId/name)
+ * to prevent [object Object] display issues and ensure proper data storage
+ */
+export function standardizeExpenseFields(expenses: Record<string, any> | null | undefined): Record<string, any> {
+  if (!expenses) return {};
+  
+  const traceId = Math.floor(Math.random() * 10000000);
+  console.log(`[STANDARDIZE:${traceId}] Standardizing ${Object.keys(expenses).length} expenses`);
+  
+  const result: Record<string, any> = {};
+  
+  Object.entries(expenses).forEach(([key, expense]) => {
+    if (!expense || typeof expense !== 'object') {
+      console.log(`[STANDARDIZE:${traceId}] Skipping invalid expense at key ${key}`);
+      return;
+    }
+    
+    // Start with the original expense
+    result[key] = { ...expense };
+    
+    // Ensure both UI format fields exist
+    if (!result[key].category || typeof result[key].category === 'object') {
+      result[key].category = result[key].categoryId || 'Other';
+    }
+    
+    if (!result[key].description || typeof result[key].description === 'object') {
+      result[key].description = result[key].name || '';
+    }
+    
+    // Ensure both API format fields exist
+    if (!result[key].categoryId || typeof result[key].categoryId === 'object') {
+      result[key].categoryId = result[key].category || 'Other';
+    }
+    
+    if (!result[key].name || typeof result[key].name === 'object') {
+      result[key].name = result[key].description || '';
+    }
+    
+    // Ensure annual total is calculated
+    if (!('annualTotal' in result[key]) || typeof result[key].annualTotal !== 'number' || isNaN(result[key].annualTotal)) {
+      const multiplier = FREQUENCY_MULTIPLIERS[result[key].frequency] || 12;
+      result[key].annualTotal = result[key].amount * multiplier;
+    }
+    
+    console.log(`[STANDARDIZE:${traceId}] Expense ${key}: category=${result[key].category}, categoryId=${result[key].categoryId}`);
+  });
+  
+  console.log(`[STANDARDIZE:${traceId}] Standardized ${Object.keys(result).length} expenses`);
+  return result;
+}
+
+/**
  * Calculate total annual expenses from different frequencies
  */
 export function calculateAnnualExpenses(expenses: Record<string, any> | null | undefined): number {

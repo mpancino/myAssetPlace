@@ -604,6 +604,16 @@ export function PropertyExpenses({
         </div>
       )}
       
+      {/* Show success message when expenses are present and not saving */}
+      {!isSaving && Object.values(expenses).length > 0 && (
+        <div className="bg-green-50 border border-green-200 p-2 rounded flex items-center text-green-700">
+          <Check className="h-4 w-4 mr-2" />
+          <span className="text-sm">
+            {Object.values(expenses).length} expense{Object.values(expenses).length !== 1 ? 's' : ''} saved
+          </span>
+        </div>
+      )}
+      
       {/* Expenses table */}
       {Object.values(expenses).length > 0 ? (
         <Table>
