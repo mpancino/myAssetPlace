@@ -99,6 +99,8 @@ function convertPageToComponentExpense(expense: InvestmentExpense): ComponentInv
                               expense.frequency === 'quarterly' ? 4 : 1;
   const annualTotal = expense.amount * frequencyMultiplier;
   
+  // Create a new expense object with only the component format properties
+  // This ensures we don't have duplicate properties in different formats
   return {
     id: expense.id,
     category: expense.categoryId,
@@ -111,6 +113,8 @@ function convertPageToComponentExpense(expense: InvestmentExpense): ComponentInv
 
 // Convert from component format to page format
 function convertComponentToPageExpense(expense: ComponentInvestmentExpense): InvestmentExpense {
+  // Create a new expense object with only the page format properties
+  // This ensures we don't have duplicate properties in different formats
   return {
     id: expense.id,
     categoryId: expense.category,
@@ -2960,9 +2964,11 @@ export default function AssetDetailPage() {
                     console.log("Is form valid:", form.formState.isValid);
                     console.log("Current asset ID:", assetId);
                     
-                    // Get current expenses from state
-                    const propertyExpensesToSave = currentPropertyExpenses || {};
-                    const investmentExpensesToSave = currentInvestmentExpenses || {};
+                    // Get current expenses from state and standardize them
+                    const propertyExpensesToSave = currentPropertyExpenses ? 
+                      standardizeExpenseFields(currentPropertyExpenses) : {};
+                    const investmentExpensesToSave = currentInvestmentExpenses ? 
+                      standardizeExpenseFields(currentInvestmentExpenses) : {};
                     
                     console.log("Current property expenses to save:", propertyExpensesToSave);
                     console.log("Current investment expenses to save:", investmentExpensesToSave);
