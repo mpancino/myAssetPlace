@@ -160,6 +160,7 @@ export function InvestmentExpenses({
     console.log(`[INV_EXPENSES:${Date.now()}] useEffect triggered with value:`, value);
     console.log(`[INV_EXPENSES:${Date.now()}] Type of value:`, typeof value);
     console.log(`[INV_EXPENSES:${Date.now()}] isEditMode:`, isEditMode);
+    console.log(`[INV_EXPENSES:${Date.now()}] assetId:`, assetId);
     
     // First, check if we have data in the context
     if (Object.keys(contextExpenses).length > 0) {
@@ -213,7 +214,15 @@ export function InvestmentExpenses({
       // Only update context if we got meaningful data and didn't already have context data
       if (Object.keys(normalizedExpenses).length > 0) {
         console.log(`[INV_EXPENSES:${Date.now()}] Setting context with ${Object.keys(normalizedExpenses).length} expenses`);
-        setContextExpenses(normalizedExpenses);
+        
+        // Make sure to associate these expenses with the correct asset ID if available
+        if (assetId) {
+          console.log(`[INV_EXPENSES:${Date.now()}] Associating expenses with asset ID ${assetId}`);
+          setContextExpenses(normalizedExpenses, assetId);
+        } else {
+          console.log(`[INV_EXPENSES:${Date.now()}] No asset ID available to associate expenses`);
+          setContextExpenses(normalizedExpenses);
+        }
       }
       
       setExpenses(normalizedExpenses);
@@ -221,7 +230,7 @@ export function InvestmentExpenses({
       console.error('Failed to parse investment expenses data:', err);
       setExpenses({});
     }
-  }, [value, contextExpenses, setContextExpenses]);
+  }, [value, contextExpenses, setContextExpenses, assetId]);
   
   // Calculate annual total based on amount and frequency
   const calculateAnnualTotal = useCallback((amount: number, frequency: string): number => {
@@ -271,6 +280,9 @@ export function InvestmentExpenses({
     }
     
     try {
+      console.log('[INV_EXPENSES] Adding new expense');
+      console.log('[INV_EXPENSES] Current asset ID:', assetId);
+      
       // Create a new expense object
       const id = uuidv4();
       const annualTotal = calculateAnnualTotal(amount, newFrequency);
@@ -293,8 +305,14 @@ export function InvestmentExpenses({
       // Update local state
       setExpenses(updatedExpenses);
       
-      // Update global context
-      setContextExpenses(updatedExpenses);
+      // Update global context - explicitly pass the asset ID to ensure proper association
+      if (assetId) {
+        console.log(`[INV_EXPENSES] Updating expenses context with asset ID: ${assetId}`);
+        setContextExpenses(updatedExpenses, assetId);
+      } else {
+        console.log('[INV_EXPENSES] Warning: No asset ID available for context update');
+        setContextExpenses(updatedExpenses);
+      }
       
       // Notify parent component
       onChange(updatedExpenses);
@@ -309,7 +327,7 @@ export function InvestmentExpenses({
         variant: "destructive",
       });
     }
-  }, [newCategory, newDescription, newAmount, newFrequency, expenses, onChange, calculateAnnualTotal, resetForm, toast]);
+  }, [newCategory, newDescription, newAmount, newFrequency, expenses, onChange, calculateAnnualTotal, resetForm, toast, setContextExpenses, assetId]);
   
   // Update an existing expense
   const handleUpdateExpense = useCallback(() => {
@@ -334,6 +352,9 @@ export function InvestmentExpenses({
     }
     
     try {
+      console.log('[INV_EXPENSES] Updating expense with id:', editingId);
+      console.log('[INV_EXPENSES] Using asset ID:', assetId);
+      
       // Get the existing expense
       const existingExpense = expenses[editingId];
       if (!existingExpense) {
@@ -361,8 +382,14 @@ export function InvestmentExpenses({
       // Update local state
       setExpenses(updatedExpenses);
       
-      // Update global context
-      setContextExpenses(updatedExpenses);
+      // Update global context - explicitly pass the asset ID to ensure proper association
+      if (assetId) {
+        console.log(`[INV_EXPENSES] Updating expenses context with asset ID: ${assetId}`);
+        setContextExpenses(updatedExpenses, assetId);
+      } else {
+        console.log('[INV_EXPENSES] Warning: No asset ID available for context update');
+        setContextExpenses(updatedExpenses);
+      }
       
       // Notify parent component
       onChange(updatedExpenses);
@@ -377,11 +404,14 @@ export function InvestmentExpenses({
         variant: "destructive",
       });
     }
-  }, [editingId, newCategory, newDescription, newAmount, newFrequency, expenses, onChange, calculateAnnualTotal, resetForm, toast]);
+  }, [editingId, newCategory, newDescription, newAmount, newFrequency, expenses, onChange, calculateAnnualTotal, resetForm, toast, setContextExpenses, assetId]);
   
   // Delete an expense
   const handleDeleteExpense = useCallback((id: string) => {
     try {
+      console.log('[INV_EXPENSES] Deleting expense with id:', id);
+      console.log('[INV_EXPENSES] Current asset ID:', assetId);
+      
       // Check if expense exists
       if (!expenses[id]) {
         throw new Error(`Expense with ID ${id} not found`);
@@ -393,8 +423,14 @@ export function InvestmentExpenses({
       // Update local state
       setExpenses(updatedExpenses);
       
-      // Update global context
-      setContextExpenses(updatedExpenses);
+      // Update global context - explicitly pass the asset ID to ensure proper association
+      if (assetId) {
+        console.log(`[INV_EXPENSES] Updating expenses context with asset ID: ${assetId}`);
+        setContextExpenses(updatedExpenses, assetId);
+      } else {
+        console.log('[INV_EXPENSES] Warning: No asset ID available for context update');
+        setContextExpenses(updatedExpenses);
+      }
       
       // Notify parent component
       onChange(updatedExpenses);
@@ -406,7 +442,7 @@ export function InvestmentExpenses({
         variant: "destructive",
       });
     }
-  }, [expenses, onChange, toast, setContextExpenses]);
+  }, [expenses, onChange, toast, setContextExpenses, assetId]);
   
   // Calculate the total annual expenses
   const totalAnnualExpenses = Object.values(expenses).reduce(

@@ -2858,6 +2858,7 @@ export default function AssetDetailPage() {
                                       // Update state tracker to monitor changes
                                       setCurrentInvestmentExpenses(pageFormatExpenses);
                                     }}
+                                    assetId={asset.id}
                                     assetClassId={asset?.assetClassId}
                                     isEditMode={isEditing}
                                     isSaving={updateAssetMutation.isPending}
@@ -2879,6 +2880,7 @@ export default function AssetDetailPage() {
                                 console.log("Investment expenses component triggered onChange in read-only mode");
                                 // We shouldn't reach here because of the overlay
                               }}
+                              assetId={asset.id}
                               assetClassId={asset?.assetClassId}
                               isEditMode={false}
                             />
