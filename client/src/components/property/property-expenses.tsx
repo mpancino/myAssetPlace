@@ -33,18 +33,18 @@ import {
   Loader2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAssetClassDetails } from "@/hooks/use-asset-class-details";
+import { useAssetClassDetails, StandardizedExpenseCategory } from "@/hooks/use-asset-class-details";
 import { formatCurrency } from "@/lib/utils";
 import { parseExpenses, FREQUENCY_MULTIPLIERS } from '@/lib/expense-utils';
 
-// Default expense categories as fallback
+// Default expense categories as fallback with standardized structure
 const DEFAULT_EXPENSE_CATEGORIES = [
-  "Insurance",
-  "Property Tax", 
-  "Maintenance",
-  "Management Fee",
-  "Utilities",
-  "Other",
+  { id: "insurance", name: "Insurance" },
+  { id: "property-tax", name: "Property Tax" },
+  { id: "maintenance", name: "Maintenance" },
+  { id: "management-fee", name: "Management Fee" },
+  { id: "utilities", name: "Utilities" },
+  { id: "other", name: "Other" },
 ];
 
 // Property expense object structure
@@ -140,12 +140,7 @@ export function PropertyExpenses({
   // Use the asset class expense categories if available, or fall back to defaults
   const availableCategories = expenseCategories && expenseCategories.length > 0
     ? expenseCategories 
-    : DEFAULT_EXPENSE_CATEGORIES.map(category => ({
-        id: category,
-        name: category,
-        description: '',
-        defaultFrequency: 'monthly'
-      }));
+    : DEFAULT_EXPENSE_CATEGORIES;
   
   // Core state
   const [expenses, setExpenses] = useState<Record<string, PropertyExpense>>({});
