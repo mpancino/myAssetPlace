@@ -39,12 +39,13 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [currentAssetId, setCurrentAssetId] = useState<number | null>(null);
   
   // Get current asset's expenses or empty objects if not available
-  const investmentExpenses = currentAssetId && expensesByAsset[currentAssetId] 
-    ? expensesByAsset[currentAssetId].investmentExpenses 
+  // Use optional chaining and nullish coalescing to safely access properties
+  const investmentExpenses = currentAssetId 
+    ? (expensesByAsset[currentAssetId]?.investmentExpenses ?? {})
     : {};
     
-  const propertyExpenses = currentAssetId && expensesByAsset[currentAssetId] 
-    ? expensesByAsset[currentAssetId].propertyExpenses 
+  const propertyExpenses = currentAssetId 
+    ? (expensesByAsset[currentAssetId]?.propertyExpenses ?? {})
     : {};
 
   // Log changes to expenses for debugging
