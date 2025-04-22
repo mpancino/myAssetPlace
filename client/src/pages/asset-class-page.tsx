@@ -409,7 +409,10 @@ export default function AssetClassPage() {
                                     'weekly': 'Weekly Expense'
                                   };
                                   categoryDisplay = frequencyMap[category.defaultFrequency as keyof typeof frequencyMap] || 'Expense Category';
-                                  console.log(`[CATEGORY_BADGE] Using frequency for display: ${categoryDisplay}`);
+                                } else if (String(category.name) === "[object Object]") {
+                                  // Direct fix for [object Object] rendering
+                                  categoryDisplay = `Expense ${category.id?.substring(0, 4) || index + 1}`;
+                                  console.log(`[CATEGORY_BADGE] Detected [object Object], fixed with: ${categoryDisplay}`);
                                 } else {
                                   // Last resort fallback with index
                                   categoryDisplay = `Expense ${index + 1}`;

@@ -97,15 +97,12 @@ function parseExpenseCategories(expenseCategories: any): StandardizedExpenseCate
           defaultFrequency: cat.defaultFrequency || 'monthly'
         };
         
-        // Handle name property which might be an object itself
-        if (cat.name === undefined || cat.name === null) {
-          // Use alternative property if name doesn't exist
-          cleanCategory.name = String(cat.value || cat.category || 'Unnamed Category');
-          console.log('[EXPENSE_CATEGORY_PARSE] Using alternative property for name:', cleanCategory.name);
-        } else if (typeof cat.name === 'object') {
-          // Handle case where name is an object (root cause of "[object Object]" display)
+        // First, check if name is actually an object before anything else
+        if (cat.name !== null && typeof cat.name === 'object') {
+          // This is specifically for the [object Object] case
+          console.log('[EXPENSE_CATEGORY_PARSE] Detected object name:', JSON.stringify(cat.name));
           try {
-            if (cat.name !== null && 'name' in cat.name) {
+            if ('name' in cat.name) {
               // Extract the name property from the nested object
               cleanCategory.name = String(cat.name.name);
               console.log('[EXPENSE_CATEGORY_PARSE] Extracted nested name property:', cleanCategory.name);
@@ -121,13 +118,17 @@ function parseExpenseCategories(expenseCategories: any): StandardizedExpenseCate
               console.log('[EXPENSE_CATEGORY_PARSE] Using frequency-based name:', cleanCategory.name);
             } else {
               // Create a more meaningful name than [object Object]
-              cleanCategory.name = `Expense Category`;
+              cleanCategory.name = `Expense Category ${cat.id?.substring(0, 4) || ''}`;
               console.log('[EXPENSE_CATEGORY_PARSE] Created generic name:', cleanCategory.name);
             }
           } catch (e) {
             cleanCategory.name = 'Expense Category';
             console.error('[EXPENSE_CATEGORY_PARSE] Error handling object name:', e);
           }
+        } else if (cat.name === undefined || cat.name === null) {
+          // Use alternative property if name doesn't exist
+          cleanCategory.name = String(cat.value || cat.category || 'Unnamed Category');
+          console.log('[EXPENSE_CATEGORY_PARSE] Using alternative property for name:', cleanCategory.name);
         } else {
           // Normal case - string or primitive
           cleanCategory.name = String(cat.name);
