@@ -87,22 +87,45 @@ function parseExpenseCategories(expenseCategories: any): StandardizedExpenseCate
       
       // If it's already a standardized object, use it as is
       if (typeof cat === 'object' && cat !== null) {
-        // Ensure it has an ID
-        if (!cat.id) {
-          cat.id = crypto.randomUUID?.() || `cat-${Math.random().toString(36).substring(2, 9)}`;
+        console.log('[EXPENSE_CATEGORY_PARSE] Processing object category:', cat);
+        
+        // Create a fresh object to avoid modifying the original which might be deeply nested
+        const cleanCategory = {
+          id: cat.id || crypto.randomUUID?.() || `cat-${Math.random().toString(36).substring(2, 9)}`,
+          name: '',
+          description: cat.description || '',
+          defaultFrequency: cat.defaultFrequency || 'monthly'
+        };
+        
+        // Handle name property which might be an object itself
+        if (cat.name === undefined || cat.name === null) {
+          // Use alternative property if name doesn't exist
+          cleanCategory.name = String(cat.value || cat.category || 'Unnamed Category');
+          console.log('[EXPENSE_CATEGORY_PARSE] Using alternative property for name:', cleanCategory.name);
+        } else if (typeof cat.name === 'object') {
+          // Handle nested object in name property
+          try {
+            if (cat.name && typeof cat.name === 'object' && 'name' in cat.name) {
+              cleanCategory.name = String(cat.name.name);
+              console.log('[EXPENSE_CATEGORY_PARSE] Extracted nested name:', cleanCategory.name);
+            } else {
+              // If we can't extract a proper name, use a stringify preview
+              const preview = JSON.stringify(cat.name).substring(0, 20);
+              cleanCategory.name = `Category ${preview}...`;
+              console.log('[EXPENSE_CATEGORY_PARSE] Created preview name from object:', cleanCategory.name);
+            }
+          } catch (e) {
+            cleanCategory.name = 'Complex Category';
+            console.error('[EXPENSE_CATEGORY_PARSE] Error extracting nested name:', e);
+          }
+        } else {
+          // Normal case - string or primitive
+          cleanCategory.name = String(cat.name);
+          console.log('[EXPENSE_CATEGORY_PARSE] Using normal name property:', cleanCategory.name);
         }
         
-        // Ensure it has a name
-        if (!cat.name && (cat.value || cat.category)) {
-          cat.name = cat.value || cat.category;
-        }
-        
-        // Ensure it has a default frequency
-        if (!cat.defaultFrequency) {
-          cat.defaultFrequency = 'monthly';
-        }
-        
-        return cat;
+        console.log('[EXPENSE_CATEGORY_PARSE] Returning standardized category:', cleanCategory);
+        return cleanCategory;
       }
       
       // Fallback for unexpected types
