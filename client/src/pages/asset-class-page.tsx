@@ -417,25 +417,9 @@ export default function AssetClassPage() {
                                   console.log(`[CATEGORY_BADGE] Unexpected nested structure, using fallback: ${categoryDisplay}`);
                                 }
                               } else {
-                                // Normal case, but check if it's already stringified "[object Object]"
+                                // Normal case
                                 categoryDisplay = String(category.name);
-                                
-                                // Check if we have a stringified object that wasn't properly parsed
-                                if (categoryDisplay === "[object Object]") {
-                                  // Use category id or a default name instead
-                                  if (category.defaultFrequency) {
-                                    categoryDisplay = `${category.defaultFrequency.charAt(0).toUpperCase() + category.defaultFrequency.slice(1)} Expense`;
-                                    console.log(`[CATEGORY_BADGE] Replacing [object Object] with frequency-based name: ${categoryDisplay}`);
-                                  } else if (category.description && category.description.length > 0) {
-                                    categoryDisplay = category.description;
-                                    console.log(`[CATEGORY_BADGE] Replacing [object Object] with description: ${categoryDisplay}`);
-                                  } else {
-                                    categoryDisplay = `Expense Category ${index + 1}`;
-                                    console.log(`[CATEGORY_BADGE] Replacing [object Object] with generic name: ${categoryDisplay}`);
-                                  }
-                                } else {
-                                  console.log(`[CATEGORY_BADGE] Normal category name: ${categoryDisplay}`);
-                                }
+                                console.log(`[CATEGORY_BADGE] Normal category name: ${categoryDisplay}`);
                               }
                             } else {
                               // Fallback for unexpected types
