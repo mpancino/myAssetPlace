@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
+import { useExpenses } from "@/contexts/ExpenseContext";
 import MainLayout from "@/components/layout/main-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from "@/components/ui/card";
@@ -412,9 +413,9 @@ export default function AssetDetailPage() {
     }
   }, [asset, isLoadingAsset, assetId, setPropertyExpenses]);
   
-  // Add debug Effect to track investment expenses after asset loads/updates
+  // Add effect to track investment expenses after asset loads/updates and update context 
   useEffect(() => {
-    if (asset?.investmentExpenses && !isLoadingAsset) {
+    if (asset?.investmentExpenses && !isLoadingAsset && assetId) {
       try {
         // Use our utility function to get a properly parsed version of the expenses
         const parsedExpenses = parseInvestmentExpenses(asset.investmentExpenses);
@@ -426,12 +427,15 @@ export default function AssetDetailPage() {
         // Set the current expenses state when asset data changes
         if (Object.keys(parsedExpenses).length > 0) {
           setCurrentInvestmentExpenses(parsedExpenses);
+          
+          // Update the expense context with asset ID for isolation
+          setInvestmentExpenses(parsedExpenses, assetId);
         }
       } catch (err) {
         console.error("Error parsing investment expenses in debug effect:", err);
       }
     }
-  }, [asset, isLoadingAsset]);
+  }, [asset, isLoadingAsset, assetId, setInvestmentExpenses]);
   
   // Initialize form with asset data
   const form = useForm<AssetDetailFormValues>({
@@ -608,7 +612,11 @@ export default function AssetDetailPage() {
             
             // Update property expenses state
             setCurrentPropertyExpenses(parsedPropertyExpenses);
-            console.log('[RELOAD] Updated property expenses state');
+            // Update context to maintain isolation between assets
+            if (assetId) {
+              setPropertyExpenses(parsedPropertyExpenses, assetId);
+            }
+            console.log('[RELOAD] Updated property expenses state and context');
           }
           
           // Process investment expenses - this is critical for our current issue
@@ -619,7 +627,11 @@ export default function AssetDetailPage() {
             
             // Update investment expenses state
             setCurrentInvestmentExpenses(parsedInvestmentExpenses);
-            console.log('[RELOAD] Updated investment expenses state');
+            // Update context to maintain isolation between assets
+            if (assetId) {
+              setInvestmentExpenses(parsedInvestmentExpenses, assetId);
+            }
+            console.log('[RELOAD] Updated investment expenses state and context');
           }
           
           // Manually update the cache with this fresh data
@@ -660,6 +672,10 @@ export default function AssetDetailPage() {
               if (freshData && freshData.investmentExpenses) {
                 const parsedInvestmentExpenses = parseInvestmentExpenses(freshData.investmentExpenses);
                 setCurrentInvestmentExpenses(parsedInvestmentExpenses);
+                // Update context to maintain isolation between assets
+                if (assetId) {
+                  setInvestmentExpenses(parsedInvestmentExpenses, assetId);
+                }
                 console.log('[RELOAD] Updated investment expenses via fallback with',
                   Object.keys(parsedInvestmentExpenses).length, 'expenses');
               }
