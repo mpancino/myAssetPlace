@@ -1,0 +1,17 @@
+**Goal:** Fix the UI display bug where Expense Categories for an Asset Class show as "[object Object]".
+
+**Context:**
+In the myAssetPlace application (React/TypeScript/shadcn/ui), there's a UI component that displays the details of a specific Asset Class (like the "Overview" section shown in the screenshot). This component fetches or receives the `expenseCategories` associated with that Asset Class.
+
+Based on `shared/schema.ts` and the standardization logic in `server/utils/standardize-expense-categories.ts`, the `expenseCategories` data for an Asset Class is expected to be an array of objects, where each object has properties like `id`, `name`, `description`, etc. (e.g., `[{ id: 'uuid1', name: 'Insurance', ... }, { id: 'uuid2', name: 'Maintenance', ... }]`).
+
+**Problem (DEF-001 & Screenshot):**
+The UI component responsible for displaying these expense categories is rendering each category as `[object Object]` (as seen in the provided screenshot) instead of displaying the actual category name (e.g., "Insurance", "Maintenance"). This indicates the component is trying to render the category *object* directly as a string.
+
+**Relevant Files:**
+1.  **Target UI Component:** Please locate the React component file that renders the Asset Class details view shown in the screenshot (it might be in `client/src/pages/` or `client/src/components/features/asset-classes/` or similar). This component fetches asset class data and displays the `expenseCategories`.
+2.  **Data Structure Reference:** Refer to `shared/schema.ts` (specifically the `assetClasses` table definition and the `ExpenseCategory` type) to confirm the expected structure of the `expenseCategories` data.
+
+**Request:**
+1.  Identify the specific code block (likely a `.map()` or loop) within the target UI component where the `expenseCategories` array is being rendered.
+2.  Provide the exact code modification needed within that rendering logic to correctly access and display the `name` property of each category object (e.g., `category.name`) instead of the object itself. Ensure the output is a list of category names (e.g., displayed as tags, list items, or a comma-separated string).
