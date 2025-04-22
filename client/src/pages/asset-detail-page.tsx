@@ -601,14 +601,17 @@ export default function AssetDetailPage() {
       if (!assetId) return null;
       
       // Create a copy of the values to ensure we're not affected by object references
+      // Also standardize expense fields to prevent format inconsistencies that cause display issues
       const dataToSend = {
         ...values,
         // Ensure expenses are properly handled by creating deep copies
+        // Apply standardizeExpenseFields to ensure consistent field formats (categoryId/name only)
         propertyExpenses: values.propertyExpenses ? 
-          JSON.parse(JSON.stringify(values.propertyExpenses)) : {},
+          standardizeExpenseFields(JSON.parse(JSON.stringify(values.propertyExpenses))) : {},
         // IMPORTANT: Always send an empty object for investmentExpenses when it's null to prevent validation errors
+        // Apply standardizeExpenseFields to ensure consistent field formats (categoryId/name only)
         investmentExpenses: values.investmentExpenses ? 
-          JSON.parse(JSON.stringify(values.investmentExpenses)) : {}
+          standardizeExpenseFields(JSON.parse(JSON.stringify(values.investmentExpenses))) : {}
       };
       
       // Log the values being sent in the request to debug expenses
@@ -817,8 +820,9 @@ export default function AssetDetailPage() {
       }
       
       // Create a minimal update payload with just the expenses
+      // Standardize the expense format to ensure consistent field naming
       const dataToSend = {
-        investmentExpenses: pageFormatExpenses
+        investmentExpenses: standardizeExpenseFields(pageFormatExpenses)
       };
       
       console.log("[DIRECT SAVE INV] Saving expenses to database:", Object.keys(expenses).length);
@@ -943,8 +947,9 @@ export default function AssetDetailPage() {
       if (!assetId) return null;
       
       // Create a minimal update payload with just the expenses
+      // Standardize the expense format to ensure consistent field naming
       const dataToSend = {
-        propertyExpenses: expenses
+        propertyExpenses: standardizeExpenseFields(expenses)
       };
       
       console.log("[DIRECT SAVE] Saving expenses to database:", Object.keys(expenses).length);
@@ -1120,8 +1125,9 @@ export default function AssetDetailPage() {
     
     // CRITICAL: Create deep copies of expense objects to completely isolate them
     // This prevents any race conditions where state updates might affect these objects
-    const finalPropertyExpenses = JSON.parse(JSON.stringify(propertyExpensesToSave));
-    const finalInvestmentExpenses = JSON.parse(JSON.stringify(investmentExpensesToSave));
+    // Also standardize the expense format to ensure consistent field naming
+    const finalPropertyExpenses = standardizeExpenseFields(JSON.parse(JSON.stringify(propertyExpensesToSave)));
+    const finalInvestmentExpenses = standardizeExpenseFields(JSON.parse(JSON.stringify(investmentExpensesToSave)));
     
     // TEST CASE: Log the isolated expense objects to prove they're safe from state changes
     console.log("[FORM SUBMIT TEST] Final property expenses object (copied):", finalPropertyExpenses);
