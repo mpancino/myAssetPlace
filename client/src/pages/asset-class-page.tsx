@@ -379,34 +379,57 @@ export default function AssetClassPage() {
                           {expenseCategories.map((category, index) => {
                             // Safely extract category name
                             let categoryName: string;
+                            let categoryDisplay: string;
                             
                             if (typeof category === 'string') {
                               // Simple string category
                               categoryName = category;
+                              categoryDisplay = category;
+                              console.log(`[CATEGORY_BADGE] String category: ${categoryName}`);
                             } else if (typeof category === 'object' && category !== null) {
+                              // For objects, capture both ID and display name
+                              categoryName = category.id ? String(category.id) : `cat-${index}`;
+                              
                               if (!category.name) {
                                 // No name property, use a fallback
-                                categoryName = `Category ${index + 1}`;
+                                categoryDisplay = `Category ${index + 1}`;
+                                console.log(`[CATEGORY_BADGE] No name property, using fallback: ${categoryDisplay}`);
                               } else if (typeof category.name === 'object') {
                                 // Handle nested objects in category.name
-                                if (category.name && typeof category.name === 'object' && 'name' in (category.name as any) && typeof (category.name as any).name === 'string') {
-                                  categoryName = (category.name as any).name;
+                                if (category.name && typeof category.name === 'object') {
+                                  try {
+                                    if ('name' in (category.name as any) && (category.name as any).name) {
+                                      categoryDisplay = String((category.name as any).name);
+                                      console.log(`[CATEGORY_BADGE] Extracted deeply nested name: ${categoryDisplay}`);
+                                    } else {
+                                      // Try to stringify the object and display a preview
+                                      const json = JSON.stringify(category.name).slice(0, 20);
+                                      categoryDisplay = `Complex Category ${index + 1}`;
+                                      console.log(`[CATEGORY_BADGE] Complex object name (${json}), using fallback: ${categoryDisplay}`);
+                                    }
+                                  } catch (e) {
+                                    categoryDisplay = `Category ${index + 1}`;
+                                    console.log(`[CATEGORY_BADGE] Error extracting name: ${e}`);
+                                  }
                                 } else {
                                   // Cannot extract name from nested object
-                                  categoryName = `Category ${index + 1}`;
+                                  categoryDisplay = `Category ${index + 1}`;
+                                  console.log(`[CATEGORY_BADGE] Unexpected nested structure, using fallback: ${categoryDisplay}`);
                                 }
                               } else {
                                 // Normal case
-                                categoryName = String(category.name);
+                                categoryDisplay = String(category.name);
+                                console.log(`[CATEGORY_BADGE] Normal category name: ${categoryDisplay}`);
                               }
                             } else {
                               // Fallback for unexpected types
-                              categoryName = `Category ${index + 1}`;
+                              categoryDisplay = `Category ${index + 1}`;
+                              console.log(`[CATEGORY_BADGE] Unexpected type (${typeof category}), using fallback: ${categoryDisplay}`);
                             }
                             
                             return (
                               <Badge key={index} variant="outline">
-                                {categoryName}
+                                {categoryDisplay}
                               </Badge>
                             );
                           })}
