@@ -33,20 +33,36 @@ export function standardizeExpenseFields(expenses: Record<string, any> | null | 
     
     // Ensure both UI format fields exist
     if (!result[key].category || typeof result[key].category === 'object') {
-      result[key].category = result[key].categoryId || 'Other';
+      if (result[key].categoryId) {
+        result[key].category = typeof result[key].categoryId === 'object' ? 'Other' : result[key].categoryId;
+      } else {
+        result[key].category = 'Other';
+      }
     }
     
     if (!result[key].description || typeof result[key].description === 'object') {
-      result[key].description = result[key].name || '';
+      if (result[key].name) {
+        result[key].description = typeof result[key].name === 'object' ? '' : result[key].name;
+      } else {
+        result[key].description = '';
+      }
     }
     
     // Ensure both API format fields exist
     if (!result[key].categoryId || typeof result[key].categoryId === 'object') {
-      result[key].categoryId = result[key].category || 'Other';
+      if (result[key].category) {
+        result[key].categoryId = typeof result[key].category === 'object' ? 'Other' : result[key].category;
+      } else {
+        result[key].categoryId = 'Other';
+      }
     }
     
     if (!result[key].name || typeof result[key].name === 'object') {
-      result[key].name = result[key].description || '';
+      if (result[key].description) {
+        result[key].name = typeof result[key].description === 'object' ? '' : result[key].description;
+      } else {
+        result[key].name = '';
+      }
     }
     
     // Ensure annual total is calculated

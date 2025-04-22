@@ -243,8 +243,12 @@ function parseInvestmentExpenses(data: any): Record<string, InvestmentExpense> {
       const parsedData = JSON.parse(data) as Record<string, InvestmentExpense>;
       console.log(`[PARSE:${parseId}] Parsed string into object with ${Object.keys(parsedData).length} items`);
       console.log(`[PARSE:${parseId}] Keys:`, Object.keys(parsedData));
+      
+      // Standardize the parsed data
+      const standardizedData = standardizeExpenseFields(parsedData);
+      console.log(`[PARSE:${parseId}] Standardized data with ${Object.keys(standardizedData).length} items`);
       console.log(`[PARSE:${parseId}] ===== END PARSE =====\n`);
-      return parsedData;
+      return standardizedData as Record<string, InvestmentExpense>;
     }
     
     // If it's already an object, create a deep clone to break reference cycles
@@ -253,10 +257,14 @@ function parseInvestmentExpenses(data: any): Record<string, InvestmentExpense> {
       console.log(`[PARSE:${parseId}] Keys:`, Object.keys(data));
       
       // Create a deep clone to ensure we're not affected by reference issues
-      const clonedData = JSON.parse(JSON.stringify(data)) as Record<string, InvestmentExpense>;
+      const clonedData = JSON.parse(JSON.stringify(data));
       console.log(`[PARSE:${parseId}] Created deep clone with ${Object.keys(clonedData).length} items`);
+      
+      // Standardize the cloned data
+      const standardizedData = standardizeExpenseFields(clonedData);
+      console.log(`[PARSE:${parseId}] Standardized data with ${Object.keys(standardizedData).length} items`);
       console.log(`[PARSE:${parseId}] ===== END PARSE =====\n`);
-      return clonedData;
+      return standardizedData as Record<string, InvestmentExpense>;
     }
     
     // Return empty object as fallback
@@ -294,8 +302,12 @@ function parsePropertyExpenses(data: any): Record<string, PropertyExpense> {
       const parsedData = JSON.parse(data) as Record<string, PropertyExpense>;
       console.log(`[PARSE:${parseId}] Parsed string into object with ${Object.keys(parsedData).length} items`);
       console.log(`[PARSE:${parseId}] Keys:`, Object.keys(parsedData));
+      
+      // Standardize the parsed data
+      const standardizedData = standardizeExpenseFields(parsedData);
+      console.log(`[PARSE:${parseId}] Standardized data with ${Object.keys(standardizedData).length} items`);
       console.log(`[PARSE:${parseId}] ===== END PARSE =====\n`);
-      return parsedData;
+      return standardizedData as Record<string, PropertyExpense>;
     }
     
     // If it's already an object, create a deep clone to break reference cycles
@@ -304,10 +316,14 @@ function parsePropertyExpenses(data: any): Record<string, PropertyExpense> {
       console.log(`[PARSE:${parseId}] Keys:`, Object.keys(data));
       
       // Create a deep clone to ensure we're not affected by reference issues
-      const clonedData = JSON.parse(JSON.stringify(data)) as Record<string, PropertyExpense>;
+      const clonedData = JSON.parse(JSON.stringify(data));
       console.log(`[PARSE:${parseId}] Created deep clone with ${Object.keys(clonedData).length} items`);
+      
+      // Standardize the cloned data
+      const standardizedData = standardizeExpenseFields(clonedData);
+      console.log(`[PARSE:${parseId}] Standardized data with ${Object.keys(standardizedData).length} items`);
       console.log(`[PARSE:${parseId}] ===== END PARSE =====\n`);
-      return clonedData;
+      return standardizedData as Record<string, PropertyExpense>;
     }
     
     // Return empty object as fallback
