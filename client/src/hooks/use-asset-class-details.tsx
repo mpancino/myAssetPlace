@@ -131,7 +131,11 @@ function parseExpenseCategories(expenseCategories: any): StandardizedExpenseCate
           console.log('[EXPENSE_CATEGORY_PARSE] Using alternative property for name:', cleanCategory.name);
         } else {
           // Normal case - string or primitive
-          cleanCategory.name = String(cat.name);
+          const nameStr = String(cat.name);
+          // Check if we're getting [object Object] and provide meaningful replacement
+          cleanCategory.name = nameStr === "[object Object]" 
+            ? `${cat.defaultFrequency || 'Monthly'} Expense` 
+            : nameStr;
           console.log('[EXPENSE_CATEGORY_PARSE] Using normal name property:', cleanCategory.name);
         }
         

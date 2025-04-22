@@ -420,8 +420,12 @@ export default function AssetClassPage() {
                                 }
                               } else {
                                 // Normal case - name is a string or primitive
-                                categoryDisplay = String(category.name);
-                                console.log(`[CATEGORY_BADGE] Normal category name: ${categoryDisplay}`);
+                                // Double-check for [object Object] string to directly handle the issue
+                                const nameStr = String(category.name);
+                                categoryDisplay = nameStr === "[object Object]" 
+                                  ? `Expense ${index + 1}` 
+                                  : nameStr;
+                                console.log(`[CATEGORY_BADGE] Final category name: ${categoryDisplay}`);
                               }
                             } else {
                               // Fallback for unexpected types
