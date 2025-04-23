@@ -4,6 +4,8 @@ import { ExpenseForm } from '@/components/expense/ExpenseForm';
 import { ExpenseTable } from '@/components/expense/ExpenseTable';
 import { PropertyExpenseAnalysis } from '@/components/property/property-expenses-refactored';
 import { useAssetClassDetails, StandardizedExpenseCategory } from '@/hooks/use-asset-class-details';
+import { Button } from "@/components/ui/button";
+import { Save } from "lucide-react";
 
 // Default expense categories as fallback with standardized structure
 const DEFAULT_EXPENSE_CATEGORIES: StandardizedExpenseCategory[] = [
@@ -76,21 +78,25 @@ export function PropertyExpensesNew({
     }
   }, [value, assetId, setPropertyExpenses]);
   
-  // Modified: Don't automatically notify parent form on every expense change
-  // This prevents triggering form-wide automatic saves when only expenses change
-  // Instead, we'll notify the parent only when explicitly saving expenses
-  useEffect(() => {
-    if (isEditMode && onChange && Object.keys(propertyExpenses).length > 0) {
-      console.log('[EXPENSE CHANGE] Property expenses changed in context, but NOT auto-updating parent form');
-      console.log('[EXPENSE CHANGE] This prevents unnecessary automatic form saves');
-      // Removed onChange(propertyExpenses) to prevent triggering parent form updates
-      // Parent form will get the values when explicitly saved or during form submission
-    }
-  }, [propertyExpenses, isEditMode]);
+  // We no longer automatically save changes to the parent form - instead
+  // we'll use the explicit Save Changes buttons to notify the parent when ready
   
   // Get expenses in UI-friendly format with display fields
   const displayExpenses = getPropertyExpensesForDisplay();
   
+  // Handle saving all expense changes to the parent component
+  const handleSaveChanges = () => {
+    const traceId = Math.floor(Math.random() * 10000);
+    console.log(`[PropertyExpensesNew:${traceId}] Saving expense changes to parent component`);
+    
+    if (onChange) {
+      console.log(`[PropertyExpensesNew:${traceId}] Notifying parent component of ${Object.keys(propertyExpenses).length} expense changes`);
+      onChange(propertyExpenses);
+    } else {
+      console.warn(`[PropertyExpensesNew:${traceId}] Cannot save changes - no onChange handler provided`);
+    }
+  };
+
   // Log component render and props for debugging
   console.log("[PropertyExpensesNew] Rendering with props:", {
     expenseCount: Object.keys(displayExpenses).length,
@@ -104,9 +110,25 @@ export function PropertyExpensesNew({
 
   return (
     <div id="property-expenses-container" className="expense-management-container border rounded-md p-4 bg-background">
-      {/* DEBUG MARKER - helps identify if container is rendering */}
-      <div className="text-xs text-muted-foreground mb-2">
-        Debug: PropertyExpensesNew rendered with {Object.keys(displayExpenses).length} expenses
+      {/* Header with debug info and save button */}
+      <div className="flex justify-between items-center mb-4">
+        <div className="text-xs text-muted-foreground">
+          Debug: PropertyExpensesNew rendered with {Object.keys(displayExpenses).length} expenses
+        </div>
+        
+        {/* Save Changes button - only show in edit mode */}
+        {isEditMode && (
+          <Button 
+            onClick={handleSaveChanges} 
+            disabled={isSaving}
+            variant="outline"
+            size="sm"
+            className="bg-primary hover:bg-primary/90 text-white"
+          >
+            <Save className="h-4 w-4 mr-2" />
+            Save Expense Changes
+          </Button>
+        )}
       </div>
       
       {/* Expense analysis */}
@@ -137,6 +159,20 @@ export function PropertyExpensesNew({
             availableCategories={availableCategories}
             isLoading={isLoadingCategories || isSaving}
           />
+        </div>
+      )}
+      
+      {/* Footer with save button again, for convenience */}
+      {isEditMode && Object.keys(displayExpenses).length > 0 && (
+        <div className="mt-6 flex justify-end">
+          <Button 
+            onClick={handleSaveChanges} 
+            disabled={isSaving}
+            className="bg-primary hover:bg-primary/90 text-white"
+          >
+            <Save className="h-4 w-4 mr-2" />
+            Save All Expense Changes
+          </Button>
         </div>
       )}
     </div>
