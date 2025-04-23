@@ -88,30 +88,36 @@ export function PropertyExpensesNew({
   const displayExpenses = getPropertyExpensesForDisplay();
   
   return (
-    <div className="space-y-6">
+    <div className="expense-management-container border rounded-md p-4 bg-white">
       {/* Expense analysis */}
       {Object.keys(displayExpenses).length > 0 && (
-        <PropertyExpenseAnalysis
-          expenses={displayExpenses}
-          annualIncome={annualIncome}
-        />
+        <div className="mb-6">
+          <PropertyExpenseAnalysis
+            expenses={displayExpenses}
+            annualIncome={annualIncome}
+          />
+        </div>
       )}
       
       {/* Expense table */}
-      <ExpenseTable
-        expenses={displayExpenses}
-        categoryMap={categoryMap}
-        type="property"
-        isEditMode={isEditMode}
-        isSaving={isSaving}
-      />
+      <div className="mb-6 bg-white rounded-md border p-4">
+        <ExpenseTable
+          expenses={displayExpenses}
+          categoryMap={categoryMap}
+          type="property"
+          isEditMode={isEditMode}
+          isSaving={isSaving}
+        />
+      </div>
       
       {/* Expense form - only show when editing is active */}
       {isEditMode && editorState.isEditing && editorState.expenseType === 'property' && (
-        <ExpenseForm
-          availableCategories={availableCategories}
-          isLoading={isLoadingCategories || isSaving}
-        />
+        <div className="mt-6 bg-muted rounded-md border p-4">
+          <ExpenseForm
+            availableCategories={availableCategories}
+            isLoading={isLoadingCategories || isSaving}
+          />
+        </div>
       )}
     </div>
   );
