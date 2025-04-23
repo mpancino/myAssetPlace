@@ -4,7 +4,8 @@ import { ExpenseForm } from '@/components/expense/ExpenseForm';
 import { ExpenseTable } from '@/components/expense/ExpenseTable';
 import { PropertyExpenseAnalysis } from '@/components/property/property-expenses-refactored';
 import { useAssetClassDetails, StandardizedExpenseCategory } from '@/hooks/use-asset-class-details';
-import { convertToComponentFormat } from '@/lib/expense-utils-new';
+import { convertToComponentFormat, generateExpenseId } from '@/lib/expense-utils-new';
+import { calculateAnnualAmount } from '@/lib/expense-utils-new';
 import type { Expense } from '@/../../shared/schema';
 
 // Default expense categories as fallback
@@ -122,6 +123,48 @@ export function PropertyExpenses({
   
   // Get expenses in UI-friendly format with display fields
   const displayExpenses = getPropertyExpensesForDisplay();
+  
+  // Handle adding a new expense using local state management
+  const handleAddExpense = (expenseData: Partial<Expense>) => {
+    const traceId = Math.floor(Math.random() * 10000);
+    console.log(`[PropertyExpenses:${traceId}] Adding new expense`);
+    
+    // Generate a unique ID for the new expense
+    const newId = generateExpenseId();
+    
+    // Create the new expense object with complete data
+    const newExpense: Expense = {
+      id: newId,
+      categoryId: expenseData.categoryId || 'other',
+      name: expenseData.name || 'Unnamed expense',
+      amount: Number(expenseData.amount) || 0,
+      frequency: expenseData.frequency || 'monthly',
+      notes: expenseData.notes,
+    };
+    
+    // Create the UI display version of the expense
+    // This includes the display-specific fields needed by the UI components
+    const newDisplayExpense = {
+      ...newExpense,
+      category: newExpense.categoryId, // UI display field
+      description: newExpense.name,    // UI display field
+      annualTotal: calculateAnnualAmount(newExpense) // Calculated field for UI
+    };
+    
+    // Update the local state with the new expense
+    setEditableExpenses(prevExpenses => {
+      const updatedExpenses = {
+        ...prevExpenses,
+        [newId]: newDisplayExpense
+      };
+      
+      console.log(`[PropertyExpenses:${traceId}] Updated local expenses state. Now has ${Object.keys(updatedExpenses).length} expenses`);
+      return updatedExpenses;
+    });
+    
+    // Note: We're not calling onChange here to avoid triggering parent form updates
+    // Parent form will get updated expenses when explicitly saved or during form submission
+  };
   
   // Log component render and props for debugging
   console.log("[PropertyExpenses] Rendering with props:", {
