@@ -729,7 +729,13 @@ export default function AssetDetailPage() {
             console.log('[RELOAD] Updated investment expenses state and context');
           }
           
-          // Manually update the cache with this fresh data
+          // Properly invalidate the cache for this specific asset
+          console.log('[RELOAD] Invalidating and updating cache for asset...');
+          
+          // First, properly invalidate the specific asset query to trigger a refetch
+          queryClient.invalidateQueries({ queryKey: [`/api/assets/${assetId}`] });
+          
+          // Then set the fresh data in the cache
           console.log('[RELOAD] Setting query data with fresh data...');
           queryClient.setQueryData([`/api/assets/${assetId}`], freshData);
           
@@ -751,8 +757,11 @@ export default function AssetDetailPage() {
           // Fall back to using the original approach
           console.log('[RELOAD] Falling back to standard query mechanism...');
           
-          // First invalidate the queries to force fresh data
+          // First properly invalidate the queries to force fresh data
+          console.log('[RELOAD] Invalidating all relevant cache entries...');
           queryClient.invalidateQueries({ queryKey: [`/api/assets/${assetId}`] });
+          queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
+          queryClient.invalidateQueries({ queryKey: ["/api/assets/by-class"] });
           
           setTimeout(() => {
             console.log('[RELOAD] Executing fallback query fetch after timeout...');
@@ -790,6 +799,12 @@ export default function AssetDetailPage() {
         description: error.message,
         variant: "destructive",
       });
+      
+      // Invalidate cache to ensure fresh data on next access
+      console.log('[UPDATE ERROR] Invalidating cache after error');
+      queryClient.invalidateQueries({ queryKey: [`/api/assets/${assetId}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/assets/by-class"] });
     },
   });
   
@@ -925,8 +940,11 @@ export default function AssetDetailPage() {
             Object.keys(form.getValues().investmentExpenses || {}).length} items`);
           console.log('[DIRECT SAVE INV] Updated local, form state and context with parsed expenses');
           
-          // Manually update the cache with this fresh data
-          console.log(`[SEQUENCE:${Date.now()}] 7. UPDATING CACHE with fresh data`);
+          // Properly invalidate and update the cache with this fresh data
+          console.log(`[SEQUENCE:${Date.now()}] 7. INVALIDATING AND UPDATING CACHE with fresh data`);
+          // First invalidate queries to ensure they're refetched
+          queryClient.invalidateQueries({ queryKey: [`/api/assets/${assetId}`] });
+          // Then set the fresh data directly in the cache
           queryClient.setQueryData([`/api/assets/${assetId}`], freshData);
           
           // Show brief success toast
@@ -975,6 +993,10 @@ export default function AssetDetailPage() {
         description: error.message,
         variant: "destructive",
       });
+      
+      // Invalidate the cache to ensure fresh data on next load
+      console.log('[DIRECT SAVE INV ERROR] Invalidating cache after error');
+      queryClient.invalidateQueries({ queryKey: [`/api/assets/${assetId}`] });
     },
   });
   
@@ -1030,8 +1052,11 @@ export default function AssetDetailPage() {
           
           console.log('[DIRECT SAVE] Updated local, form state and context with parsed expenses');
           
-          // Manually update the cache with this fresh data
-          console.log('[DIRECT SAVE] Setting query data with fresh data...');
+          // Properly invalidate and update the cache with this fresh data
+          console.log('[DIRECT SAVE] Invalidating and updating cache with fresh data...');
+          // First invalidate queries to ensure they're refetched
+          queryClient.invalidateQueries({ queryKey: [`/api/assets/${assetId}`] });
+          // Then set the fresh data directly in the cache
           queryClient.setQueryData([`/api/assets/${assetId}`], freshData);
           
           // Show brief success toast
@@ -1080,6 +1105,10 @@ export default function AssetDetailPage() {
         description: error.message,
         variant: "destructive",
       });
+      
+      // Invalidate the cache to ensure fresh data on next load
+      console.log('[DIRECT SAVE ERROR] Invalidating cache after error');
+      queryClient.invalidateQueries({ queryKey: [`/api/assets/${assetId}`] });
     },
   });
   
