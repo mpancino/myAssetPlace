@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { convertToPageFormat, convertToComponentFormat, calculateAnnualAmount } from '@/lib/expense-utils-new';
+import { parseExpenses, calculateAnnualExpenses, calculateAnnualAmount, FREQUENCY_MULTIPLIERS } from '@/lib/expense-utils';
 import type { Expense } from '@shared/schema';
 
 // Form state for expense editing
@@ -175,14 +175,14 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
       if (typeof expenses === 'string') {
         try {
           const parsedJson = JSON.parse(expenses);
-          standardizedExpenses = convertToPageFormat(parsedJson);
+          standardizedExpenses = parseExpenses(parsedJson);
         } catch (e) {
           console.error(`[EXPENSE_CONTEXT:${traceId}] Error parsing JSON:`, e);
           standardizedExpenses = {};
         }
       } else {
         // Already an object, but ensure it's in standard format
-        standardizedExpenses = convertToPageFormat(expenses);
+        standardizedExpenses = parseExpenses(expenses);
       }
       
       console.log(`[EXPENSE_CONTEXT:${traceId}] Standardized investment expenses:`, 
@@ -270,7 +270,7 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
       if (typeof expenses === 'string') {
         try {
           const parsedJson = JSON.parse(expenses);
-          standardizedExpenses = convertToPageFormat(parsedJson);
+          standardizedExpenses = parseExpenses(parsedJson);
         } catch (e) {
           console.error(`[EXPENSE_CONTEXT:${traceId}] Error parsing JSON:`, e);
           standardizedExpenses = {};
@@ -280,7 +280,7 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
         standardizedExpenses = {};
       } else {
         // Already an object, but ensure it's in standard format
-        standardizedExpenses = convertToPageFormat(expenses);
+        standardizedExpenses = parseExpenses(expenses);
       }
       
       console.log(`[EXPENSE_CONTEXT:${traceId}] Standardized property expenses:`, 
@@ -359,11 +359,31 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   // Get expenses in component-friendly format
   const getInvestmentExpensesForDisplay = useCallback(() => {
-    return convertToComponentFormat(investmentExpenses);
+    // Add annualTotal property for each expense for display purposes
+    const result: Record<string, any> = {};
+    Object.entries(investmentExpenses).forEach(([id, expense]) => {
+      result[id] = {
+        ...expense,
+        category: expense.categoryId,
+        description: expense.name,
+        annualTotal: calculateAnnualAmount(expense.amount, expense.frequency)
+      };
+    });
+    return result;
   }, [investmentExpenses]);
 
   const getPropertyExpensesForDisplay = useCallback(() => {
-    return convertToComponentFormat(propertyExpenses);
+    // Add annualTotal property for each expense for display purposes
+    const result: Record<string, any> = {};
+    Object.entries(propertyExpenses).forEach(([id, expense]) => {
+      result[id] = {
+        ...expense,
+        category: expense.categoryId,
+        description: expense.name,
+        annualTotal: calculateAnnualAmount(expense.amount, expense.frequency)
+      };
+    });
+    return result;
   }, [propertyExpenses]);
   
   // Editor state operations
