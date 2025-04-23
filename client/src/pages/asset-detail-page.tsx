@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { MortgageDetails } from "@/components/property/mortgage-details";
-import { PropertyExpenses, PropertyExpenseAnalysis } from "@/components/property/property-expenses";
+import { PropertyExpenses, PropertyExpenseAnalysis } from "@/components/property/property-expenses-refactored";
 import { InvestmentExpenses, InvestmentExpenseAnalysis } from "@/components/expense/investment-expenses";
 import { 
   ArrowLeft, 
@@ -70,7 +70,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 // Import shared types
-import type { PropertyExpense } from "@shared/schema";
+import type { Expense } from "@shared/schema";
 
 /**
  * Standardizes expense fields to ensure only one format is used.
@@ -278,7 +278,7 @@ function parseInvestmentExpenses(data: any): Record<string, InvestmentExpense> {
 }
 
 // Helper function to safely parse property expenses data
-function parsePropertyExpenses(data: any): Record<string, PropertyExpense> {
+function parsePropertyExpenses(data: any): Record<string, Expense> {
   try {
     // Create a hash from the data for a more stable identifier that won't change on every call
     const valueStr = typeof data === 'string' ? data : JSON.stringify(data || {});
@@ -299,7 +299,7 @@ function parsePropertyExpenses(data: any): Record<string, PropertyExpense> {
         return {};
       }
       
-      const parsedData = JSON.parse(data) as Record<string, PropertyExpense>;
+      const parsedData = JSON.parse(data) as Record<string, any>;
       console.log(`[PARSE:${parseId}] Parsed string into object with ${Object.keys(parsedData).length} items`);
       console.log(`[PARSE:${parseId}] Keys:`, Object.keys(parsedData));
       
@@ -307,7 +307,7 @@ function parsePropertyExpenses(data: any): Record<string, PropertyExpense> {
       const standardizedData = standardizeExpenseFields(parsedData);
       console.log(`[PARSE:${parseId}] Standardized data with ${Object.keys(standardizedData).length} items`);
       console.log(`[PARSE:${parseId}] ===== END PARSE =====\n`);
-      return standardizedData as Record<string, PropertyExpense>;
+      return standardizedData as Record<string, Expense>;
     }
     
     // If it's already an object, create a deep clone to break reference cycles
@@ -323,7 +323,7 @@ function parsePropertyExpenses(data: any): Record<string, PropertyExpense> {
       const standardizedData = standardizeExpenseFields(clonedData);
       console.log(`[PARSE:${parseId}] Standardized data with ${Object.keys(standardizedData).length} items`);
       console.log(`[PARSE:${parseId}] ===== END PARSE =====\n`);
-      return standardizedData as Record<string, PropertyExpense>;
+      return standardizedData as Record<string, Expense>;
     }
     
     // Return empty object as fallback
@@ -409,7 +409,7 @@ export default function AssetDetailPage() {
   // View states
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
-  const [currentPropertyExpenses, setCurrentPropertyExpenses] = useState<Record<string, PropertyExpense> | undefined>(undefined);
+  const [currentPropertyExpenses, setCurrentPropertyExpenses] = useState<Record<string, Expense> | undefined>(undefined);
   const [currentInvestmentExpenses, setCurrentInvestmentExpenses] = useState<Record<string, InvestmentExpense> | undefined>(undefined);
   
   // Fetch the asset details
