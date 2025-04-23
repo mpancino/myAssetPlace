@@ -2881,9 +2881,12 @@ export default function AssetDetailPage() {
                     {asset.propertyExpenses && Object.keys(parsePropertyExpenses(asset.propertyExpenses)).length > 0 && (
                       <PropertyExpenseAnalysis 
                         key={`expense-analysis-${asset.id}`}
-                        expenses={parsePropertyExpenses(asset.propertyExpenses)}
-                        rentalIncome={asset.isRental ? asset.rentalIncome || 0 : 0}
-                        rentalFrequency={asset.rentalFrequency || "monthly"}
+                        expenses={convertToComponentFormat(parsePropertyExpenses(asset.propertyExpenses))}
+                        annualIncome={asset.isRental && asset.rentalIncome ? 
+                          (asset.rentalFrequency === 'weekly' ? asset.rentalIncome * 52 : 
+                           asset.rentalFrequency === 'fortnightly' ? asset.rentalIncome * 26 : 
+                           asset.rentalFrequency === 'monthly' ? asset.rentalIncome * 12 : 
+                           asset.rentalIncome) : 0}
                       />
                     )}
                     
