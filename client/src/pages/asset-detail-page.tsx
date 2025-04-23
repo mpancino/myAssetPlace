@@ -2961,7 +2961,7 @@ export default function AssetDetailPage() {
                             render={({ field }) => (
                               <FormItem>
                                 <FormControl>
-                                  <InvestmentExpenses
+                                  <InvestmentExpensesFixed
                                     key={`investment-expenses-edit-${asset.id}`}
                                     value={convertPageExpensesToComponent(field.value as Record<string, InvestmentExpense> || {})}
                                     onChange={(newComponentExpenses) => {
@@ -3001,7 +3001,7 @@ export default function AssetDetailPage() {
                           <div className="relative">
                             {/* Read-only overlay when not in edit mode */}
                             <div className="absolute inset-0 bg-transparent z-10" onClick={() => setIsEditing(true)}></div>
-                            <InvestmentExpenses
+                            <InvestmentExpensesFixed
                               key={`investment-expenses-view-${asset.id}`}
                               value={convertPageExpensesToComponent(parseInvestmentExpenses(asset.investmentExpenses))}
                               onChange={(value) => {
