@@ -247,15 +247,10 @@ function PropertyExpensesInternal({
     return calculateAnnualAmount(dummyExpense);
   }, []);
   
-  // Reset form fields
+  // Reset form fields by canceling the edit in the context
   const resetForm = useCallback(() => {
-    setNewCategory('');
-    setNewDescription('');
-    setNewAmount('');
-    setNewFrequency('monthly');
-    setEditingId(null);
-    setIsAddingNew(false);
-  }, []);
+    cancelEditExpense();
+  }, [cancelEditExpense]);
   
   // Helper to find the category name from ID
   const getCategoryNameFromId = useCallback((categoryId: string): string => {
@@ -278,248 +273,16 @@ function PropertyExpensesInternal({
   
   // Start editing an expense
   const handleStartEdit = useCallback((expense: ComponentExpense) => {
-    setEditingId(expense.id);
-    setNewCategory(expense.categoryId);
-    setNewDescription(expense.name);
-    setNewAmount(expense.amount);
-    setNewFrequency(expense.frequency);
-  }, []);
-  
-  // Add a new expense
-  const handleAddExpense = useCallback(() => {
-    if (!newCategory || !newAmount) {
-      toast({
-        title: "Missing information",
-        description: "Please provide a category and amount",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const amount = typeof newAmount === 'string' ? parseFloat(newAmount) : newAmount;
-    
-    if (isNaN(amount) || amount <= 0) {
-      toast({
-        title: "Invalid amount",
-        description: "Please enter a valid positive amount",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    try {
-      const traceId = Math.floor(Math.random() * 10000000);
-      console.log(`[PROP_EXPENSES:${traceId}] Adding new expense`);
-      
-      // Create a new standardized expense
-      const id = uuidv4();
-      
-      // Create the standard Expense object
-      const standardExpense: Expense = {
-        id,
-        categoryId: newCategory,
-        name: newDescription,
-        amount,
-        frequency: newFrequency
-      };
-      
-      // Calculate annual total for UI display
-      const annualTotal = calculateAnnualTotal(amount, newFrequency);
-      
-      // Create component expense with display fields
-      const componentExpense: ComponentExpense = {
-        ...standardExpense,
-        category: getCategoryNameFromId(newCategory),
-        description: newDescription,
-        annualTotal
-      };
-      
-      // Update local state with the new component expense
-      const updatedComponentExpenses = {
-        ...expenses,
-        [id]: componentExpense
-      };
-      
-      // Update local state immediately for responsive UI
-      setExpenses(updatedComponentExpenses);
-      
-      // Convert to standard expenses for storage
-      const updatedStandardExpenses = Object.entries(updatedComponentExpenses).reduce(
-        (acc, [key, expense]) => {
-          acc[key] = {
-            id: expense.id,
-            categoryId: expense.categoryId,
-            name: expense.name,
-            amount: expense.amount,
-            frequency: expense.frequency,
-            notes: expense.notes
-          };
-          return acc;
-        }, 
-        {} as Record<string, Expense>
-      );
-      
-      // Update context
-      setContextExpenses(updatedStandardExpenses);
-      
-      // Notify parent component
-      onChange(updatedStandardExpenses);
-      
-      // Reset form
-      resetForm();
-      
-      // Show success message
-      toast({
-        title: "Success",
-        description: "Expense added successfully",
-        variant: "default",
-      });
-    } catch (err) {
-      console.error('[PROP_EXPENSES] Error adding expense:', err);
-      toast({
-        title: "Error",
-        description: "Failed to add expense",
-        variant: "destructive",
-      });
-    }
-  }, [newCategory, newDescription, newAmount, newFrequency, expenses, onChange, calculateAnnualTotal, resetForm, toast, setContextExpenses, getCategoryNameFromId]);
-  
-  // Update an existing expense
-  const handleUpdateExpense = useCallback(() => {
-    if (!editingId || !newCategory || !newAmount) {
-      toast({
-        title: "Missing information",
-        description: "Please provide a category and amount",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const amount = typeof newAmount === 'string' ? parseFloat(newAmount) : newAmount;
-    
-    if (isNaN(amount) || amount <= 0) {
-      toast({
-        title: "Invalid amount",
-        description: "Please enter a valid positive amount",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    try {
-      const traceId = Math.floor(Math.random() * 10000000);
-      console.log(`[PROP_EXPENSES:${traceId}] Updating expense with ID:`, editingId);
-      
-      // Get existing expense
-      const existingExpense = expenses[editingId];
-      if (!existingExpense) {
-        throw new Error(`Expense with ID ${editingId} not found`);
-      }
-      
-      // Update the standard expense
-      const updatedStandardExpense: Expense = {
-        id: editingId,
-        categoryId: newCategory,
-        name: newDescription,
-        amount,
-        frequency: newFrequency,
-        notes: existingExpense.notes
-      };
-      
-      // Calculate annual total for UI display
-      const annualTotal = calculateAnnualTotal(amount, newFrequency);
-      
-      // Create the updated component expense with UI display fields
-      const updatedComponentExpense: ComponentExpense = {
-        ...updatedStandardExpense,
-        category: getCategoryNameFromId(newCategory),
-        description: newDescription,
-        annualTotal
-      };
-      
-      // Update local state
-      const updatedComponentExpenses = {
-        ...expenses,
-        [editingId]: updatedComponentExpense
-      };
-      
-      // Update local state immediately for responsive UI
-      setExpenses(updatedComponentExpenses);
-      
-      // Convert to standard expenses for storage
-      const updatedStandardExpenses = Object.entries(updatedComponentExpenses).reduce(
-        (acc, [key, expense]) => {
-          acc[key] = {
-            id: expense.id,
-            categoryId: expense.categoryId,
-            name: expense.name,
-            amount: expense.amount,
-            frequency: expense.frequency,
-            notes: expense.notes
-          };
-          return acc;
-        }, 
-        {} as Record<string, Expense>
-      );
-      
-      // Update context
-      setContextExpenses(updatedStandardExpenses);
-      
-      // Notify parent component
-      onChange(updatedStandardExpenses);
-      
-      // Reset form
-      resetForm();
-      
-      // Show success message
-      toast({
-        title: "Success",
-        description: "Expense updated successfully",
-        variant: "default",
-      });
-    } catch (err) {
-      console.error('[PROP_EXPENSES] Error updating expense:', err);
-      toast({
-        title: "Error",
-        description: "Failed to update expense",
-        variant: "destructive",
-      });
-    }
-  }, [editingId, newCategory, newDescription, newAmount, newFrequency, expenses, onChange, calculateAnnualTotal, resetForm, toast, setContextExpenses, getCategoryNameFromId]);
+    startEditExpense(expense.id, 'property');
+  }, [startEditExpense]);
   
   // Delete an expense
   const handleDeleteExpense = useCallback((id: string) => {
     try {
-      const traceId = Math.floor(Math.random() * 10000000);
-      console.log(`[PROP_EXPENSES:${traceId}] Deleting expense with ID:`, id);
+      console.log(`[PROP_EXPENSES] Deleting expense with ID:`, id);
       
-      // Create a copy of expenses without the deleted one
-      const { [id]: _, ...updatedComponentExpenses } = expenses;
-      
-      // Update local state immediately for responsive UI
-      setExpenses(updatedComponentExpenses);
-      
-      // Convert to standard expenses for storage
-      const updatedStandardExpenses = Object.entries(updatedComponentExpenses).reduce(
-        (acc, [key, expense]) => {
-          acc[key] = {
-            id: expense.id,
-            categoryId: expense.categoryId,
-            name: expense.name,
-            amount: expense.amount,
-            frequency: expense.frequency,
-            notes: expense.notes
-          };
-          return acc;
-        }, 
-        {} as Record<string, Expense>
-      );
-      
-      // Update context
-      setContextExpenses(updatedStandardExpenses);
-      
-      // Notify parent component
-      onChange(updatedStandardExpenses);
+      // Use the context function to delete the expense
+      deleteExpense(id);
       
       // Show success message
       toast({
@@ -535,13 +298,11 @@ function PropertyExpensesInternal({
         variant: "destructive",
       });
     }
-  }, [expenses, onChange, toast, setContextExpenses]);
+  }, [deleteExpense, toast]);
   
   const handleAddNew = useCallback(() => {
-    setEditingId(null);
-    setIsAddingNew(true);
-    resetForm();
-  }, [resetForm]);
+    startAddExpense('property');
+  }, [startAddExpense]);
   
   const handleCancelEdit = useCallback(() => {
     resetForm();
@@ -671,7 +432,7 @@ function PropertyExpensesInternal({
                     <label className="text-sm font-medium mb-1 block">Category</label>
                     <Select
                       value={newCategory}
-                      onValueChange={setNewCategory}
+                      onValueChange={(value) => updateFormField('categoryId', value)}
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select a category" />
@@ -698,7 +459,7 @@ function PropertyExpensesInternal({
                     <Input
                       placeholder="Description"
                       value={newDescription}
-                      onChange={(e) => setNewDescription(e.target.value)}
+                      onChange={(e) => updateFormField('name', e.target.value)}
                     />
                   </div>
                   
@@ -710,7 +471,7 @@ function PropertyExpensesInternal({
                       step="0.01"
                       placeholder="0.00"
                       value={newAmount}
-                      onChange={(e) => setNewAmount(e.target.value === '' ? '' : parseFloat(e.target.value))}
+                      onChange={(e) => updateFormField('amount', e.target.value === '' ? '' : parseFloat(e.target.value))}
                     />
                   </div>
                   
@@ -718,7 +479,7 @@ function PropertyExpensesInternal({
                     <label className="text-sm font-medium mb-1 block">Frequency</label>
                     <Select
                       value={newFrequency}
-                      onValueChange={(value) => setNewFrequency(value as 'monthly' | 'quarterly' | 'annually')}
+                      onValueChange={(value) => updateFormField('frequency', value as 'monthly' | 'quarterly' | 'annually')}
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select frequency" />
@@ -737,7 +498,7 @@ function PropertyExpensesInternal({
                     Cancel
                   </Button>
                   <Button 
-                    onClick={editingId ? handleUpdateExpense : handleAddExpense}
+                    onClick={() => saveExpense()}
                     type="button"
                   >
                     {editingId ? "Update" : "Add"} Expense
@@ -747,7 +508,7 @@ function PropertyExpensesInternal({
             </Card>
           </div>
         );
-      }, [editingId, isAddingNew, newCategory, newDescription, newAmount, newFrequency, availableCategories, handleUpdateExpense, handleAddExpense, handleCancelEdit])}
+      }, [editingId, isAddingNew, newCategory, newDescription, newAmount, newFrequency, availableCategories, saveExpense, handleCancelEdit])}
     </div>
   );
 }
