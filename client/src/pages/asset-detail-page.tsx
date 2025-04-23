@@ -18,6 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { MortgageDetails } from "@/components/property/mortgage-details";
 import { PropertyExpenses, PropertyExpenseAnalysis } from "@/components/property/property-expenses-refactored";
+import { PropertyExpensesNew } from "@/components/property/PropertyExpensesNew";
 import { InvestmentExpenses, InvestmentExpenseAnalysis } from "@/components/expense/investment-expenses";
 import { 
   ArrowLeft, 
@@ -2822,7 +2823,7 @@ export default function AssetDetailPage() {
                             render={({ field }) => (
                               <FormItem>
                                 <FormControl>
-                                  <PropertyExpenses
+                                  <PropertyExpensesNew
                                     key={`expenses-edit-${asset.id}`}
                                     value={field.value as Record<string, PropertyExpense> || {}}
                                     onChange={(newExpenses) => {
@@ -2842,7 +2843,11 @@ export default function AssetDetailPage() {
                                     assetClassId={asset?.assetClassId}
                                     isEditMode={isEditing}
                                     isSaving={savePropertyExpensesMutation.isPending}
-                                    // isSaved prop removed as it doesn't exist in new component
+                                    annualIncome={asset.isRental && asset.rentalIncome ? 
+                                      (asset.rentalFrequency === 'weekly' ? asset.rentalIncome * 52 : 
+                                       asset.rentalFrequency === 'fortnightly' ? asset.rentalIncome * 26 : 
+                                       asset.rentalFrequency === 'monthly' ? asset.rentalIncome * 12 : 
+                                       asset.rentalIncome) : 0}
                                   />
                                 </FormControl>
                                 <FormMessage />
@@ -2853,7 +2858,7 @@ export default function AssetDetailPage() {
                           <div className="relative">
                             {/* Read-only overlay when not in edit mode */}
                             <div className="absolute inset-0 bg-transparent z-10" onClick={() => setIsEditing(true)}></div>
-                            <PropertyExpenses
+                            <PropertyExpensesNew
                               key={`expenses-view-${asset.id}`}
                               value={parsePropertyExpenses(asset.propertyExpenses)}
                               onChange={(value) => {
@@ -2864,6 +2869,11 @@ export default function AssetDetailPage() {
                               assetId={asset.id}
                               assetClassId={asset?.assetClassId}
                               isEditMode={false}
+                              annualIncome={asset.isRental && asset.rentalIncome ? 
+                                (asset.rentalFrequency === 'weekly' ? asset.rentalIncome * 52 : 
+                                 asset.rentalFrequency === 'fortnightly' ? asset.rentalIncome * 26 : 
+                                 asset.rentalFrequency === 'monthly' ? asset.rentalIncome * 12 : 
+                                 asset.rentalIncome) : 0}
                             />
 
                           </div>
@@ -2878,18 +2888,7 @@ export default function AssetDetailPage() {
                       </CardContent>
                     </Card>
                     
-                    {/* Property Expense Analysis */}
-                    {asset.propertyExpenses && Object.keys(parsePropertyExpenses(asset.propertyExpenses)).length > 0 && (
-                      <PropertyExpenseAnalysis 
-                        key={`expense-analysis-${asset.id}`}
-                        expenses={convertToComponentFormat(parsePropertyExpenses(asset.propertyExpenses))}
-                        annualIncome={asset.isRental && asset.rentalIncome ? 
-                          (asset.rentalFrequency === 'weekly' ? asset.rentalIncome * 52 : 
-                           asset.rentalFrequency === 'fortnightly' ? asset.rentalIncome * 26 : 
-                           asset.rentalFrequency === 'monthly' ? asset.rentalIncome * 12 : 
-                           asset.rentalIncome) : 0}
-                      />
-                    )}
+                    {/* Property Expense Analysis is now included within PropertyExpensesNew */}
                     
                     {/* Database persistence status card (shows only when editing) */}
                     {isEditing && (
