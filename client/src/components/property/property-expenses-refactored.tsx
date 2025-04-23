@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useExpenses } from '@/contexts/ExpenseContext';
 import {
@@ -178,11 +178,29 @@ function PropertyExpensesInternal({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
   
-  // New expense form state
-  const [newCategory, setNewCategory] = useState('');
-  const [newDescription, setNewDescription] = useState('');
-  const [newAmount, setNewAmount] = useState<number | ''>('');
-  const [newFrequency, setNewFrequency] = useState<'monthly' | 'quarterly' | 'annually'>('monthly');
+  // Prevent form state from being reset during re-renders by using refs
+  const formStateRef = useRef({
+    category: '',
+    description: '',
+    amount: '' as number | '',
+    frequency: 'monthly' as 'monthly' | 'quarterly' | 'annually'
+  });
+
+  // New expense form state - with local references to prevent loss during re-renders
+  const [newCategory, setNewCategory] = useState(() => formStateRef.current.category);
+  const [newDescription, setNewDescription] = useState(() => formStateRef.current.description);
+  const [newAmount, setNewAmount] = useState<number | ''>(() => formStateRef.current.amount);
+  const [newFrequency, setNewFrequency] = useState<'monthly' | 'quarterly' | 'annually'>(() => formStateRef.current.frequency);
+  
+  // Update ref when state changes to preserve values between re-renders
+  useEffect(() => {
+    formStateRef.current = {
+      category: newCategory,
+      description: newDescription,
+      amount: newAmount,
+      frequency: newFrequency
+    };
+  }, [newCategory, newDescription, newAmount, newFrequency]);
   
   // Process and normalize the input data
   useEffect(() => {
@@ -656,90 +674,104 @@ function PropertyExpensesInternal({
         </div>
       )}
       
-      {/* Edit form */}
-      {isEditMode && (editingId || isAddingNew) && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{editingId ? "Edit Expense" : "Add New Expense"}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="text-sm font-medium mb-1 block">Category</label>
-                <Select
-                  value={newCategory}
-                  onValueChange={setNewCategory}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableCategories.map((cat, index) => {
-                      // Handle both string and object categories
-                      const id = typeof cat === 'string' ? cat : cat.id;
-                      const name = typeof cat === 'string' ? cat : 
-                        (typeof cat.name === 'string' ? cat.name : String(cat.name));
-                      
-                      return (
-                        <SelectItem key={`${id}-${index}`} value={String(id)}>
-                          {name}
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium mb-1 block">Description</label>
-                <Input
-                  placeholder="Description"
-                  value={newDescription}
-                  onChange={(e) => setNewDescription(e.target.value)}
-                />
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium mb-1 block">Amount</label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={newAmount}
-                  onChange={(e) => setNewAmount(e.target.value === '' ? '' : parseFloat(e.target.value))}
-                />
-              </div>
-              
-              <div>
-                <label className="text-sm font-medium mb-1 block">Frequency</label>
-                <Select
-                  value={newFrequency}
-                  onValueChange={(value) => setNewFrequency(value as 'monthly' | 'quarterly' | 'annually')}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select frequency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="quarterly">Quarterly</SelectItem>
-                    <SelectItem value="annually">Annually</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={handleCancelEdit}>
-                Cancel
-              </Button>
-              <Button onClick={editingId ? handleUpdateExpense : handleAddExpense}>
-                {editingId ? "Update" : "Add"} Expense
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Edit form - using React.useMemo to prevent it from disappearing during re-renders */}
+      {isEditMode && React.useMemo(() => {
+        const shouldShowForm = editingId || isAddingNew;
+        
+        if (!shouldShowForm) {
+          return null;
+        }
+        
+        // The form is wrapped in a div with a key to force remounting when editing state changes
+        return (
+          <div key={`expense-form-${editingId || 'new'}`}>
+            <Card>
+              <CardHeader>
+                <CardTitle>{editingId ? "Edit Expense" : "Add New Expense"}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Category</label>
+                    <Select
+                      value={newCategory}
+                      onValueChange={setNewCategory}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableCategories.map((cat, index) => {
+                          // Handle both string and object categories
+                          const id = typeof cat === 'string' ? cat : cat.id;
+                          const name = typeof cat === 'string' ? cat : 
+                            (typeof cat.name === 'string' ? cat.name : String(cat.name));
+                          
+                          return (
+                            <SelectItem key={`${id}-${index}`} value={String(id)}>
+                              {name}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Description</label>
+                    <Input
+                      placeholder="Description"
+                      value={newDescription}
+                      onChange={(e) => setNewDescription(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Amount</label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={newAmount}
+                      onChange={(e) => setNewAmount(e.target.value === '' ? '' : parseFloat(e.target.value))}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Frequency</label>
+                    <Select
+                      value={newFrequency}
+                      onValueChange={(value) => setNewFrequency(value as 'monthly' | 'quarterly' | 'annually')}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select frequency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                        <SelectItem value="quarterly">Quarterly</SelectItem>
+                        <SelectItem value="annually">Annually</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end space-x-2">
+                  <Button variant="outline" onClick={handleCancelEdit} type="button">
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={editingId ? handleUpdateExpense : handleAddExpense}
+                    type="button"
+                  >
+                    {editingId ? "Update" : "Add"} Expense
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+      }, [editingId, isAddingNew, newCategory, newDescription, newAmount, newFrequency, availableCategories, handleUpdateExpense, handleAddExpense, handleCancelEdit])}
     </div>
   );
 }
