@@ -166,6 +166,52 @@ export function PropertyExpenses({
     // Parent form will get updated expenses when explicitly saved or during form submission
   };
   
+  // Handle updating an existing expense using local state management
+  const handleUpdateExpense = (id: string, expenseData: Partial<Expense>) => {
+    const traceId = Math.floor(Math.random() * 10000);
+    console.log(`[PropertyExpenses:${traceId}] Updating expense with ID: ${id}`);
+    
+    // Update the local state with the modified expense
+    setEditableExpenses(prevExpenses => {
+      // Check if the expense exists in our local state
+      if (!prevExpenses[id]) {
+        console.error(`[PropertyExpenses:${traceId}] Cannot update expense with ID ${id} - not found in local state`);
+        return prevExpenses;
+      }
+      
+      // Create updated expense object by merging existing data with new data
+      const updatedExpense = {
+        ...prevExpenses[id], // Start with existing expense data
+        ...expenseData,      // Override with new data
+        
+        // Make sure ID doesn't change
+        id: id,
+      };
+      
+      // Recalculate UI display fields
+      updatedExpense.category = updatedExpense.categoryId;
+      updatedExpense.description = updatedExpense.name;
+      updatedExpense.annualTotal = calculateAnnualAmount(updatedExpense);
+      
+      // Create new expenses object with the updated expense
+      const updatedExpenses = {
+        ...prevExpenses,
+        [id]: updatedExpense
+      };
+      
+      console.log(`[PropertyExpenses:${traceId}] Updated expense in local state`, {
+        previousAmount: prevExpenses[id].amount,
+        newAmount: updatedExpense.amount,
+        expenseCount: Object.keys(updatedExpenses).length
+      });
+      
+      return updatedExpenses;
+    });
+    
+    // Note: We're not calling onChange here to avoid triggering parent form updates
+    // Parent form will get updated expenses when explicitly saved or during form submission
+  };
+  
   // Log component render and props for debugging
   console.log("[PropertyExpenses] Rendering with props:", {
     localExpenseCount: Object.keys(editableExpenses).length,
