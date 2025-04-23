@@ -162,7 +162,8 @@ function PropertyExpensesInternal({
   const { toast } = useToast();
   const { 
     propertyExpenses: contextExpenses, 
-    setPropertyExpenses: setContextExpenses 
+    setPropertyExpenses: setContextExpenses,
+    setCurrentAssetId
   } = useExpenses();
   
   // Fetch expense categories from the asset class
@@ -282,8 +283,22 @@ function PropertyExpensesInternal({
     try {
       console.log(`[PROP_EXPENSES] Deleting expense with ID:`, id);
       
+      // First ensure we have set the current asset ID
+      if (!assetId) {
+        console.error('[PROP_EXPENSES] Cannot delete expense without an asset ID');
+        toast({
+          title: "Error",
+          description: "Failed to delete expense - missing asset ID",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Make sure we're operating on the correct asset
+      setCurrentAssetId(assetId);
+      
       // Use the context function to delete the expense
-      deleteExpense(id);
+      deleteExpense(id, 'property');
       
       // Show success message
       toast({
@@ -299,7 +314,7 @@ function PropertyExpensesInternal({
         variant: "destructive",
       });
     }
-  }, [deleteExpense, toast]);
+  }, [deleteExpense, toast, assetId, setCurrentAssetId]);
   
   const handleAddNew = useCallback(() => {
     console.log('[PROP_EXPENSES] Starting to add new expense for property');
@@ -515,6 +530,17 @@ function PropertyExpensesInternal({
                   </Button>
                   <Button 
                     onClick={() => {
+                      // First ensure we have set the current asset ID
+                      if (!assetId) {
+                        console.error('[PROP_EXPENSES] Cannot save expense without an asset ID');
+                        toast({
+                          title: "Error",
+                          description: "Failed to save expense - missing asset ID",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+
                       console.log('[PROP_EXPENSES] Saving expense with data:', { 
                         id: editingId,
                         type: 'property', 
@@ -523,7 +549,28 @@ function PropertyExpensesInternal({
                         amount: newAmount, 
                         frequency: newFrequency 
                       });
-                      saveExpense();
+
+                      try {
+                        // Make sure we're operating on the correct asset
+                        setCurrentAssetId(assetId);
+                        
+                        // Update the form values if needed (this should already be done via updateFormField)
+                        // Then trigger the save operation through the context
+                        saveExpense();
+                        
+                        toast({
+                          title: "Success",
+                          description: editingId ? "Expense updated successfully" : "Expense added successfully",
+                          variant: "default",
+                        });
+                      } catch (error) {
+                        console.error('[PROP_EXPENSES] Error saving expense:', error);
+                        toast({
+                          title: "Error",
+                          description: "Failed to save expense",
+                          variant: "destructive",
+                        });
+                      }
                     }}
                     type="button"
                   >
@@ -534,7 +581,7 @@ function PropertyExpensesInternal({
             </Card>
           </div>
         );
-      }, [editingId, isAddingNew, newCategory, newDescription, newAmount, newFrequency, availableCategories, saveExpense, handleCancelEdit])}
+      }, [editingId, isAddingNew, newCategory, newDescription, newAmount, newFrequency, availableCategories, saveExpense, handleCancelEdit, assetId, setCurrentAssetId, toast])}
     </div>
   );
 }
