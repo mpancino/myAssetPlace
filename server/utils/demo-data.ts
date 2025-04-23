@@ -108,24 +108,24 @@ export async function createDemoAssets(userId: number): Promise<Asset[]> {
       propertyExpenses: {
         "expense-home-1": {
           id: "expense-home-1",
-          category: "Insurance",
-          description: "Home and contents insurance",
+          categoryId: "Insurance",
+          name: "Home and contents insurance",
           amount: 1200,
           frequency: "annually",
           annualTotal: 1200
         },
         "expense-home-2": {
           id: "expense-home-2",
-          category: "Utilities",
-          description: "Water and electricity",
+          categoryId: "Utilities",
+          name: "Water and electricity",
           amount: 250,
           frequency: "quarterly",
           annualTotal: 1000
         },
         "expense-home-3": {
           id: "expense-home-3",
-          category: "Maintenance",
-          description: "Gardening service",
+          categoryId: "Maintenance",
+          name: "Gardening service",
           amount: 80,
           frequency: "monthly",
           annualTotal: 960
@@ -160,24 +160,24 @@ export async function createDemoAssets(userId: number): Promise<Asset[]> {
       propertyExpenses: {
         "expense-1": {
           id: "expense-1",
-          category: "Insurance",
-          description: "Building insurance",
+          categoryId: "Insurance",
+          name: "Building insurance",
           amount: 800,
           frequency: "annually",
           annualTotal: 800
         },
         "expense-2": {
           id: "expense-2",
-          category: "Property Tax",
-          description: "Annual council rates",
+          categoryId: "Property Tax",
+          name: "Annual council rates",
           amount: 1200,
           frequency: "annually",
           annualTotal: 1200
         },
         "expense-3": {
           id: "expense-3",
-          category: "Maintenance",
-          description: "General upkeep",
+          categoryId: "Maintenance",
+          name: "General upkeep",
           amount: 150,
           frequency: "monthly",
           annualTotal: 1800
