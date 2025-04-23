@@ -314,8 +314,11 @@ export function InvestmentExpenses({
         setContextExpenses(updatedExpenses);
       }
       
-      // Notify parent component
-      onChange(updatedExpenses);
+      // Notify parent component if in edit mode
+      if (isEditMode) {
+        console.log('[INV_EXPENSES] Notifying parent of expense changes (edit mode only)');
+        onChange(updatedExpenses);
+      }
       
       // Reset form
       resetForm();
@@ -327,7 +330,7 @@ export function InvestmentExpenses({
         variant: "destructive",
       });
     }
-  }, [newCategory, newDescription, newAmount, newFrequency, expenses, onChange, calculateAnnualTotal, resetForm, toast, setContextExpenses, assetId]);
+  }, [newCategory, newDescription, newAmount, newFrequency, expenses, onChange, calculateAnnualTotal, resetForm, toast, setContextExpenses, assetId, isEditMode]);
   
   // Update an existing expense
   const handleUpdateExpense = useCallback(() => {
@@ -391,8 +394,11 @@ export function InvestmentExpenses({
         setContextExpenses(updatedExpenses);
       }
       
-      // Notify parent component
-      onChange(updatedExpenses);
+      // Notify parent component if in edit mode
+      if (isEditMode) {
+        console.log('[INV_EXPENSES] Notifying parent of expense changes (edit mode only)');
+        onChange(updatedExpenses);
+      }
       
       // Reset form
       resetForm();
@@ -404,7 +410,7 @@ export function InvestmentExpenses({
         variant: "destructive",
       });
     }
-  }, [editingId, newCategory, newDescription, newAmount, newFrequency, expenses, onChange, calculateAnnualTotal, resetForm, toast, setContextExpenses, assetId]);
+  }, [editingId, newCategory, newDescription, newAmount, newFrequency, expenses, onChange, calculateAnnualTotal, resetForm, toast, setContextExpenses, assetId, isEditMode]);
   
   // Delete an expense
   const handleDeleteExpense = useCallback((id: string) => {
@@ -432,8 +438,11 @@ export function InvestmentExpenses({
         setContextExpenses(updatedExpenses);
       }
       
-      // Notify parent component
-      onChange(updatedExpenses);
+      // Notify parent component if in edit mode
+      if (isEditMode) {
+        console.log('[INV_EXPENSES] Notifying parent of expense changes (edit mode only)');
+        onChange(updatedExpenses);
+      }
     } catch (err) {
       console.error('Error deleting expense:', err);
       toast({
@@ -442,7 +451,7 @@ export function InvestmentExpenses({
         variant: "destructive",
       });
     }
-  }, [expenses, onChange, toast, setContextExpenses, assetId]);
+  }, [expenses, onChange, toast, setContextExpenses, assetId, isEditMode]);
   
   // Calculate the total annual expenses
   const totalAnnualExpenses = Object.values(expenses).reduce(
@@ -482,22 +491,24 @@ export function InvestmentExpenses({
                 <TableCell>{formatCurrency(expense.annualTotal)}</TableCell>
                 {isEditMode && (
                   <TableCell>
-                    <div className="flex space-x-1">
+                    <div className="flex space-x-2">
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="icon"
                         onClick={() => handleStartEdit(expense)}
-                        title="Edit expense"
+                        disabled={isSaving}
                       >
-                        <Edit className="h-4 w-4" />
+                        <Edit className="h-4 w-4 text-primary" />
+                        <span className="sr-only">Edit</span>
                       </Button>
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="icon"
                         onClick={() => handleDeleteExpense(expense.id)}
-                        title="Delete expense"
+                        disabled={isSaving}
                       >
-                        <Trash className="h-4 w-4" />
+                        <Trash className="h-4 w-4 text-destructive" />
+                        <span className="sr-only">Delete</span>
                       </Button>
                     </div>
                   </TableCell>
@@ -506,114 +517,133 @@ export function InvestmentExpenses({
             ))}
             
             {/* Total row */}
-            <TableRow className="bg-muted/50">
-              <TableCell colSpan={4} className="font-medium">
-                Total Annual Expenses
-              </TableCell>
-              <TableCell className="font-bold">
-                {formatCurrency(totalAnnualExpenses)}
-              </TableCell>
-              {isEditMode && <TableCell></TableCell>}
+            <TableRow className="font-medium bg-muted/50">
+              <TableCell colSpan={4} className="text-right">Total Annual:</TableCell>
+              <TableCell colSpan={isEditMode ? 2 : 1}>{formatCurrency(totalAnnualExpenses)}</TableCell>
             </TableRow>
           </TableBody>
         </Table>
       ) : (
-        <div className="text-center p-4 border rounded text-muted-foreground">
-          No expenses added yet.
+        <div className="text-center p-4 border rounded border-dashed">
+          <p className="text-muted-foreground">No expenses added yet.</p>
+          {isEditMode && <p className="text-sm mt-1">Use the form below to add expenses.</p>}
         </div>
       )}
       
-      {/* Edit form */}
-      {isEditMode && (editingId || isAddingNew) && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{editingId ? "Edit Expense" : "Add New Expense"}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="text-sm font-medium mb-1 block">Category</label>
-                <Select
-                  value={newCategory}
-                  onValueChange={setNewCategory}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableCategories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">Description</label>
-                <Input
-                  value={newDescription}
-                  onChange={(e) => setNewDescription(e.target.value)}
-                  placeholder="Optional description"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">Amount</label>
-                <Input
-                  type="number"
-                  value={newAmount === '' ? '' : newAmount}
-                  onChange={(e) => setNewAmount(e.target.value === '' ? '' : parseFloat(e.target.value))}
-                  placeholder="0.00"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">Frequency</label>
-                <Select
-                  value={newFrequency}
-                  onValueChange={setNewFrequency}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select frequency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="quarterly">Quarterly</SelectItem>
-                    <SelectItem value="annually">Annually</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+      {/* Add new expense form - only show in edit mode */}
+      {isEditMode && (
+        <div className="mt-4 space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="font-medium">
+              {editingId ? "Edit Expense" : (isAddingNew ? "Add New Expense" : "")}
+            </h3>
             
-            <div className="flex justify-end space-x-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={resetForm}
+            {!isAddingNew && !editingId && (
+              <Button 
+                variant="outline" 
+                onClick={() => setIsAddingNew(true)}
+                disabled={isSaving}
               >
-                Cancel
+                <Plus className="h-4 w-4 mr-2" />
+                Add Expense
               </Button>
-              <Button
-                type="button"
-                onClick={editingId ? handleUpdateExpense : handleAddExpense}
-                disabled={!newCategory || !newAmount}
-              >
-                {editingId ? 'Save Changes' : 'Add Expense'}
-              </Button>
+            )}
+          </div>
+          
+          {(isAddingNew || editingId) && (
+            <div className="bg-muted rounded-md p-4 border">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Category</label>
+                  <Select 
+                    value={newCategory} 
+                    onValueChange={setNewCategory}
+                    disabled={isSaving}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableCategories.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Description (optional)</label>
+                  <Input
+                    placeholder="Brief description"
+                    value={newDescription}
+                    onChange={(e) => setNewDescription(e.target.value)}
+                    disabled={isSaving}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Amount</label>
+                  <Input
+                    type="number"
+                    placeholder="0.00"
+                    value={newAmount === '' ? '' : newAmount}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setNewAmount(val === '' ? '' : parseFloat(val));
+                    }}
+                    disabled={isSaving}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Frequency</label>
+                  <Select 
+                    value={newFrequency} 
+                    onValueChange={setNewFrequency}
+                    disabled={isSaving}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select frequency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="quarterly">Quarterly</SelectItem>
+                      <SelectItem value="annually">Annually</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-2">
+                <Button
+                  variant="outline"
+                  onClick={resetForm}
+                  disabled={isSaving}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={editingId ? handleUpdateExpense : handleAddExpense}
+                  disabled={isSaving || !newCategory || !newAmount}
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Check className="mr-2 h-4 w-4" />
+                      {editingId ? "Update" : "Add"}
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
-      
-      {/* Add expense button */}
-      {isEditMode && !editingId && !isAddingNew && (
-        <Button 
-          onClick={() => setIsAddingNew(true)}
-          className="w-full"
-          variant="outline"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Expense
-        </Button>
+          )}
+        </div>
       )}
     </div>
   );
