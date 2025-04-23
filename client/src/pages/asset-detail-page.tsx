@@ -2830,17 +2830,26 @@ export default function AssetDetailPage() {
                                     key={`expenses-edit-${asset.id}`}
                                     value={field.value as Record<string, PropertyExpense> || {}}
                                     onChange={(newExpenses) => {
-                                      console.log("Expense component updated with", Object.keys(newExpenses).length, "expenses");
+                                      const timestamp = Date.now();
+                                      console.log(`[PROP_EXPENSES_PARENT:${timestamp}] ===== PROPERTY EXPENSE CHANGE HANDLER START =====`);
+                                      console.log(`[PROP_EXPENSES_PARENT:${timestamp}] Expense component updated with ${Object.keys(newExpenses).length} expenses`);
+                                      console.log(`[PROP_EXPENSES_PARENT:${timestamp}] Call stack:`, new Error().stack?.split('\n').slice(1, 5).join('\n'));
+                                      console.log(`[PROP_EXPENSES_PARENT:${timestamp}] Current form values:`, form.getValues());
+                                      console.log(`[PROP_EXPENSES_PARENT:${timestamp}] Current form dirty state:`, form.formState.isDirty);
+                                      console.log(`[PROP_EXPENSES_PARENT:${timestamp}] Expense data:`, newExpenses);
                                       
                                       // IMPORTANT: Only update the form field without immediate database save
                                       field.onChange(newExpenses);
+                                      console.log(`[PROP_EXPENSES_PARENT:${timestamp}] Form field updated`);
                                       
                                       // Update state tracker to monitor changes
                                       setCurrentPropertyExpenses(newExpenses);
+                                      console.log(`[PROP_EXPENSES_PARENT:${timestamp}] State tracker updated`);
                                       
                                       // No longer saving to database immediately
                                       // Database updates will occur when "Save Changes" is clicked
                                       // This ensures all changes are committed together
+                                      console.log(`[PROP_EXPENSES_PARENT:${timestamp}] ===== PROPERTY EXPENSE CHANGE HANDLER END =====`);
                                     }}
                                     assetId={asset.id}
                                     assetClassId={asset?.assetClassId}
@@ -2956,19 +2965,27 @@ export default function AssetDetailPage() {
                                     key={`investment-expenses-edit-${asset.id}`}
                                     value={convertPageExpensesToComponent(field.value as Record<string, InvestmentExpense> || {})}
                                     onChange={(newComponentExpenses) => {
-                                      console.log(`[INV_EXPENSE_CHANGED:${Date.now()}] Component updated with`, 
-                                        Object.keys(newComponentExpenses).length, "expenses");
+                                      const timestamp = Date.now();
+                                      console.log(`[INV_EXPENSES_PARENT:${timestamp}] ===== INVESTMENT EXPENSE CHANGE HANDLER START =====`);
+                                      console.log(`[INV_EXPENSES_PARENT:${timestamp}] Component updated with ${Object.keys(newComponentExpenses).length} expenses`);
+                                      console.log(`[INV_EXPENSES_PARENT:${timestamp}] Call stack:`, new Error().stack?.split('\n').slice(1, 5).join('\n'));
+                                      console.log(`[INV_EXPENSES_PARENT:${timestamp}] Current form values:`, form.getValues());
+                                      console.log(`[INV_EXPENSES_PARENT:${timestamp}] Current form dirty state:`, form.formState.isDirty);
+                                      console.log(`[INV_EXPENSES_PARENT:${timestamp}] Raw component expense data:`, newComponentExpenses);
                                       
                                       // Convert component format back to page format
                                       const pageFormatExpenses = convertComponentExpensesToPage(newComponentExpenses);
-                                      console.log(`[INV_EXPENSE_CHANGED:${Date.now()}] Converted to page format with`, 
-                                        Object.keys(pageFormatExpenses).length, "expenses");
+                                      console.log(`[INV_EXPENSES_PARENT:${timestamp}] Converted to page format with ${Object.keys(pageFormatExpenses).length} expenses`);
+                                      console.log(`[INV_EXPENSES_PARENT:${timestamp}] Converted expense data:`, pageFormatExpenses);
                                       
                                       // Update the form field without immediate database save
                                       field.onChange(pageFormatExpenses);
+                                      console.log(`[INV_EXPENSES_PARENT:${timestamp}] Form field updated`);
                                       
                                       // Update state tracker to monitor changes
                                       setCurrentInvestmentExpenses(pageFormatExpenses);
+                                      console.log(`[INV_EXPENSES_PARENT:${timestamp}] State tracker updated`);
+                                      console.log(`[INV_EXPENSES_PARENT:${timestamp}] ===== INVESTMENT EXPENSE CHANGE HANDLER END =====`);
                                     }}
                                     assetId={asset.id}
                                     assetClassId={asset?.assetClassId}
