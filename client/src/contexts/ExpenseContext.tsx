@@ -1,31 +1,90 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { convertToPageFormat, convertToComponentFormat } from '@/lib/expense-utils-new';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+import { convertToPageFormat, convertToComponentFormat, calculateAnnualAmount } from '@/lib/expense-utils-new';
 import type { Expense } from '@shared/schema';
+
+// Form state for expense editing
+interface ExpenseFormState {
+  categoryId: string;
+  name: string;
+  amount: number | '';
+  frequency: 'monthly' | 'quarterly' | 'annually';
+}
+
+// Expense editor state
+interface EditorState {
+  isEditing: boolean;
+  isAddingNew: boolean;
+  editingId: string | null;
+  formState: ExpenseFormState;
+  expenseType: 'property' | 'investment';
+}
 
 // Define the structure of the ExpenseContext
 interface ExpenseContextType {
+  // Expense data
   investmentExpenses: Record<string, Expense>;
   propertyExpenses: Record<string, Expense>;
   currentAssetId: number | null;
+  
+  // Data operations
   setInvestmentExpenses: (expenses: Record<string, Expense> | string | any, assetId?: number) => void;
   setPropertyExpenses: (expenses: Record<string, Expense> | string | any, assetId?: number) => void;
   clearExpenses: () => void;
   setCurrentAssetId: (assetId: number | null) => void;
   getInvestmentExpensesForDisplay: () => Record<string, any>;
   getPropertyExpensesForDisplay: () => Record<string, any>;
+  
+  // Editor state and operations
+  editorState: EditorState;
+  startEditExpense: (id: string, type: 'property' | 'investment') => void;
+  startAddExpense: (type: 'property' | 'investment') => void;
+  cancelEditExpense: () => void;
+  updateFormField: (field: keyof ExpenseFormState, value: any) => void;
+  saveExpense: () => void;
+  deleteExpense: (id: string, type: 'property' | 'investment') => void;
 }
+
+// Default form state
+const defaultFormState: ExpenseFormState = {
+  categoryId: '',
+  name: '',
+  amount: '',
+  frequency: 'monthly',
+};
+
+// Default editor state
+const defaultEditorState: EditorState = {
+  isEditing: false,
+  isAddingNew: false,
+  editingId: null,
+  formState: { ...defaultFormState },
+  expenseType: 'property',
+};
 
 // Create expense context with default values
 const ExpenseContext = createContext<ExpenseContextType>({
+  // Data
   investmentExpenses: {},
   propertyExpenses: {},
   currentAssetId: null,
+  
+  // Data operations
   setInvestmentExpenses: () => {},
   setPropertyExpenses: () => {},
   clearExpenses: () => {},
   setCurrentAssetId: () => {},
   getInvestmentExpensesForDisplay: () => ({}),
   getPropertyExpensesForDisplay: () => ({}),
+  
+  // Editor state and operations
+  editorState: defaultEditorState,
+  startEditExpense: () => {},
+  startAddExpense: () => {},
+  cancelEditExpense: () => {},
+  updateFormField: () => {},
+  saveExpense: () => {},
+  deleteExpense: () => {},
 });
 
 // Provider component
@@ -38,6 +97,9 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
   
   // Track the current asset being viewed/edited
   const [currentAssetId, setCurrentAssetId] = useState<number | null>(null);
+  
+  // Track editor state in context instead of component state
+  const [editorState, setEditorState] = useState<EditorState>(defaultEditorState);
   
   // Get current asset's expenses or empty objects if not available
   // Use optional chaining and nullish coalescing to safely access properties
@@ -227,26 +289,203 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   // Get expenses in component-friendly format
-  const getInvestmentExpensesForDisplay = () => {
+  const getInvestmentExpensesForDisplay = useCallback(() => {
     return convertToComponentFormat(investmentExpenses);
-  };
+  }, [investmentExpenses]);
 
-  const getPropertyExpensesForDisplay = () => {
+  const getPropertyExpensesForDisplay = useCallback(() => {
     return convertToComponentFormat(propertyExpenses);
-  };
+  }, [propertyExpenses]);
+  
+  // Editor state operations
+  const startEditExpense = useCallback((id: string, type: 'property' | 'investment') => {
+    console.log(`[EXPENSE_CONTEXT] Starting edit of ${type} expense with ID ${id}`);
+    
+    // Get the expense collection based on type
+    const expenses = type === 'property' ? propertyExpenses : investmentExpenses;
+    
+    // Find the expense to edit
+    const expense = expenses[id];
+    if (!expense) {
+      console.error(`[EXPENSE_CONTEXT] Cannot find ${type} expense with ID ${id}`);
+      return;
+    }
+    
+    // Set editor state
+    setEditorState({
+      isEditing: true,
+      isAddingNew: false,
+      editingId: id,
+      formState: {
+        categoryId: expense.categoryId,
+        name: expense.name,
+        amount: expense.amount,
+        frequency: expense.frequency
+      },
+      expenseType: type
+    });
+  }, [propertyExpenses, investmentExpenses]);
+  
+  const startAddExpense = useCallback((type: 'property' | 'investment') => {
+    console.log(`[EXPENSE_CONTEXT] Starting to add new ${type} expense`);
+    
+    // Set editor state for adding new expense
+    setEditorState({
+      isEditing: true,
+      isAddingNew: true,
+      editingId: null,
+      formState: { ...defaultFormState },
+      expenseType: type
+    });
+  }, []);
+  
+  const cancelEditExpense = useCallback(() => {
+    console.log(`[EXPENSE_CONTEXT] Canceling expense edit`);
+    
+    // Reset editor state
+    setEditorState(defaultEditorState);
+  }, []);
+  
+  const updateFormField = useCallback((field: keyof ExpenseFormState, value: any) => {
+    // Update a single form field while preserving other fields
+    setEditorState(prev => ({
+      ...prev,
+      formState: {
+        ...prev.formState,
+        [field]: value
+      }
+    }));
+  }, []);
+  
+  const saveExpense = useCallback(() => {
+    const { isAddingNew, editingId, formState, expenseType } = editorState;
+    console.log(`[EXPENSE_CONTEXT] Saving ${isAddingNew ? 'new' : 'existing'} ${expenseType} expense`);
+    
+    if (!currentAssetId) {
+      console.error('[EXPENSE_CONTEXT] Cannot save expense without current asset ID');
+      return;
+    }
+    
+    // Validate form data
+    if (!formState.categoryId || formState.amount === '' || parseFloat(String(formState.amount)) <= 0) {
+      console.error('[EXPENSE_CONTEXT] Invalid expense data:', formState);
+      return;
+    }
+    
+    try {
+      // Get current expenses based on type
+      const currentExpenses = expenseType === 'property' 
+        ? {...propertyExpenses} 
+        : {...investmentExpenses};
+      
+      // Create or update expense
+      const expenseId = isAddingNew ? uuidv4() : editingId as string;
+      
+      // Create standardized expense object
+      const expense: Expense = {
+        id: expenseId,
+        categoryId: formState.categoryId,
+        name: formState.name,
+        amount: typeof formState.amount === 'string' ? parseFloat(formState.amount) : formState.amount,
+        frequency: formState.frequency
+      };
+      
+      // Update expenses collection
+      currentExpenses[expenseId] = expense;
+      
+      // Dispatch update to the appropriate expense state
+      if (expenseType === 'property') {
+        handleSetPropertyExpenses(currentExpenses);
+      } else {
+        handleSetInvestmentExpenses(currentExpenses);
+      }
+      
+      // Reset editor state
+      setEditorState(defaultEditorState);
+      
+    } catch (error) {
+      console.error('[EXPENSE_CONTEXT] Error saving expense:', error);
+    }
+  }, [
+    editorState, 
+    currentAssetId, 
+    propertyExpenses, 
+    investmentExpenses, 
+    handleSetPropertyExpenses, 
+    handleSetInvestmentExpenses
+  ]);
+  
+  const deleteExpense = useCallback((id: string, type: 'property' | 'investment') => {
+    console.log(`[EXPENSE_CONTEXT] Deleting ${type} expense with ID ${id}`);
+    
+    if (!currentAssetId) {
+      console.error('[EXPENSE_CONTEXT] Cannot delete expense without current asset ID');
+      return;
+    }
+    
+    try {
+      // Get current expenses based on type
+      const currentExpenses = type === 'property' 
+        ? {...propertyExpenses} 
+        : {...investmentExpenses};
+      
+      // Verify expense exists
+      if (!currentExpenses[id]) {
+        console.error(`[EXPENSE_CONTEXT] Cannot find ${type} expense with ID ${id} to delete`);
+        return;
+      }
+      
+      // Remove the expense
+      delete currentExpenses[id];
+      
+      // Update the state
+      if (type === 'property') {
+        handleSetPropertyExpenses(currentExpenses);
+      } else {
+        handleSetInvestmentExpenses(currentExpenses);
+      }
+      
+      // If we're currently editing this expense, cancel editing
+      if (editorState.editingId === id && editorState.expenseType === type) {
+        setEditorState(defaultEditorState);
+      }
+      
+    } catch (error) {
+      console.error('[EXPENSE_CONTEXT] Error deleting expense:', error);
+    }
+  }, [
+    currentAssetId, 
+    propertyExpenses, 
+    investmentExpenses, 
+    handleSetPropertyExpenses, 
+    handleSetInvestmentExpenses, 
+    editorState
+  ]);
 
   return (
     <ExpenseContext.Provider
       value={{
+        // Data
         investmentExpenses,
         propertyExpenses,
         currentAssetId,
+        
+        // Data operations
         setInvestmentExpenses: handleSetInvestmentExpenses,
         setPropertyExpenses: handleSetPropertyExpenses,
         clearExpenses: handleClearExpenses,
         setCurrentAssetId: handleSetCurrentAssetId,
         getInvestmentExpensesForDisplay,
         getPropertyExpensesForDisplay,
+        
+        // Editor state and operations
+        editorState,
+        startEditExpense,
+        startAddExpense,
+        cancelEditExpense,
+        updateFormField,
+        saveExpense,
+        deleteExpense,
       }}
     >
       {children}
