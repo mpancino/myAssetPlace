@@ -87,8 +87,24 @@ export function PropertyExpensesNew({
   // Get expenses in UI-friendly format with display fields
   const displayExpenses = getPropertyExpensesForDisplay();
   
+  // Log component render and props for debugging
+  console.log("[PropertyExpensesNew] Rendering with props:", {
+    expenseCount: Object.keys(displayExpenses).length,
+    assetId, 
+    isEditMode,
+    editorState: {
+      isEditing: editorState.isEditing,
+      expenseType: editorState.expenseType
+    }
+  });
+
   return (
-    <div className="expense-management-container border rounded-md p-4 bg-white">
+    <div id="property-expenses-container" className="expense-management-container border rounded-md p-4 bg-background">
+      {/* DEBUG MARKER - helps identify if container is rendering */}
+      <div className="text-xs text-muted-foreground mb-2">
+        Debug: PropertyExpensesNew rendered with {Object.keys(displayExpenses).length} expenses
+      </div>
+      
       {/* Expense analysis */}
       {Object.keys(displayExpenses).length > 0 && (
         <div className="mb-6">
@@ -100,7 +116,7 @@ export function PropertyExpensesNew({
       )}
       
       {/* Expense table */}
-      <div className="mb-6 bg-white rounded-md border p-4">
+      <div className="mb-6 bg-card rounded-md border p-4">
         <ExpenseTable
           expenses={displayExpenses}
           categoryMap={categoryMap}
