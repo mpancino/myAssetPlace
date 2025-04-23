@@ -846,235 +846,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Not authorized to update this asset" });
       }
       
-      // Enhanced logging for all expense types
+      // Enhanced logging for asset updates
       console.log("PATCH request for asset:", id);
       
-      // Log property expenses in request
-      console.log("Property expenses in request:", 
-        req.body.propertyExpenses ? 
-        `Found ${Object.keys(req.body.propertyExpenses).length} expenses` : 
-        "None");
+      // Handle expense logging
+      if (req.body.propertyExpenses) {
+        console.log("Property expenses in request:", 
+          typeof req.body.propertyExpenses === 'object' ? 
+          `Found ${Object.keys(req.body.propertyExpenses).length} expenses` : 
+          `Unexpected format: ${typeof req.body.propertyExpenses}`);
+      }
       
-      // Log investment expenses in request
-      console.log("Investment expenses in request:", 
-        req.body.investmentExpenses ? 
-        `Found ${Object.keys(req.body.investmentExpenses).length} expenses` : 
-        "None");
+      if (req.body.investmentExpenses) {
+        console.log("Investment expenses in request:", 
+          typeof req.body.investmentExpenses === 'object' ? 
+          `Found ${Object.keys(req.body.investmentExpenses).length} expenses` : 
+          `Unexpected format: ${typeof req.body.investmentExpenses}`);
+      }
       
-      // Ensure investmentExpenses is never null to prevent validation errors
+      // Ensure any null expense fields are converted to empty objects to prevent validation errors
+      if (req.body.propertyExpenses === null) {
+        console.log("Converting null propertyExpenses to empty object");
+        req.body.propertyExpenses = {};
+      }
+      
       if (req.body.investmentExpenses === null) {
         console.log("Converting null investmentExpenses to empty object");
         req.body.investmentExpenses = {};
       }
       
-      // For real estate assets, check for property expenses and implement deduplication
-      if (asset.assetClassId === 3 && req.body.propertyExpenses) {
-        console.log("Detailed property expenses data:", JSON.stringify(req.body.propertyExpenses));
-        
-        // Handle property expenses deduplication
-        try {
-          const expensesData = typeof req.body.propertyExpenses === 'string' 
-            ? JSON.parse(req.body.propertyExpenses) 
-            : req.body.propertyExpenses;
-          
-          // Create a deduplication tracker
-          const dedupeTracker: Record<string, boolean> = {};
-          const dedupedExpenses: Record<string, any> = {};
-          
-          // Sort expenses to prioritize "expense-N" IDs over random UUIDs
-          const sortedEntries = Object.entries(expensesData).sort(([keyA], [keyB]) => {
-            const isOriginalA = keyA.startsWith('expense-');
-            const isOriginalB = keyB.startsWith('expense-');
-            if (isOriginalA && !isOriginalB) return -1;
-            if (!isOriginalA && isOriginalB) return 1;
-            return 0;
-          });
-          
-          // Process entries with deduplication
-          sortedEntries.forEach(([key, expense]) => {
-            // Make sure expense is an object and has required properties
-            if (expense && typeof expense === 'object' && 
-                ('category' in expense || 'categoryId' in expense) && 
-                'amount' in expense) {
-              
-              // Safely extract properties with type checking - support both formats
-              const category = String(((expense as any).category || (expense as any).categoryId) || '');
-              const amount = Number(expense.amount || 0);
-              const description = String(((expense as any).description || (expense as any).name) || '');
-              
-              // Check if frequency property exists, defaulting to monthly
-              const frequency = typeof (expense as any).frequency === 'string' 
-                ? String((expense as any).frequency) 
-                : 'monthly';
-              
-              // Skip empty or invalid expenses
-              if (!category || amount <= 0) return;
-              
-              // Create a unique key for this expense signature
-              const dedupeKey = `${category}-${amount}-${frequency}`;
-              
-              // Skip if we've already seen this signature
-              if (dedupeTracker[dedupeKey]) {
-                console.log(`Deduplicating expense: ${dedupeKey}`);
-                return;
-              }
-              
-              // Mark this signature as seen
-              dedupeTracker[dedupeKey] = true;
-              
-              // Calculate annualTotal if needed
-              const multiplier = frequency === 'monthly' ? 12 : (frequency === 'quarterly' ? 4 : 1);
-              const annualTotal = (expense as any).annualTotal || (amount * multiplier);
-              
-              // Create a normalized expense object that will satisfy validation
-              dedupedExpenses[key] = {
-                ...expense,
-                // Ensure both property name formats exist
-                category,
-                categoryId: category,
-                description,
-                name: description,
-                annualTotal
-              };
-            }
-          });
-          
-          console.log(`Deduplicated expenses from ${Object.keys(expensesData).length} to ${Object.keys(dedupedExpenses).length}`);
-          // Keep as object instead of stringifying to comply with schema
-          req.body.propertyExpenses = dedupedExpenses;
-        } catch (err) {
-          console.error("Error during expense deduplication:", err);
-        }
+      if (req.body.expenses === null) {
+        console.log("Converting null expenses to empty object");
+        req.body.expenses = {};
       }
-      
-      // For investment assets (class ID 4), check for investment expenses and handle deduplication
-      if (asset.assetClassId === 4 && req.body.investmentExpenses) {
-        console.log("Detailed investment expenses data:", JSON.stringify(req.body.investmentExpenses));
-        
-        // Handle investment expenses deduplication
-        try {
-          const expensesData = typeof req.body.investmentExpenses === 'string' 
-            ? JSON.parse(req.body.investmentExpenses) 
-            : req.body.investmentExpenses;
-          
-          // Create a deduplication tracker
-          const dedupeTracker: Record<string, boolean> = {};
-          const dedupedExpenses: Record<string, any> = {};
-          
-          // Sort expenses to prioritize well-known IDs over random UUIDs
-          const sortedEntries = Object.entries(expensesData).sort(([keyA], [keyB]) => {
-            const isOriginalA = keyA.startsWith('expense-');
-            const isOriginalB = keyB.startsWith('expense-');
-            if (isOriginalA && !isOriginalB) return -1;
-            if (!isOriginalA && isOriginalB) return 1;
-            return 0;
-          });
-          
-          // Process entries with deduplication
-          sortedEntries.forEach(([key, expense]) => {
-            // Make sure expense is an object and has required properties
-            if (expense && typeof expense === 'object' && 
-                ('category' in expense || 'categoryId' in expense) && 
-                'amount' in expense) {
-              
-              // Safely extract properties with type checking
-              const category = String(((expense as any).category || (expense as any).categoryId) || '');
-              const amount = Number(expense.amount || 0);
-              const description = String(((expense as any).description || (expense as any).name) || '');
-              
-              // Check if frequency property exists, defaulting to monthly
-              const frequency = typeof (expense as any).frequency === 'string' 
-                ? String((expense as any).frequency) 
-                : 'monthly';
-              
-              // Skip empty or invalid expenses
-              if (!category || amount <= 0) return;
-              
-              // Create a unique key for this expense signature
-              const dedupeKey = `${category}-${amount}-${frequency}`;
-              
-              // Skip if we've already seen this signature
-              if (dedupeTracker[dedupeKey]) {
-                console.log(`Deduplicating investment expense: ${dedupeKey}`);
-                return;
-              }
-              
-              // Mark this signature as seen
-              dedupeTracker[dedupeKey] = true;
-              
-              // Calculate annualTotal if needed
-              const multiplier = frequency === 'monthly' ? 12 : (frequency === 'quarterly' ? 4 : 1);
-              const annualTotal = (expense as any).annualTotal || (amount * multiplier);
-              
-              // Create a normalized expense object that will satisfy validation
-              dedupedExpenses[key] = {
-                ...expense,
-                // Ensure both property name formats exist
-                category,
-                categoryId: category,
-                description,
-                name: description,
-                annualTotal
-              };
-            }
-          });
-          
-          console.log(`Deduplicated investment expenses from ${Object.keys(expensesData).length} to ${Object.keys(dedupedExpenses).length}`);
-          // Keep as object instead of stringifying to comply with schema
-          req.body.investmentExpenses = dedupedExpenses;
-        } catch (err) {
-          console.error("Error during investment expense deduplication:", err);
-        }
-      }
-      
-      // Handle empty expense objects by keeping them as empty objects
-      // We used to convert empty objects to null, but this caused validation issues
-      // Keep as empty objects to avoid ZodError with "Expected object, received null"
       
       // Ensure accountType is a string to match schema
       if (req.body.accountType) {
         req.body.accountType = String(req.body.accountType);
       }
       
-      console.log("Validating data for PATCH request:", JSON.stringify(req.body, null, 2));
+      console.log("Validating data for PATCH request");
       
-      // Validate the data
-      const validatedData = insertAssetSchema.partial().parse(req.body);
-      console.log("Successfully validated data");
-      
-      // Log the validated data to ensure expenses survived validation
-      console.log("Property expenses after validation:", 
-        validatedData.propertyExpenses ? 
-        `Found ${Object.keys(validatedData.propertyExpenses || {}).length} expenses` : 
-        "None");
+      try {
+        // Validate the data using Zod schema
+        const validatedData = insertAssetSchema.partial().parse(req.body);
+        console.log("Successfully validated data");
         
-      console.log("Investment expenses after validation:", 
-        validatedData.investmentExpenses ? 
-        `Found ${Object.keys(validatedData.investmentExpenses || {}).length} expenses` : 
-        "None");
-      
-      const updatedAsset = await storage.updateAsset(id, validatedData);
-      
-      // Immediately verify the saved data by fetching it again
-      const verifiedAsset = await storage.getAsset(id);
-      console.log("VERIFICATION - Property expenses after save:", 
-        verifiedAsset && verifiedAsset.propertyExpenses && typeof verifiedAsset.propertyExpenses === 'object' ? 
-        `Found ${Object.keys(verifiedAsset.propertyExpenses).length} expenses` : 
-        "None");
+        // Log the validated expense data
+        if (validatedData.propertyExpenses) {
+          console.log("Property expenses after validation:", 
+            `Found ${Object.keys(validatedData.propertyExpenses).length} expenses`);
+        }
+          
+        if (validatedData.investmentExpenses) {
+          console.log("Investment expenses after validation:", 
+            `Found ${Object.keys(validatedData.investmentExpenses).length} expenses`);
+        }
         
-      console.log("VERIFICATION - Investment expenses after save:", 
-        verifiedAsset && verifiedAsset.investmentExpenses && typeof verifiedAsset.investmentExpenses === 'object' ? 
-        `Found ${Object.keys(verifiedAsset.investmentExpenses).length} expenses` : 
-        "None");
-      
-      res.json(updatedAsset);
+        // Update the asset with validated data
+        const updatedAsset = await storage.updateAsset(id, validatedData);
+        
+        // Immediately verify the saved data by fetching it again
+        const verifiedAsset = await storage.getAsset(id);
+        console.log("VERIFICATION - Property expenses after save:", 
+          verifiedAsset && verifiedAsset.propertyExpenses && typeof verifiedAsset.propertyExpenses === 'object' ? 
+          `Found ${Object.keys(verifiedAsset.propertyExpenses).length} expenses` : 
+          "None");
+          
+        console.log("VERIFICATION - Investment expenses after save:", 
+          verifiedAsset && verifiedAsset.investmentExpenses && typeof verifiedAsset.investmentExpenses === 'object' ? 
+          `Found ${Object.keys(verifiedAsset.investmentExpenses).length} expenses` : 
+          "None");
+        
+        res.json(updatedAsset);
+      } catch (validationError) {
+        if (validationError instanceof z.ZodError) {
+          console.error("Validation error details:", JSON.stringify(validationError.errors));
+          return res.status(400).json({ 
+            message: "Invalid request data", 
+            details: validationError.errors
+          });
+        }
+        throw validationError; // Re-throw if it's not a ZodError
+      }
     } catch (err) {
       console.error("Error updating asset:", err);
-      if (err instanceof z.ZodError) {
-        console.error("Validation error details:", JSON.stringify(err.errors));
-        return res.status(400).json({ errors: err.errors });
-      }
-      res.status(500).json({ message: "Failed to update asset" });
+      res.status(500).json({ 
+        message: "Failed to update asset",
+        error: err instanceof Error ? err.message : "Unknown error"
+      });
     }
   });
   
