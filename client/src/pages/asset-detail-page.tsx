@@ -918,7 +918,7 @@ export default function AssetDetailPage() {
           
           // Update expense context with parsed expenses and asset ID for isolation
           if (assetId) {
-            setInvestmentExpenses(parsedExpenses, assetId);
+            setInvestmentExpenses(parsedExpenses, assetId, true);
           }
           
           console.log(`After update: form.getValues().investmentExpenses has ${
@@ -950,7 +950,7 @@ export default function AssetDetailPage() {
             
             // Update expense context with parsed expenses and asset ID for isolation
             if (assetId) {
-              setInvestmentExpenses(parsedExpenses, assetId);
+              setInvestmentExpenses(parsedExpenses, assetId, true);
             }
           }
           
@@ -1025,7 +1025,7 @@ export default function AssetDetailPage() {
           
           // Update expense context to maintain isolation between assets
           if (assetId) {
-            setPropertyExpenses(parsedExpenses, assetId);
+            setPropertyExpenses(parsedExpenses, assetId, true);
           }
           
           console.log('[DIRECT SAVE] Updated local, form state and context with parsed expenses');
@@ -1055,7 +1055,7 @@ export default function AssetDetailPage() {
             
             // Update expense context to maintain isolation between assets
             if (assetId) {
-              setPropertyExpenses(parsedExpenses, assetId);
+              setPropertyExpenses(parsedExpenses, assetId, true);
             }
           }
           
@@ -1223,8 +1223,8 @@ export default function AssetDetailPage() {
     
     // Update expense context with the final data for isolation
     if (assetId) {
-      setPropertyExpenses(finalPropertyExpenses, assetId);
-      setInvestmentExpenses(finalInvestmentExpenses, assetId);
+      setPropertyExpenses(finalPropertyExpenses, assetId, true);
+      setInvestmentExpenses(finalInvestmentExpenses, assetId, true);
       console.log("[FORM SUBMIT] Updated expense context with final data for asset ID:", assetId);
     }
     

@@ -396,10 +396,11 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
       currentExpenses[expenseId] = expense;
       
       // Dispatch update to the appropriate expense state
+      // This is a user-initiated change, so set isInitialLoad to false
       if (expenseType === 'property') {
-        handleSetPropertyExpenses(currentExpenses);
+        handleSetPropertyExpenses(currentExpenses, undefined, false);
       } else {
-        handleSetInvestmentExpenses(currentExpenses);
+        handleSetInvestmentExpenses(currentExpenses, undefined, false);
       }
       
       // Reset editor state
