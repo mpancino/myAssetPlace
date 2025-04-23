@@ -10,7 +10,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { formatCurrency } from "@/lib/utils";
 import { logInfo, logError } from "@/lib/logger";
 import { formSpacing } from "@/lib/form-utils";
-import { InvestmentExpenses } from "@/components/expense/investment-expenses";
+import { InvestmentExpensesFixed as InvestmentExpenses } from "@/components/expense/investment-expenses-fixed";
 
 // UI Components
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";

@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/utils";
 import { logInfo, logError } from "@/lib/logger";
 import { formSpacing } from "@/lib/form-utils";
-import { InvestmentExpenses } from "@/components/expense/investment-expenses";
+import { InvestmentExpensesFixed as InvestmentExpenses } from "@/components/expense/investment-expenses-fixed";
 
 // UI Components
 import {

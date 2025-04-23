@@ -37,7 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { InvestmentExpenses } from "@/components/expense/investment-expenses";
+import { InvestmentExpensesFixed as InvestmentExpenses } from "@/components/expense/investment-expenses-fixed";
 
 // Define the retirement form schema
 const retirementFormSchema = z.object({
