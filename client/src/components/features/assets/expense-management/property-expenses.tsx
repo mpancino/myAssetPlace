@@ -284,9 +284,25 @@ export function PropertyExpenses({
 
   return (
     <div id="property-expenses-container" className="expense-management-container border rounded-md p-4 bg-background">
-      {/* DEBUG MARKER - helps identify if container is rendering */}
-      <div className="text-xs text-muted-foreground mb-2">
-        Debug: PropertyExpenses rendered with {Object.keys(editableExpenses).length} expenses (local state)
+      {/* Header with debug info and save button */}
+      <div className="flex justify-between items-center mb-4">
+        <div className="text-xs text-muted-foreground">
+          Debug: PropertyExpenses rendered with {Object.keys(editableExpenses).length} expenses (local state)
+        </div>
+        
+        {/* Save Changes button - only show in edit mode */}
+        {isEditMode && (
+          <Button 
+            onClick={handleSaveChanges} 
+            disabled={isSaving}
+            variant="outline"
+            size="sm"
+            className="bg-primary hover:bg-primary/90 text-white"
+          >
+            <Save className="h-4 w-4 mr-2" />
+            Save Expense Changes
+          </Button>
+        )}
       </div>
       
       {/* Expense analysis */}
@@ -317,6 +333,20 @@ export function PropertyExpenses({
             availableCategories={availableCategories}
             isLoading={isLoadingCategories || isSaving}
           />
+        </div>
+      )}
+      
+      {/* Footer with save button again, for convenience */}
+      {isEditMode && Object.keys(editableExpenses).length > 0 && (
+        <div className="mt-6 flex justify-end">
+          <Button 
+            onClick={handleSaveChanges} 
+            disabled={isSaving}
+            className="bg-primary hover:bg-primary/90 text-white"
+          >
+            <Save className="h-4 w-4 mr-2" />
+            Save All Expense Changes
+          </Button>
         </div>
       )}
     </div>
