@@ -212,6 +212,39 @@ export function PropertyExpenses({
     // Parent form will get updated expenses when explicitly saved or during form submission
   };
   
+  // Handle deleting an expense using local state management
+  const handleDeleteExpense = (id: string) => {
+    const traceId = Math.floor(Math.random() * 10000);
+    console.log(`[PropertyExpenses:${traceId}] Deleting expense with ID: ${id}`);
+    
+    // Update the local state by removing the expense
+    setEditableExpenses(prevExpenses => {
+      // Check if the expense exists in our local state
+      if (!prevExpenses[id]) {
+        console.error(`[PropertyExpenses:${traceId}] Cannot delete expense with ID ${id} - not found in local state`);
+        return prevExpenses;
+      }
+      
+      // Log the expense being deleted for debugging
+      console.log(`[PropertyExpenses:${traceId}] Deleting expense:`, {
+        id,
+        name: prevExpenses[id].name || prevExpenses[id].description,
+        amount: prevExpenses[id].amount,
+        category: prevExpenses[id].category || prevExpenses[id].categoryId
+      });
+      
+      // Create a new expenses object without the deleted expense
+      const { [id]: deletedExpense, ...remainingExpenses } = prevExpenses;
+      
+      console.log(`[PropertyExpenses:${traceId}] Updated local expenses state. Now has ${Object.keys(remainingExpenses).length} expenses (removed 1)`);
+      
+      return remainingExpenses;
+    });
+    
+    // Note: We're not calling onChange here to avoid triggering parent form updates
+    // Parent form will get updated expenses when explicitly saved or during form submission
+  };
+  
   // Log component render and props for debugging
   console.log("[PropertyExpenses] Rendering with props:", {
     localExpenseCount: Object.keys(editableExpenses).length,
