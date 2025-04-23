@@ -1,13 +1,14 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { parseExpenses, convertToComponentFormat } from '@/lib/expense-utils';
+import { convertToPageFormat, convertToComponentFormat } from '@/lib/expense-utils-new';
+import type { Expense } from '@shared/schema';
 
 // Define the structure of the ExpenseContext
 interface ExpenseContextType {
-  investmentExpenses: Record<string, any>;
-  propertyExpenses: Record<string, any>;
+  investmentExpenses: Record<string, Expense>;
+  propertyExpenses: Record<string, Expense>;
   currentAssetId: number | null;
-  setInvestmentExpenses: (expenses: Record<string, any>, assetId?: number) => void;
-  setPropertyExpenses: (expenses: Record<string, any>, assetId?: number) => void;
+  setInvestmentExpenses: (expenses: Record<string, Expense> | string | any, assetId?: number) => void;
+  setPropertyExpenses: (expenses: Record<string, Expense> | string | any, assetId?: number) => void;
   clearExpenses: () => void;
   setCurrentAssetId: (assetId: number | null) => void;
   getInvestmentExpensesForDisplay: () => Record<string, any>;
@@ -31,8 +32,8 @@ const ExpenseContext = createContext<ExpenseContextType>({
 export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   // Store expenses by asset ID to prevent cross-contamination between properties
   const [expensesByAsset, setExpensesByAsset] = useState<Record<number, {
-    investmentExpenses: Record<string, any>,
-    propertyExpenses: Record<string, any>
+    investmentExpenses: Record<string, Expense>,
+    propertyExpenses: Record<string, Expense>
   }>>({});
   
   // Track the current asset being viewed/edited
@@ -70,7 +71,7 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   // Set investment expenses for current asset or specified asset
-  const handleSetInvestmentExpenses = (expenses: Record<string, any>, assetId?: number) => {
+  const handleSetInvestmentExpenses = (expenses: Record<string, Expense> | string | any, assetId?: number) => {
     const targetAssetId = assetId || currentAssetId;
     if (!targetAssetId) {
       console.error(`[EXPENSE_CONTEXT] Cannot set investment expenses without an asset ID`);
@@ -82,9 +83,24 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
       typeof expenses === 'object' ? Object.keys(expenses).length : typeof expenses, 'items');
     
     try {
-      const parsedExpenses = parseExpenses(expenses);
-      console.log(`[EXPENSE_CONTEXT:${traceId}] Parsed investment expenses:`, 
-        Object.keys(parsedExpenses).length, 'items');
+      // Convert input to standardized expense format
+      let standardizedExpenses: Record<string, Expense>;
+      
+      if (typeof expenses === 'string') {
+        try {
+          const parsedJson = JSON.parse(expenses);
+          standardizedExpenses = convertToPageFormat(parsedJson);
+        } catch (e) {
+          console.error(`[EXPENSE_CONTEXT:${traceId}] Error parsing JSON:`, e);
+          standardizedExpenses = {};
+        }
+      } else {
+        // Already an object, but ensure it's in standard format
+        standardizedExpenses = convertToPageFormat(expenses);
+      }
+      
+      console.log(`[EXPENSE_CONTEXT:${traceId}] Standardized investment expenses:`, 
+        Object.keys(standardizedExpenses).length, 'items');
       
       // Update the expenses by asset ID to maintain isolation
       setExpensesByAsset(prev => {
@@ -102,18 +118,18 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
         // Update the investment expenses
         newState[targetAssetId] = {
           ...newState[targetAssetId],
-          investmentExpenses: parsedExpenses
+          investmentExpenses: standardizedExpenses
         };
         
         return newState;
       });
     } catch (error) {
-      console.error(`[EXPENSE_CONTEXT:${traceId}] Error parsing investment expenses:`, error);
+      console.error(`[EXPENSE_CONTEXT:${traceId}] Error processing investment expenses:`, error);
     }
   };
 
   // Set property expenses for current asset or specified asset
-  const handleSetPropertyExpenses = (expenses: Record<string, any>, assetId?: number) => {
+  const handleSetPropertyExpenses = (expenses: Record<string, Expense> | string | any, assetId?: number) => {
     const targetAssetId = assetId || currentAssetId;
     if (!targetAssetId) {
       console.error(`[EXPENSE_CONTEXT] Cannot set property expenses without an asset ID`);
@@ -126,15 +142,27 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
     console.log(`[EXPENSE_CONTEXT:${traceId}] Current asset ID: ${currentAssetId}, Target asset ID: ${targetAssetId}`);
     
     try {
-      // Check if expenses is not a valid object
-      if (!expenses || typeof expenses !== 'object') {
+      // Convert input to standardized expense format
+      let standardizedExpenses: Record<string, Expense>;
+      
+      if (typeof expenses === 'string') {
+        try {
+          const parsedJson = JSON.parse(expenses);
+          standardizedExpenses = convertToPageFormat(parsedJson);
+        } catch (e) {
+          console.error(`[EXPENSE_CONTEXT:${traceId}] Error parsing JSON:`, e);
+          standardizedExpenses = {};
+        }
+      } else if (!expenses || typeof expenses !== 'object') {
         console.error(`[EXPENSE_CONTEXT:${traceId}] Invalid expenses format:`, expenses);
-        return;
+        standardizedExpenses = {};
+      } else {
+        // Already an object, but ensure it's in standard format
+        standardizedExpenses = convertToPageFormat(expenses);
       }
       
-      const parsedExpenses = parseExpenses(expenses);
-      console.log(`[EXPENSE_CONTEXT:${traceId}] Parsed property expenses:`, 
-        Object.keys(parsedExpenses).length, 'items');
+      console.log(`[EXPENSE_CONTEXT:${traceId}] Standardized property expenses:`, 
+        Object.keys(standardizedExpenses).length, 'items');
       
       // Update the expenses by asset ID to maintain isolation
       setExpensesByAsset(prev => {
@@ -156,7 +184,7 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
         // Update the property expenses
         newState[targetAssetId] = {
           ...newState[targetAssetId],
-          propertyExpenses: parsedExpenses
+          propertyExpenses: standardizedExpenses
         };
         
         console.log(`[EXPENSE_CONTEXT:${traceId}] Updated state assets:`, Object.keys(newState));
@@ -166,7 +194,7 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
         return newState;
       });
     } catch (error) {
-      console.error(`[EXPENSE_CONTEXT:${traceId}] Error parsing property expenses:`, error);
+      console.error(`[EXPENSE_CONTEXT:${traceId}] Error processing property expenses:`, error);
     }
   };
 
