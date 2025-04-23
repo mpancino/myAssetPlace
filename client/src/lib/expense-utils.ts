@@ -1,190 +1,74 @@
-import { Expense, DisplayExpense, ExpenseCategory } from '@shared/schema';
-import { v4 as uuid } from 'uuid';
-
 /**
- * Frequency multipliers for calculating annual amounts
+ * DEPRECATED: This file is kept for backward compatibility but should not be used for new code.
+ * Import expense utility functions from expense-utils-new.ts instead, which properly uses 
+ * the shared standardized expense utilities.
+ * 
+ * @deprecated Use expense-utils-new.ts which uses the shared implementation
  */
-export const FREQUENCY_MULTIPLIERS = {
-  monthly: 12,
-  quarterly: 4, 
-  annually: 1
+import {
+  parseExpenses,
+  calculateAnnualAmount,
+  calculateTotalAnnualExpenses as calculateTotalAnnual,
+  getMonthlyExpenseBreakdown as getMonthlyBreakdown,
+  groupExpensesByCategory as groupByCategory,
+  calculateExpenseToValueRatio as calculateRatio,
+  getExpenseCount as countExpenses,
+  generateExpenseId,
+  calculateMonthlyInterestExpense,
+  standardizeExpense,
+  FREQUENCY_MULTIPLIERS
+} from './expense-utils-new';
+
+import {
+  convertToPageFormat as convertToPage,
+  convertToComponentFormat as convertToComponent,
+  calculateAnnualExpenses as calculateAnnual
+} from './expense-utils-new';
+
+// Re-export all functions from expense-utils-new to maintain backward compatibility
+export {
+  parseExpenses,
+  standardizeExpense,
+  calculateMonthlyInterestExpense,
+  generateExpenseId,
+  FREQUENCY_MULTIPLIERS
 };
 
-/**
- * Calculate the monthly interest expense for a loan/mortgage
- */
-export function calculateMonthlyInterestExpense(principal: number, interestRate: number): number {
-  if (!principal || !interestRate) return 0;
-  return (principal * (interestRate / 100)) / 12;
-}
+// Keep function names the same for backward compatibility
+export const calculateAnnualExpenses = calculateAnnual;
+export const getMonthlyExpenseBreakdown = getMonthlyBreakdown;
+export const groupExpensesByCategory = groupByCategory;
+export const calculateExpenseToValueRatio = calculateRatio;
+export const getExpenseCount = countExpenses;
+export const convertToPageFormat = convertToPage;
+export const convertToComponentFormat = convertToComponent;
 
 /**
- * Calculate the annual total for an expense based on its frequency
+ * Standardize expense fields (wrapper for standardizeExpense)
+ * @deprecated Use standardizeExpense from expense-utils-new.ts instead
  */
-export function calculateAnnualAmount(amount: number, frequency: string): number {
-  switch (frequency) {
-    case 'monthly':
-      return amount * 12;
-    case 'quarterly':
-      return amount * 4;
-    case 'annually':
-      return amount;
-    default:
-      console.warn(`Unknown frequency: ${frequency}, defaulting to annual value`);
-      return amount;
-  }
-}
-
-/**
- * Convert a storage-format expense to a display-format expense for UI rendering
- */
-export function formatExpenseForDisplay(
-  expense: Expense, 
-  categories: ExpenseCategory[]
-): DisplayExpense {
-  // Find the matching category to get its name
-  const category = categories.find(c => c.id === expense.categoryId);
+export function standardizeExpenseFields(expenses: Record<string, any> | null | undefined): Record<string, any> {
+  if (!expenses) return {};
   
-  return {
-    id: expense.id,
-    categoryId: expense.categoryId,
-    categoryName: category?.name || 'Unknown Category',
-    name: expense.name,
-    amount: expense.amount,
-    frequency: expense.frequency,
-    annualTotal: calculateAnnualAmount(expense.amount, expense.frequency),
-    notes: expense.notes,
-  };
-}
-
-/**
- * Convert a display-format expense back to storage format for saving
- */
-export function prepareExpenseForStorage(displayExpense: DisplayExpense): Expense {
-  return {
-    id: displayExpense.id,
-    categoryId: displayExpense.categoryId,
-    name: displayExpense.name,
-    amount: displayExpense.amount,
-    frequency: displayExpense.frequency,
-    notes: displayExpense.notes,
-  };
-}
-
-/**
- * Convert a collection of expenses from storage to display format
- */
-export function formatExpensesForDisplay(
-  expenses: Record<string, Expense>, 
-  categories: ExpenseCategory[]
-): Record<string, DisplayExpense> {
-  console.log(`\n[CONVERT:${Date.now() % 10000}] Converting ${Object.keys(expenses).length} expenses to display format`);
+  const traceId = Math.floor(Math.random() * 10000);
+  console.log(`[DEPRECATED:${traceId}] standardizeExpenseFields is deprecated, use standardizeExpense instead`);
   
-  const result: Record<string, DisplayExpense> = {};
+  const result: Record<string, any> = {};
   
-  Object.entries(expenses).forEach(([id, expense]) => {
-    result[id] = formatExpenseForDisplay(expense, categories);
-    console.log(`[CONVERT:${Date.now() % 10000}] Converted expense ${id}`);
+  // Use standardizeExpense for each expense
+  Object.entries(expenses).forEach(([key, expense]) => {
+    if (!expense || typeof expense !== 'object') return;
+    
+    const standardized = standardizeExpense(expense);
+    
+    // Add UI display fields for backward compatibility
+    result[key] = {
+      ...standardized,
+      category: standardized.categoryId,
+      description: standardized.name,
+      annualTotal: calculateAnnualAmount(standardized)
+    };
   });
   
-  console.log(`[CONVERT:${Date.now() % 10000}] Converted ${Object.keys(result).length} expenses`);
   return result;
-}
-
-/**
- * Convert a collection of expenses from display to storage format
- */
-export function prepareExpensesForStorage(
-  expenses: Record<string, DisplayExpense>
-): Record<string, Expense> {
-  console.log(`\n[CONVERT:${Date.now() % 10000}] Converting ${Object.keys(expenses).length} expenses to standard format`);
-  
-  const result: Record<string, Expense> = {};
-  
-  Object.entries(expenses).forEach(([id, expense]) => {
-    result[id] = prepareExpenseForStorage(expense);
-    console.log(`[CONVERT:${Date.now() % 10000}] Converted expense ${id}`);
-  });
-  
-  console.log(`[CONVERT:${Date.now() % 10000}] Converted ${Object.keys(result).length} expenses`);
-  return result;
-}
-
-/**
- * Create a new expense with default values
- */
-export function createDefaultExpense(
-  categoryId: string, 
-  categories: ExpenseCategory[]
-): DisplayExpense {
-  const category = categories.find(c => c.id === categoryId);
-  const defaultFrequency = category?.defaultFrequency || 'monthly';
-  
-  return {
-    id: uuid(),
-    categoryId,
-    categoryName: category?.name || 'Unknown Category',
-    name: '',
-    amount: 0,
-    frequency: defaultFrequency,
-    annualTotal: 0,
-    notes: '',
-  };
-}
-
-/**
- * Parse property expenses data from an asset
- */
-export function parsePropertyExpenses(data: any): Record<string, Expense> {
-  // If the data is already in the correct format, just return it
-  if (!data) return {};
-  
-  try {
-    // Handle string format (from JSON)
-    if (typeof data === 'string') {
-      try {
-        return JSON.parse(data);
-      } catch (e) {
-        console.error("Error parsing property expenses string:", e);
-        return {};
-      }
-    }
-    
-    // Handle object format
-    if (typeof data === 'object') {
-      return data;
-    }
-    
-    // Fallback
-    console.warn("Unknown property expenses format:", typeof data);
-    return {};
-  } catch (err) {
-    console.error("Error parsing property expenses:", err);
-    return {};
-  }
-}
-
-/**
- * Parse investment expenses data from an asset
- */
-export function parseInvestmentExpenses(data: any): Record<string, Expense> {
-  // Same implementation as property expenses for now
-  return parsePropertyExpenses(data);
-}
-
-/**
- * Generic parse expenses function that works for any expense type
- * This is a convenience wrapper around parsePropertyExpenses
- */
-export function parseExpenses(data: any): Record<string, Expense> {
-  return parsePropertyExpenses(data);
-}
-
-/**
- * Calculate the total annual expenses for a collection of expenses
- */
-export function calculateAnnualExpenses(expenses: Record<string, Expense>): number {
-  return Object.values(expenses).reduce((total, expense) => {
-    return total + calculateAnnualAmount(expense.amount, expense.frequency);
-  }, 0);
 }

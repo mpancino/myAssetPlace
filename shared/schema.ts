@@ -486,7 +486,14 @@ export const insertPropertySchema = insertAssetSchema.extend({
   rentalIncome: z.number().min(0).optional(),
   rentalFrequency: z.enum(["weekly", "fortnightly", "monthly"]).optional(),
   vacancyRate: z.number().min(0).max(100).default(0).optional(),
-  propertyExpenses: z.record(z.string(), expenseSchema).optional(),
+  propertyExpenses: z.record(z.string(), z.object({
+    id: z.string(),
+    category: z.string(),
+    description: z.string(),
+    amount: z.number(),
+    frequency: z.string(),
+    annualTotal: z.number()
+  })).optional(),
   
   // Property location data
   longitude: z.number().optional(),
@@ -519,7 +526,14 @@ export const insertShareSchema = insertAssetSchema.extend({
     frankedAmount: z.number().min(0).optional(),
     notes: z.string().optional(),
   })).optional(),
-  investmentExpenses: z.record(z.string(), expenseSchema).optional(),
+  investmentExpenses: z.record(z.string(), z.object({
+    id: z.string(),
+    category: z.string(),
+    description: z.string(),
+    amount: z.number(),
+    frequency: z.string(),
+    annualTotal: z.number()
+  })).optional(),
 });
 
 // Employee Stock Options schema - for REQ-141 through REQ-147
@@ -683,21 +697,25 @@ export type ExpenseCategory = {
   defaultFrequency: 'monthly' | 'quarterly' | 'annually';
 };
 
-// DisplayExpense is used for UI display with calculated annualTotal
-export type DisplayExpense = {
+// Property expense type for user assets
+export type PropertyExpense = {
   id: string;
-  categoryId: string;   // The actual ID for storage
-  categoryName: string; // User-friendly display name 
-  name: string;
+  category: string;
+  description: string;
   amount: number;
-  frequency: 'monthly' | 'quarterly' | 'annually';
-  annualTotal: number;  // Calculated field for display
-  notes?: string;
+  frequency: string;
+  annualTotal: number;
 };
 
-// Legacy type aliases for backward compatibility - to be removed after refactoring
-export type PropertyExpense = DisplayExpense;
-export type InvestmentExpense = DisplayExpense;
+// Investment expense type for investment assets
+export type InvestmentExpense = {
+  id: string;
+  category: string;
+  description: string;
+  amount: number;
+  frequency: string;
+  annualTotal: number;
+};
 
 // Share transaction types for purchase history
 export type SharePurchaseTransaction = {

@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useExpenseEdit } from '@/contexts/expense-edit-context';
 import { useAssetClassDetails } from '@/hooks/use-asset-class-details';
 import { useToast } from '@/hooks/use-toast';
+import { FREQUENCY_MULTIPLIERS } from '@/lib/expense-utils';
 
 import {
   Dialog,
@@ -44,7 +45,7 @@ export function ExpenseEditModal() {
   
   // Use the asset class expense categories if available, or fall back to defaults
   const availableCategories = expenseCategories && expenseCategories.length > 0
-    ? expenseCategories.map((cat) => typeof cat === 'string' ? cat : (cat?.name || 'Unknown Category'))
+    ? expenseCategories.map((cat) => typeof cat === 'string' ? cat : cat.name)
     : DEFAULT_EXPENSE_CATEGORIES;
   
   // Form state
@@ -56,11 +57,7 @@ export function ExpenseEditModal() {
   // Initialize form when expense changes
   useEffect(() => {
     if (expense) {
-      // Handle both string categories and object categories with a name property
-      const categoryValue = typeof expense.category === 'object' 
-        ? (expense.category?.name || '') 
-        : (expense.category || '');
-      setCategory(categoryValue);
+      setCategory(expense.category || '');
       setDescription(expense.description || '');
       setAmount(expense.amount || '');
       setFrequency(expense.frequency || 'monthly');
@@ -97,9 +94,7 @@ export function ExpenseEditModal() {
     
     try {
       // Calculate annual total
-      const multiplier = frequency === 'monthly' ? 12 : 
-                       frequency === 'quarterly' ? 4 : 
-                       frequency === 'annually' ? 1 : 12;
+      const multiplier = FREQUENCY_MULTIPLIERS[frequency] || 12;
       const annualTotal = numericAmount * multiplier;
       
       // Create or update expense object

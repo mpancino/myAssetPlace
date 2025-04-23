@@ -19,8 +19,8 @@ import { Badge } from "@/components/ui/badge";
 import { MortgageDetails } from "@/components/property/mortgage-details";
 // Import just the analysis component from the refactored file
 import { PropertyExpenseAnalysis } from "@/components/property/property-expenses-refactored";
-import { ExpensesContainer } from "@/components/expense/ExpensesContainer";
-import { InvestmentExpensesFixed, InvestmentExpenseAnalysis } from "@/components/expense/investment-expenses-fixed";
+import { PropertyExpensesNew } from "@/components/property/PropertyExpensesNew";
+import { InvestmentExpenses, InvestmentExpenseAnalysis } from "@/components/expense/investment-expenses";
 import { 
   ArrowLeft, 
   BarChart3,
@@ -2826,36 +2826,24 @@ export default function AssetDetailPage() {
                             render={({ field }) => (
                               <FormItem>
                                 <FormControl>
-                                  <ExpensesContainer
+                                  <PropertyExpensesNew
                                     key={`expenses-edit-${asset.id}`}
-                                    assetId={asset.id}
-                                    assetClassId={asset.assetClassId}
-                                    propertyExpenses={field.value as Record<string, Expense> || {}}
-                                    investmentExpenses={{}} 
-                                    expenseCategories={[
-                                      { id: 'utilities', name: 'Utilities', description: 'Electricity, water, gas, etc.', defaultFrequency: 'monthly' },
-                                      { id: 'maintenance', name: 'Maintenance', description: 'Regular upkeep and repairs', defaultFrequency: 'monthly' },
-                                      { id: 'insurance', name: 'Insurance', description: 'Property and liability insurance', defaultFrequency: 'annually' },
-                                      { id: 'taxes', name: 'Property Taxes', description: 'Annual taxes on property', defaultFrequency: 'annually' },
-                                      { id: 'management', name: 'Management', description: 'Property management fees', defaultFrequency: 'monthly' },
-                                      { id: 'strata', name: 'Strata/HOA Fees', description: 'Strata or homeowners association fees', defaultFrequency: 'monthly' },
-                                      { id: 'other', name: 'Other', description: 'Other property-related expenses', defaultFrequency: 'monthly' }
-                                    ]}
-                                    onExpensesChange={(propertyExpenses, investmentExpenses) => {
+                                    value={field.value as Record<string, PropertyExpense> || {}}
+                                    onChange={(newExpenses) => {
                                       const timestamp = Date.now();
                                       console.log(`[PROP_EXPENSES_PARENT:${timestamp}] ===== PROPERTY EXPENSE CHANGE HANDLER START =====`);
-                                      console.log(`[PROP_EXPENSES_PARENT:${timestamp}] Expense component updated with ${Object.keys(propertyExpenses).length} expenses`);
+                                      console.log(`[PROP_EXPENSES_PARENT:${timestamp}] Expense component updated with ${Object.keys(newExpenses).length} expenses`);
                                       console.log(`[PROP_EXPENSES_PARENT:${timestamp}] Call stack:`, new Error().stack?.split('\n').slice(1, 5).join('\n'));
                                       console.log(`[PROP_EXPENSES_PARENT:${timestamp}] Current form values:`, form.getValues());
                                       console.log(`[PROP_EXPENSES_PARENT:${timestamp}] Current form dirty state:`, form.formState.isDirty);
-                                      console.log(`[PROP_EXPENSES_PARENT:${timestamp}] Expense data:`, propertyExpenses);
+                                      console.log(`[PROP_EXPENSES_PARENT:${timestamp}] Expense data:`, newExpenses);
                                       
                                       // IMPORTANT: Only update the form field without immediate database save
-                                      field.onChange(propertyExpenses);
+                                      field.onChange(newExpenses);
                                       console.log(`[PROP_EXPENSES_PARENT:${timestamp}] Form field updated`);
                                       
                                       // Update state tracker to monitor changes
-                                      setCurrentPropertyExpenses(propertyExpenses);
+                                      setCurrentPropertyExpenses(newExpenses);
                                       console.log(`[PROP_EXPENSES_PARENT:${timestamp}] State tracker updated`);
                                       
                                       // No longer saving to database immediately
@@ -2863,7 +2851,10 @@ export default function AssetDetailPage() {
                                       // This ensures all changes are committed together
                                       console.log(`[PROP_EXPENSES_PARENT:${timestamp}] ===== PROPERTY EXPENSE CHANGE HANDLER END =====`);
                                     }}
-                                    readOnly={!isEditing}
+                                    assetId={asset.id}
+                                    assetClassId={asset?.assetClassId}
+                                    isEditMode={isEditing}
+                                    isSaving={savePropertyExpensesMutation.isPending}
                                     annualIncome={asset.isRental && asset.rentalIncome ? 
                                       (asset.rentalFrequency === 'weekly' ? asset.rentalIncome * 52 : 
                                        asset.rentalFrequency === 'fortnightly' ? asset.rentalIncome * 26 : 
@@ -2879,27 +2870,17 @@ export default function AssetDetailPage() {
                           <div className="relative">
                             {/* Read-only overlay when not in edit mode */}
                             <div className="absolute inset-0 bg-transparent z-10" onClick={() => setIsEditing(true)}></div>
-                            <ExpensesContainer
+                            <PropertyExpensesNew
                               key={`expenses-view-${asset.id}`}
-                              assetId={asset.id}
-                              assetClassId={asset.assetClassId}
-                              propertyExpenses={parsePropertyExpenses(asset.propertyExpenses)}
-                              investmentExpenses={{}}
-                              expenseCategories={[
-                                { id: 'utilities', name: 'Utilities', description: 'Electricity, water, gas, etc.', defaultFrequency: 'monthly' },
-                                { id: 'maintenance', name: 'Maintenance', description: 'Regular upkeep and repairs', defaultFrequency: 'monthly' },
-                                { id: 'insurance', name: 'Insurance', description: 'Property and liability insurance', defaultFrequency: 'annually' },
-                                { id: 'taxes', name: 'Property Taxes', description: 'Annual taxes on property', defaultFrequency: 'annually' },
-                                { id: 'management', name: 'Management', description: 'Property management fees', defaultFrequency: 'monthly' },
-                                { id: 'strata', name: 'Strata/HOA Fees', description: 'Strata or homeowners association fees', defaultFrequency: 'monthly' },
-                                { id: 'other', name: 'Other', description: 'Other property-related expenses', defaultFrequency: 'monthly' }
-                              ]}
-                              onExpensesChange={(value) => {
+                              value={parsePropertyExpenses(asset.propertyExpenses)}
+                              onChange={(value) => {
                                 // Read-only when not editing - should trigger edit mode
                                 console.log("Property expenses component triggered onChange in read-only mode");
                                 // We shouldn't reach here because of the overlay
                               }}
-                              readOnly={true}
+                              assetId={asset.id}
+                              assetClassId={asset?.assetClassId}
+                              isEditMode={false}
                               annualIncome={asset.isRental && asset.rentalIncome ? 
                                 (asset.rentalFrequency === 'weekly' ? asset.rentalIncome * 52 : 
                                  asset.rentalFrequency === 'fortnightly' ? asset.rentalIncome * 26 : 
@@ -2919,7 +2900,7 @@ export default function AssetDetailPage() {
                       </CardContent>
                     </Card>
                     
-                    {/* Property Expense Analysis is now included within ExpensesContainer */}
+                    {/* Property Expense Analysis is now included within PropertyExpensesNew */}
                     
                     {/* Database persistence status card (shows only when editing) */}
                     {isEditing && (
@@ -2980,7 +2961,7 @@ export default function AssetDetailPage() {
                             render={({ field }) => (
                               <FormItem>
                                 <FormControl>
-                                  <InvestmentExpensesFixed
+                                  <InvestmentExpenses
                                     key={`investment-expenses-edit-${asset.id}`}
                                     value={convertPageExpensesToComponent(field.value as Record<string, InvestmentExpense> || {})}
                                     onChange={(newComponentExpenses) => {
@@ -3020,7 +3001,7 @@ export default function AssetDetailPage() {
                           <div className="relative">
                             {/* Read-only overlay when not in edit mode */}
                             <div className="absolute inset-0 bg-transparent z-10" onClick={() => setIsEditing(true)}></div>
-                            <InvestmentExpensesFixed
+                            <InvestmentExpenses
                               key={`investment-expenses-view-${asset.id}`}
                               value={convertPageExpensesToComponent(parseInvestmentExpenses(asset.investmentExpenses))}
                               onChange={(value) => {
