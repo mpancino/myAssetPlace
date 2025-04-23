@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { convertToPageFormat, convertToComponentFormat, calculateAnnualAmount } from '@/lib/expense-utils-new';
 import type { Expense } from '@shared/schema';
@@ -101,6 +101,18 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
   // Track editor state in context instead of component state
   const [editorState, setEditorState] = useState<EditorState>(defaultEditorState);
   
+  // Ref to track if expenses were just saved to prevent duplicate saves
+  // This helps distinguish between post-save context updates and user edits
+  const justSavedRef = useRef<{
+    propertyExpenseHash: string | null;
+    investmentExpenseHash: string | null;
+    timestamp: number;
+  }>({
+    propertyExpenseHash: null, 
+    investmentExpenseHash: null,
+    timestamp: 0
+  });
+  
   // Get current asset's expenses or empty objects if not available
   // Use optional chaining and nullish coalescing to safely access properties
   const investmentExpenses = currentAssetId 
@@ -176,6 +188,26 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
       console.log(`[EXPENSE_CONTEXT:${traceId}] Standardized investment expenses:`, 
         Object.keys(standardizedExpenses).length, 'items');
       
+      // Check if these expenses match what was just saved
+      const expenseHash = createExpenseHash(standardizedExpenses);
+      const isSameAsLastSaved = isInitialLoad && justSavedRef.current.investmentExpenseHash === expenseHash &&
+                               (Date.now() - justSavedRef.current.timestamp) < 3000; // Within 3 seconds
+      
+      if (isSameAsLastSaved) {
+        console.log(`[EXPENSE_CONTEXT:${traceId}] Skipping update - investment expenses match recently saved state`);
+        return; // Skip the update if it matches what was just saved
+      }
+      
+      // If this is a user edit (not initial load), update the saved hash to prevent duplicate saves
+      if (!isInitialLoad) {
+        console.log(`[EXPENSE_CONTEXT:${traceId}] User edit - updating saved investment expense hash`);
+        justSavedRef.current = {
+          ...justSavedRef.current,
+          investmentExpenseHash: expenseHash,
+          timestamp: Date.now()
+        };
+      }
+      
       // Update the expenses by asset ID to maintain isolation
       setExpensesByAsset(prev => {
         // Create a safe copy of the previous state
@@ -202,6 +234,21 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
+  // Helper to create a hash of expenses for comparison
+  const createExpenseHash = (expenses: Record<string, Expense>): string => {
+    const expenseIds = Object.keys(expenses).sort();
+    return expenseIds.map(id => {
+      const exp = expenses[id];
+      return `${id}:${exp.categoryId}:${exp.name}:${exp.amount}:${exp.frequency}`;
+    }).join('|');
+  };
+  
+  // Helper to check if expenses match a saved hash
+  const expensesMatchHash = (expenses: Record<string, Expense>, hash: string | null): boolean => {
+    if (!hash) return false;
+    return createExpenseHash(expenses) === hash;
+  };
+  
   // Set property expenses for current asset or specified asset
   const handleSetPropertyExpenses = (expenses: Record<string, Expense> | string | any, assetId?: number, isInitialLoad: boolean = false) => {
     const targetAssetId = assetId || currentAssetId;
@@ -238,6 +285,26 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
       
       console.log(`[EXPENSE_CONTEXT:${traceId}] Standardized property expenses:`, 
         Object.keys(standardizedExpenses).length, 'items');
+      
+      // Check if these expenses match what was just saved
+      const expenseHash = createExpenseHash(standardizedExpenses);
+      const isSameAsLastSaved = isInitialLoad && justSavedRef.current.propertyExpenseHash === expenseHash &&
+                               (Date.now() - justSavedRef.current.timestamp) < 3000; // Within 3 seconds
+      
+      if (isSameAsLastSaved) {
+        console.log(`[EXPENSE_CONTEXT:${traceId}] Skipping update - expenses match recently saved state`);
+        return; // Skip the update if it matches what was just saved
+      }
+      
+      // If this is a user edit (not initial load), update the saved hash to prevent duplicate saves
+      if (!isInitialLoad) {
+        console.log(`[EXPENSE_CONTEXT:${traceId}] User edit - updating saved hash`);
+        justSavedRef.current = {
+          ...justSavedRef.current,
+          propertyExpenseHash: expenseHash,
+          timestamp: Date.now()
+        };
+      }
       
       // Update the expenses by asset ID to maintain isolation
       setExpensesByAsset(prev => {
