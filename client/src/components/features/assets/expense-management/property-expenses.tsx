@@ -4,8 +4,14 @@ import { ExpenseForm } from '@/components/expense/ExpenseForm';
 import { ExpenseTable } from '@/components/expense/ExpenseTable';
 import { PropertyExpenseAnalysis } from '@/components/property/property-expenses-refactored';
 import { useAssetClassDetails, StandardizedExpenseCategory } from '@/hooks/use-asset-class-details';
-import { convertToComponentFormat, generateExpenseId } from '@/lib/expense-utils-new';
-import { calculateAnnualAmount } from '@/lib/expense-utils-new';
+import { 
+  convertToComponentFormat, 
+  generateExpenseId, 
+  calculateAnnualAmount,
+  convertToPageFormat 
+} from '@/lib/expense-utils-new';
+import { Button } from "@/components/ui/button";
+import { Save } from "lucide-react";
 import type { Expense } from '@/../../shared/schema';
 
 // Default expense categories as fallback
@@ -243,6 +249,25 @@ export function PropertyExpenses({
     
     // Note: We're not calling onChange here to avoid triggering parent form updates
     // Parent form will get updated expenses when explicitly saved or during form submission
+  };
+  
+  // Handle saving all expense changes to the parent component
+  const handleSaveChanges = () => {
+    const traceId = Math.floor(Math.random() * 10000);
+    console.log(`[PropertyExpenses:${traceId}] Saving expense changes to parent component`);
+    
+    // Convert the component format expenses back to the standard storage format
+    const storageFormatExpenses = convertToPageFormat(editableExpenses);
+    
+    console.log(`[PropertyExpenses:${traceId}] Converted ${Object.keys(editableExpenses).length} expenses from component to storage format`);
+    
+    // Now explicitly notify the parent component of the changes
+    if (onChange) {
+      console.log(`[PropertyExpenses:${traceId}] Notifying parent component of expense changes`);
+      onChange(storageFormatExpenses);
+    } else {
+      console.warn(`[PropertyExpenses:${traceId}] Cannot save changes - no onChange handler provided`);
+    }
   };
   
   // Log component render and props for debugging
