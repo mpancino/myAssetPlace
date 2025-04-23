@@ -173,90 +173,66 @@ function PropertyExpensesInternal({
     ? expenseCategories 
     : DEFAULT_EXPENSE_CATEGORIES;
   
-  // Core state - uses ComponentExpense to include UI display fields
-  const [expenses, setExpenses] = useState<Record<string, ComponentExpense>>({});
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [isAddingNew, setIsAddingNew] = useState(false);
+  // Use the context editor state instead of local component state
+  const { 
+    editorState,
+    startEditExpense,
+    startAddExpense,
+    cancelEditExpense,
+    updateFormField,
+    saveExpense,
+    deleteExpense
+  } = useExpenses();
   
-  // Prevent form state from being reset during re-renders by using refs
-  const formStateRef = useRef({
-    category: '',
-    description: '',
-    amount: '' as number | '',
-    frequency: 'monthly' as 'monthly' | 'quarterly' | 'annually'
-  });
-
-  // New expense form state - with local references to prevent loss during re-renders
-  const [newCategory, setNewCategory] = useState(() => formStateRef.current.category);
-  const [newDescription, setNewDescription] = useState(() => formStateRef.current.description);
-  const [newAmount, setNewAmount] = useState<number | ''>(() => formStateRef.current.amount);
-  const [newFrequency, setNewFrequency] = useState<'monthly' | 'quarterly' | 'annually'>(() => formStateRef.current.frequency);
+  // Destructure editor state for easier access
+  const { 
+    editingId, 
+    isAddingNew, 
+    formState,
+    isEditing
+  } = editorState;
   
-  // Update ref when state changes to preserve values between re-renders
-  useEffect(() => {
-    formStateRef.current = {
-      category: newCategory,
-      description: newDescription,
-      amount: newAmount,
-      frequency: newFrequency
-    };
-  }, [newCategory, newDescription, newAmount, newFrequency]);
+  // Aliases for form state fields for better readability
+  const newCategory = formState.categoryId;
+  const newDescription = formState.name;
+  const newAmount = formState.amount;
+  const newFrequency = formState.frequency;
   
   // Process and normalize the input data
   useEffect(() => {
-    const traceId = Date.now();
-    console.log(`[PROP_EXPENSES:${traceId}] Processing expenses data`);
+    if (!assetId) {
+      console.error('[PROP_EXPENSES] No asset ID provided, cannot process expenses');
+      return;
+    }
     
-    // First, check if we have data in the context
+    const traceId = Date.now();
+    console.log(`[PROP_EXPENSES:${traceId}] Processing expenses data for asset ${assetId}`);
+    
+    // Set the current asset ID to ensure we're working with the correct asset
+    setCurrentAssetId(assetId);
+    
+    // If we already have data in the context, we don't need to reprocess it
     if (contextExpenses && Object.keys(contextExpenses).length > 0) {
       console.log(`[PROP_EXPENSES:${traceId}] Using data from context with ${Object.keys(contextExpenses).length} items`);
-      
-      // Convert context expenses to component format for UI display
-      const componentExpenses = convertToComponentFormat(contextExpenses) as Record<string, ComponentExpense>;
-      setExpenses(componentExpenses);
       return;
     }
     
     if (!value) {
-      console.log(`[PROP_EXPENSES:${traceId}] No value provided, returning early`);
+      console.log(`[PROP_EXPENSES:${traceId}] No value provided`);
       return;
     }
     
     try {
-      // Standardize the input value to ensure it's a proper Record<string, Expense>
-      let standardExpenses: Record<string, Expense>;
+      // Update the context with the input value
+      // The context will handle normalization and standardization
+      console.log(`[PROP_EXPENSES:${traceId}] Updating context with input data`);
+      setContextExpenses(value, assetId);
       
-      if (typeof value === 'string') {
-        // Parse JSON string
-        try {
-          const parsedValue = JSON.parse(value);
-          // Convert the parsed object to standard Expense format
-          standardExpenses = convertToPageFormat(parsedValue);
-        } catch (e) {
-          console.error(`[PROP_EXPENSES:${traceId}] Error parsing JSON:`, e);
-          standardExpenses = {};
-        }
-      } else {
-        // Already an object, but might need standardization
-        standardExpenses = convertToPageFormat(value);
-      }
-      
-      // Convert standardized expenses to component format for UI display
-      const componentExpenses = convertToComponentFormat(standardExpenses) as Record<string, ComponentExpense>;
-      
-      // Update state with component expenses for UI display
-      setExpenses(componentExpenses);
-      
-      // Update the global context if we have non-empty expenses
-      if (Object.keys(standardExpenses).length > 0) {
-        console.log(`[PROP_EXPENSES:${traceId}] Updating context with ${Object.keys(standardExpenses).length} standardized expenses`);
-        setContextExpenses(standardExpenses);
-      }
+      // Context update will trigger a re-render, no need to update local state
     } catch (err) {
       console.error('[PROP_EXPENSES] Failed to process expense data:', err);
-      setExpenses({});
     }
-  }, [value, contextExpenses, setContextExpenses]);
+  }, [value, setContextExpenses, setCurrentAssetId, assetId, contextExpenses]);
   
   // Calculate annual total based on amount and frequency
   const calculateAnnualTotal = useCallback((amount: number, frequency: 'monthly' | 'quarterly' | 'annually'): number => {
