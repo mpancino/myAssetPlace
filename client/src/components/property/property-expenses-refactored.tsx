@@ -273,6 +273,7 @@ function PropertyExpensesInternal({
   
   // Start editing an expense
   const handleStartEdit = useCallback((expense: ComponentExpense) => {
+    console.log('[PROP_EXPENSES] Starting to edit expense:', expense.id, expense);
     startEditExpense(expense.id, 'property');
   }, [startEditExpense]);
   
@@ -301,12 +302,14 @@ function PropertyExpensesInternal({
   }, [deleteExpense, toast]);
   
   const handleAddNew = useCallback(() => {
+    console.log('[PROP_EXPENSES] Starting to add new expense for property');
     startAddExpense('property');
   }, [startAddExpense]);
   
   const handleCancelEdit = useCallback(() => {
-    resetForm();
-  }, [resetForm]);
+    console.log('[PROP_EXPENSES] Cancelling expense edit operation');
+    cancelEditExpense();
+  }, [cancelEditExpense]);
   
   // Calculate the total annual expenses
   const totalAnnualExpenses = Object.values(expenses).reduce(
@@ -432,7 +435,10 @@ function PropertyExpensesInternal({
                     <label className="text-sm font-medium mb-1 block">Category</label>
                     <Select
                       value={newCategory}
-                      onValueChange={(value) => updateFormField('categoryId', value)}
+                      onValueChange={(value) => {
+                        console.log('[PROP_EXPENSES] Updating category field to:', value);
+                        updateFormField('categoryId', value);
+                      }}
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select a category" />
@@ -459,7 +465,10 @@ function PropertyExpensesInternal({
                     <Input
                       placeholder="Description"
                       value={newDescription}
-                      onChange={(e) => updateFormField('name', e.target.value)}
+                      onChange={(e) => {
+                        console.log('[PROP_EXPENSES] Updating description field to:', e.target.value);
+                        updateFormField('name', e.target.value);
+                      }}
                     />
                   </div>
                   
@@ -471,7 +480,11 @@ function PropertyExpensesInternal({
                       step="0.01"
                       placeholder="0.00"
                       value={newAmount}
-                      onChange={(e) => updateFormField('amount', e.target.value === '' ? '' : parseFloat(e.target.value))}
+                      onChange={(e) => {
+                        const value = e.target.value === '' ? '' : parseFloat(e.target.value);
+                        console.log('[PROP_EXPENSES] Updating amount field to:', value);
+                        updateFormField('amount', value);
+                      }}
                     />
                   </div>
                   
@@ -479,7 +492,10 @@ function PropertyExpensesInternal({
                     <label className="text-sm font-medium mb-1 block">Frequency</label>
                     <Select
                       value={newFrequency}
-                      onValueChange={(value) => updateFormField('frequency', value as 'monthly' | 'quarterly' | 'annually')}
+                      onValueChange={(value) => {
+                        console.log('[PROP_EXPENSES] Updating frequency field to:', value);
+                        updateFormField('frequency', value as 'monthly' | 'quarterly' | 'annually');
+                      }}
                     >
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select frequency" />
@@ -498,7 +514,17 @@ function PropertyExpensesInternal({
                     Cancel
                   </Button>
                   <Button 
-                    onClick={() => saveExpense()}
+                    onClick={() => {
+                      console.log('[PROP_EXPENSES] Saving expense with data:', { 
+                        id: editingId,
+                        type: 'property', 
+                        categoryId: newCategory, 
+                        name: newDescription, 
+                        amount: newAmount, 
+                        frequency: newFrequency 
+                      });
+                      saveExpense();
+                    }}
                     type="button"
                   >
                     {editingId ? "Update" : "Add"} Expense
