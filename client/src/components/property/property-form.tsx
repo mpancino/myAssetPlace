@@ -692,7 +692,7 @@ export function PropertyForm({
           name="propertyExpenses"
           render={({ field }) => (
             <FormItem>
-              <PropertyExpenses 
+              <PropertyExpensesNew 
                 value={field.value as Record<string, PropertyExpense> || {}}
                 onChange={field.onChange}
               />

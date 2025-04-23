@@ -17,7 +17,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { MortgageDetails } from "@/components/property/mortgage-details";
-import { PropertyExpenses, PropertyExpenseAnalysis } from "@/components/property/property-expenses-refactored";
+// Import just the analysis component from the refactored file
+import { PropertyExpenseAnalysis } from "@/components/property/property-expenses-refactored";
 import { PropertyExpensesNew } from "@/components/property/PropertyExpensesNew";
 import { InvestmentExpenses, InvestmentExpenseAnalysis } from "@/components/expense/investment-expenses";
 import { 
