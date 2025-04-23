@@ -13,10 +13,9 @@ import {
   generateExpenseId,
   calculateMonthlyInterestExpense,
   standardizeExpense,
-  convertComponentExpenseToStorage,
-  convertStorageExpenseToComponent,
   FREQUENCY_MULTIPLIERS
 } from '../../../shared/expense-utils';
+import type { Expense } from '../../../shared/schema';
 
 export {
   parseExpenses,
@@ -29,41 +28,91 @@ export {
   generateExpenseId,
   calculateMonthlyInterestExpense,
   standardizeExpense,
-  convertComponentExpenseToStorage,
-  convertStorageExpenseToComponent,
   FREQUENCY_MULTIPLIERS
 };
 
-// Legacy conversion functions for backward compatibility
-export function convertToPageFormat(expenses: Record<string, any>): Record<string, any> {
-  // Use the standardized conversion function
-  return Object.entries(expenses).reduce((result, [key, expense]) => {
-    if (!expense || typeof expense !== 'object') return result;
-    result[key] = convertComponentExpenseToStorage(expense);
-    return result;
-  }, {} as Record<string, any>);
+/**
+ * Convert legacy component format expenses to standard Expense format
+ * This adapter function helps with the transition to the standard Expense interface
+ * 
+ * @param expenses Record of expenses in component format (with category, description)
+ * @returns Record of expenses in standard Expense format
+ */
+export function convertToPageFormat(expenses: Record<string, any>): Record<string, Expense> {
+  const traceId = Math.floor(Math.random() * 10000);
+  console.log(`\n[CONVERT:${traceId}] Converting ${Object.keys(expenses).length} expenses to standard format`);
+  
+  const result: Record<string, Expense> = {};
+  
+  Object.entries(expenses).forEach(([key, expense]) => {
+    if (!expense || typeof expense !== 'object') {
+      console.log(`[CONVERT:${traceId}] Skipping invalid expense at key ${key}`);
+      return;
+    }
+    
+    // Use standardizeExpense to ensure Expense interface compliance
+    result[key] = standardizeExpense(expense);
+    console.log(`[CONVERT:${traceId}] Converted expense ${key}`);
+  });
+  
+  console.log(`[CONVERT:${traceId}] Converted ${Object.keys(result).length} expenses`);
+  return result;
 }
 
-export function convertToComponentFormat(expenses: Record<string, any>): Record<string, any> {
-  // Use the standardized conversion function
-  return Object.entries(expenses).reduce((result, [key, expense]) => {
-    if (!expense || typeof expense !== 'object') return result;
-    result[key] = convertStorageExpenseToComponent(expense);
-    return result;
-  }, {} as Record<string, any>);
+/**
+ * Convert standard Expense format to component display format
+ * Adds annualTotal property for UI display purposes
+ * 
+ * @param expenses Record of expenses in standard Expense format
+ * @returns Record of expenses with additional UI display properties
+ */
+export function convertToComponentFormat(expenses: Record<string, Expense | any>): Record<string, any> {
+  const traceId = Math.floor(Math.random() * 10000);
+  console.log(`\n[CONVERT:${traceId}] Converting ${Object.keys(expenses).length} expenses to component display format`);
+  
+  const result: Record<string, any> = {};
+  
+  Object.entries(expenses).forEach(([key, expense]) => {
+    if (!expense || typeof expense !== 'object') {
+      console.log(`[CONVERT:${traceId}] Skipping invalid expense at key ${key}`);
+      return;
+    }
+    
+    // First standardize to ensure we have a valid Expense object
+    const standardized = standardizeExpense(expense);
+    
+    // Then add UI-specific fields for display purposes
+    result[key] = {
+      ...standardized,
+      // Add UI display field mappings
+      category: standardized.categoryId,
+      description: standardized.name,
+      // Calculate annual total for display
+      annualTotal: calculateAnnualAmount(standardized)
+    };
+    
+    console.log(`[CONVERT:${traceId}] Converted expense ${key}`);
+  });
+  
+  console.log(`[CONVERT:${traceId}] Converted ${Object.keys(result).length} expenses`);
+  return result;
 }
 
-// Legacy calculation function with wider input type support
+/**
+ * Calculate total annual expenses with support for both standard and legacy formats
+ * @param expenses Record of expenses (can be in any format)
+ * @returns Total annual expense amount
+ */
 export function calculateAnnualExpenses(expenses: Record<string, any> | null | undefined): number {
   if (!expenses) return 0;
   
   return Object.values(expenses).reduce((total, expense) => {
-    // Handle both direct amount or using annualTotal from component format
+    // Handle component format with annualTotal property
     if ('annualTotal' in expense && typeof expense.annualTotal === 'number') {
       return total + expense.annualTotal;
     }
     
-    // Otherwise calculate using the standard approach
+    // Otherwise standardize and calculate using the standard approach
     const standardized = standardizeExpense(expense);
     return total + calculateAnnualAmount(standardized);
   }, 0);
