@@ -495,7 +495,8 @@ export default function AssetDetailPage() {
           setCurrentPropertyExpenses(parsedExpenses);
           
           // Update the expense context with asset ID for isolation
-          setPropertyExpenses(parsedExpenses, assetId);
+          // Use isInitialLoad=true to prevent triggering auto-save on load
+          setPropertyExpenses(parsedExpenses, assetId, true);
         }
       } catch (err) {
         console.error("Error parsing property expenses in debug effect:", err);
@@ -519,7 +520,8 @@ export default function AssetDetailPage() {
           setCurrentInvestmentExpenses(parsedExpenses);
           
           // Update the expense context with asset ID for isolation
-          setInvestmentExpenses(parsedExpenses, assetId);
+          // Use isInitialLoad=true to prevent triggering auto-save on load
+          setInvestmentExpenses(parsedExpenses, assetId, true);
         }
       } catch (err) {
         console.error("Error parsing investment expenses in debug effect:", err);
@@ -707,7 +709,7 @@ export default function AssetDetailPage() {
             setCurrentPropertyExpenses(parsedPropertyExpenses);
             // Update context to maintain isolation between assets
             if (assetId) {
-              setPropertyExpenses(parsedPropertyExpenses, assetId);
+              setPropertyExpenses(parsedPropertyExpenses, assetId, true);
             }
             console.log('[RELOAD] Updated property expenses state and context');
           }
@@ -722,7 +724,7 @@ export default function AssetDetailPage() {
             setCurrentInvestmentExpenses(parsedInvestmentExpenses);
             // Update context to maintain isolation between assets
             if (assetId) {
-              setInvestmentExpenses(parsedInvestmentExpenses, assetId);
+              setInvestmentExpenses(parsedInvestmentExpenses, assetId, true);
             }
             console.log('[RELOAD] Updated investment expenses state and context');
           }
@@ -767,7 +769,7 @@ export default function AssetDetailPage() {
                 setCurrentInvestmentExpenses(parsedInvestmentExpenses);
                 // Update context to maintain isolation between assets
                 if (assetId) {
-                  setInvestmentExpenses(parsedInvestmentExpenses, assetId);
+                  setInvestmentExpenses(parsedInvestmentExpenses, assetId, true);
                 }
                 console.log('[RELOAD] Updated investment expenses via fallback with',
                   Object.keys(parsedInvestmentExpenses).length, 'expenses');

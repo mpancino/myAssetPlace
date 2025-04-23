@@ -28,8 +28,8 @@ interface ExpenseContextType {
   currentAssetId: number | null;
   
   // Data operations
-  setInvestmentExpenses: (expenses: Record<string, Expense> | string | any, assetId?: number) => void;
-  setPropertyExpenses: (expenses: Record<string, Expense> | string | any, assetId?: number) => void;
+  setInvestmentExpenses: (expenses: Record<string, Expense> | string | any, assetId?: number, isInitialLoad?: boolean) => void;
+  setPropertyExpenses: (expenses: Record<string, Expense> | string | any, assetId?: number, isInitialLoad?: boolean) => void;
   clearExpenses: () => void;
   setCurrentAssetId: (assetId: number | null) => void;
   getInvestmentExpensesForDisplay: () => Record<string, any>;
@@ -144,7 +144,7 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   // Set investment expenses for current asset or specified asset
-  const handleSetInvestmentExpenses = (expenses: Record<string, Expense> | string | any, assetId?: number) => {
+  const handleSetInvestmentExpenses = (expenses: Record<string, Expense> | string | any, assetId?: number, isInitialLoad: boolean = false) => {
     const targetAssetId = assetId || currentAssetId;
     if (!targetAssetId) {
       console.error(`[EXPENSE_CONTEXT] Cannot set investment expenses without an asset ID`);
@@ -153,7 +153,8 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
     
     const traceId = Math.floor(Math.random() * 10000);
     console.log(`[EXPENSE_CONTEXT:${traceId}] Setting investment expenses for asset ${targetAssetId}:`, 
-      typeof expenses === 'object' ? Object.keys(expenses).length : typeof expenses, 'items');
+      typeof expenses === 'object' ? Object.keys(expenses).length : typeof expenses, 'items',
+      isInitialLoad ? '(INITIAL LOAD)' : '(USER EDIT)');
     
     try {
       // Convert input to standardized expense format
@@ -202,7 +203,7 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
   };
 
   // Set property expenses for current asset or specified asset
-  const handleSetPropertyExpenses = (expenses: Record<string, Expense> | string | any, assetId?: number) => {
+  const handleSetPropertyExpenses = (expenses: Record<string, Expense> | string | any, assetId?: number, isInitialLoad: boolean = false) => {
     const targetAssetId = assetId || currentAssetId;
     if (!targetAssetId) {
       console.error(`[EXPENSE_CONTEXT] Cannot set property expenses without an asset ID`);
@@ -211,7 +212,8 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
     
     const traceId = Math.floor(Math.random() * 10000);
     console.log(`[EXPENSE_CONTEXT:${traceId}] Setting property expenses for asset ${targetAssetId}:`, 
-      typeof expenses === 'object' ? Object.keys(expenses).length : typeof expenses, 'items');
+      typeof expenses === 'object' ? Object.keys(expenses).length : typeof expenses, 'items',
+      isInitialLoad ? '(INITIAL LOAD)' : '(USER EDIT)');
     console.log(`[EXPENSE_CONTEXT:${traceId}] Current asset ID: ${currentAssetId}, Target asset ID: ${targetAssetId}`);
     
     try {
