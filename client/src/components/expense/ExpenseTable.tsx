@@ -96,7 +96,7 @@ export function ExpenseTable({
             <TableBody>
               {expenseList.map((expense) => (
                 <TableRow key={expense.id}>
-                  <TableCell>{expense.category || categoryMap[expense.categoryId] || expense.categoryId}</TableCell>
+                  <TableCell>{categoryMap[expense.categoryId] || expense.category || expense.categoryId}</TableCell>
                   <TableCell>{expense.name}</TableCell>
                   <TableCell>{formatCurrency(expense.amount)}</TableCell>
                   <TableCell className="capitalize">{expense.frequency}</TableCell>
