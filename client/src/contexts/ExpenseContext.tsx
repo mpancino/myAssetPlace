@@ -442,10 +442,11 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
       delete currentExpenses[id];
       
       // Update the state
+      // This is a user-initiated deletion, so set isInitialLoad to false
       if (type === 'property') {
-        handleSetPropertyExpenses(currentExpenses);
+        handleSetPropertyExpenses(currentExpenses, undefined, false);
       } else {
-        handleSetInvestmentExpenses(currentExpenses);
+        handleSetInvestmentExpenses(currentExpenses, undefined, false);
       }
       
       // If we're currently editing this expense, cancel editing
