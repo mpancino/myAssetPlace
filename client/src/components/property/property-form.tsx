@@ -31,7 +31,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { PropertyExpenses } from "@/components/property/property-expenses";
+import { PropertyExpensesNew } from "@/components/property/PropertyExpensesNew";
 
 interface PropertyFormProps {
   onSubmit: (data: InsertProperty) => void;
