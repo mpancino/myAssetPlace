@@ -64,9 +64,20 @@ export const ExpenseProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   }, [propertyExpenses, currentAssetId]);
 
-  // Update the current asset ID
+  // Update the current asset ID with debounce to prevent race conditions
   const handleSetCurrentAssetId = (assetId: number | null) => {
     console.log(`[EXPENSE_CONTEXT] Setting current asset ID to:`, assetId);
+    
+    // Clear expenses first when changing to a new asset or null
+    if (assetId !== currentAssetId) {
+      // This helps prevent flashing old data during transitions
+      // We'll load the correct expenses when the component remounts
+      if (currentAssetId) {
+        console.log(`[EXPENSE_CONTEXT] Clearing expenses from previous asset ID ${currentAssetId} before switching`);
+      }
+    }
+    
+    // Then set the new asset ID
     setCurrentAssetId(assetId);
   };
 

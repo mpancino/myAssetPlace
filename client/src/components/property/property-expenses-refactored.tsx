@@ -125,7 +125,33 @@ interface PropertyExpensesProps {
   isSaving?: boolean;
 }
 
+// StablePropertyExpenses wrapper to prevent unnecessary rerenders
 export function PropertyExpenses({
+  value,
+  onChange,
+  assetId,
+  assetClassId,
+  isEditMode = true,
+  isSaving = false,
+}: PropertyExpensesProps) {
+  // Wrapped in useMemo to stabilize props
+  const stableProps = React.useMemo(() => {
+    return {
+      value,
+      onChange,
+      assetId,
+      assetClassId,
+      isEditMode,
+      isSaving
+    };
+  }, [value, onChange, assetId, assetClassId, isEditMode, isSaving]);
+  
+  // Use a unique key to force complete remount when asset ID changes
+  return <PropertyExpensesInternal key={`property-expenses-${assetId}`} {...stableProps} />;
+}
+
+// Internal implementation that handles actual expense management
+function PropertyExpensesInternal({
   value,
   onChange,
   assetId,
