@@ -76,14 +76,17 @@ export function PropertyExpensesNew({
     }
   }, [value, assetId, setPropertyExpenses]);
   
-  // When property expenses in context change, notify parent component
-  // Only do this in edit mode to prevent circular update loops
+  // Modified: Don't automatically notify parent form on every expense change
+  // This prevents triggering form-wide automatic saves when only expenses change
+  // Instead, we'll notify the parent only when explicitly saving expenses
   useEffect(() => {
     if (isEditMode && onChange && Object.keys(propertyExpenses).length > 0) {
-      console.log('Notifying parent of property expense changes (edit mode only)');
-      onChange(propertyExpenses);
+      console.log('[EXPENSE CHANGE] Property expenses changed in context, but NOT auto-updating parent form');
+      console.log('[EXPENSE CHANGE] This prevents unnecessary automatic form saves');
+      // Removed onChange(propertyExpenses) to prevent triggering parent form updates
+      // Parent form will get the values when explicitly saved or during form submission
     }
-  }, [propertyExpenses, onChange, isEditMode]);
+  }, [propertyExpenses, isEditMode]);
   
   // Get expenses in UI-friendly format with display fields
   const displayExpenses = getPropertyExpensesForDisplay();
