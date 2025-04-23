@@ -57,6 +57,7 @@ import { OffsetAccountSection } from "@/components/loans/offset-account-section"
 import { calculateLoanPayment, calculatePrincipalAndInterest } from "@shared/calculations";
 import { formatCurrency } from "@/lib/utils";
 import { calculateMonthlyInterestExpense } from "@/lib/expense-utils";
+import { convertToComponentFormat } from "@/lib/expense-utils-new";
 import { 
   AlertDialog,
   AlertDialogAction,
