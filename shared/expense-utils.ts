@@ -3,6 +3,7 @@
  * 
  * This file provides standardized utility functions for handling expense data
  * consistently across the application (both frontend and backend).
+ * All functions operate solely on the standard Expense interface.
  */
 import type { Expense } from "./schema";
 import { v4 as uuidv4 } from "uuid";
@@ -22,8 +23,10 @@ export const FREQUENCY_MULTIPLIERS: Record<string, number> = {
 
 /**
  * Safely parse expenses from any source format (string or object)
+ * Ensures output conforms to the standard Expense interface
+ * 
  * @param data The expense data (can be string JSON or object)
- * @returns A record of expense objects
+ * @returns A record of standardized expense objects
  */
 export function parseExpenses(data: any): Record<string, Expense> {
   const traceId = Math.floor(Math.random() * 10000);
@@ -40,7 +43,9 @@ export function parseExpenses(data: any): Record<string, Expense> {
       return {};
     }
     
-    // If it's a string, try to parse it
+    // Parse string data
+    let parsedData: Record<string, any> = {};
+    
     if (typeof data === 'string') {
       // Handle empty string
       if (data.trim() === '') {
@@ -57,32 +62,36 @@ export function parseExpenses(data: any): Record<string, Expense> {
       console.log(`[PARSE:${traceId}] Call stack:`, new Error().stack?.split('\n').slice(2, 5).join('\n'));
       
       // Try to parse as JSON
-      const parsed = JSON.parse(data);
-      console.log(`[PARSE:${traceId}] Successfully parsed string to object with ${Object.keys(parsed).length} keys`);
-      console.log(`[PARSE:${traceId}] Keys:`, Object.keys(parsed));
-      console.log(`[PARSE:${traceId}] ===== END PARSE =====\n`);
-      return parsed;
-    }
-    
-    // If it's already an object, create a deep clone
-    if (typeof data === 'object') {
+      parsedData = JSON.parse(data);
+    } else if (typeof data === 'object' && data !== null) {
+      // If it's already an object, create a deep clone
       console.log(`[PARSE:${traceId}] Input value: object with ${Object.keys(data).length} keys`);
       console.log(`[PARSE:${traceId}] Keys:`, Object.keys(data));
       console.log(`[PARSE:${traceId}] Call stack:`, new Error().stack?.split('\n').slice(2, 5).join('\n'));
       
       // Create a deep clone to ensure we're not affected by reference issues
-      const cloned = JSON.parse(JSON.stringify(data));
-      console.log(`[PARSE:${traceId}] Created deep clone with ${Object.keys(cloned).length} keys`);
+      parsedData = JSON.parse(JSON.stringify(data));
+    } else {
+      // Fallback for unexpected formats
+      console.log(`[PARSE:${traceId}] Unhandled input format: ${typeof data}`);
+      console.log(`[PARSE:${traceId}] Call stack:`, new Error().stack?.split('\n').slice(2, 5).join('\n'));
+      console.log(`[PARSE:${traceId}] Returning empty object`);
       console.log(`[PARSE:${traceId}] ===== END PARSE =====\n`);
-      return cloned;
+      return {};
     }
     
-    // Fallback for unexpected formats
-    console.log(`[PARSE:${traceId}] Unhandled input format: ${typeof data}`);
-    console.log(`[PARSE:${traceId}] Call stack:`, new Error().stack?.split('\n').slice(2, 5).join('\n'));
-    console.log(`[PARSE:${traceId}] Returning empty object`);
+    // Standardize each expense to ensure it conforms to the Expense interface
+    const standardizedExpenses: Record<string, Expense> = {};
+    
+    Object.entries(parsedData).forEach(([key, value]) => {
+      if (value && typeof value === 'object') {
+        standardizedExpenses[key] = standardizeExpense(value);
+      }
+    });
+    
+    console.log(`[PARSE:${traceId}] Standardized ${Object.keys(standardizedExpenses).length} expenses`);
     console.log(`[PARSE:${traceId}] ===== END PARSE =====\n`);
-    return {};
+    return standardizedExpenses;
   } catch (error) {
     console.error(`[PARSE:${traceId}] Error parsing expenses:`, error);
     console.log(`[PARSE:${traceId}] Call stack:`, new Error().stack?.split('\n').slice(2, 5).join('\n'));
@@ -90,6 +99,34 @@ export function parseExpenses(data: any): Record<string, Expense> {
     console.log(`[PARSE:${traceId}] ===== END PARSE =====\n`);
     return {};
   }
+}
+
+/**
+ * Standardize an expense format to ensure it conforms to the Expense interface
+ * @param expense An expense-like object that may not conform to the standard format
+ * @returns A standardized expense object
+ */
+export function standardizeExpense(expense: any): Expense {
+  // Ensure we have an object to work with
+  if (!expense || typeof expense !== 'object') {
+    return {
+      id: generateExpenseId(),
+      categoryId: 'uncategorized',
+      name: 'Unknown Expense',
+      amount: 0,
+      frequency: 'monthly'
+    };
+  }
+  
+  // Map any field names to the standard Expense interface
+  return {
+    id: expense.id || generateExpenseId(),
+    categoryId: expense.categoryId || expense.category || 'uncategorized',
+    name: expense.name || expense.description || 'Untitled Expense',
+    amount: typeof expense.amount === 'number' ? expense.amount : 0,
+    frequency: expense.frequency || 'monthly',
+    notes: expense.notes || ''
+  };
 }
 
 /**
@@ -199,68 +236,4 @@ export function calculateMonthlyInterestExpense(asset: any): number {
   
   // Calculate monthly interest expense
   return mortgageAmount * monthlyInterestRate;
-}
-
-/**
- * Standardize an expense format
- * @param expense An expense-like object that may not conform to the standard format
- * @returns A standardized expense object
- */
-export function standardizeExpense(expense: any): Expense {
-  // Ensure we have an object to work with
-  if (!expense || typeof expense !== 'object') {
-    return {
-      id: generateExpenseId(),
-      categoryId: 'uncategorized',
-      name: 'Unknown Expense',
-      amount: 0,
-      frequency: 'monthly'
-    };
-  }
-  
-  // Map legacy or component fields to standard format
-  return {
-    id: expense.id || generateExpenseId(),
-    categoryId: expense.categoryId || expense.category || 'uncategorized',
-    name: expense.name || expense.description || 'Untitled Expense',
-    amount: typeof expense.amount === 'number' ? expense.amount : 0,
-    frequency: expense.frequency || 'monthly',
-    notes: expense.notes || ''
-  };
-}
-
-/**
- * Convert expense from component format to storage format
- * @param expense Expense in component format
- * @returns Standardized expense
- */
-export function convertComponentExpenseToStorage(expense: any): Expense {
-  return {
-    id: expense.id || generateExpenseId(),
-    categoryId: expense.category || 'uncategorized',
-    name: expense.description || 'Untitled Expense',
-    amount: typeof expense.amount === 'number' ? expense.amount : 0,
-    frequency: expense.frequency || 'monthly',
-    notes: expense.notes || ''
-  };
-}
-
-/**
- * Convert expense from storage format to component format
- * @param expense Expense in storage format
- * @returns Component-compatible expense object
- */
-export function convertStorageExpenseToComponent(expense: Expense): any {
-  // Calculate annual total based on frequency
-  const annualTotal = calculateAnnualAmount(expense);
-  
-  return {
-    id: expense.id,
-    category: expense.categoryId,
-    description: expense.name,
-    amount: expense.amount,
-    frequency: expense.frequency,
-    annualTotal: annualTotal,
-    notes: expense.notes
-  };
 }
