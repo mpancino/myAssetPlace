@@ -77,12 +77,13 @@ export function PropertyExpensesNew({
   }, [value, assetId, setPropertyExpenses]);
   
   // When property expenses in context change, notify parent component
+  // Only do this in edit mode to prevent circular update loops
   useEffect(() => {
-    if (onChange && Object.keys(propertyExpenses).length > 0) {
-      console.log('Notifying parent of property expense changes');
+    if (isEditMode && onChange && Object.keys(propertyExpenses).length > 0) {
+      console.log('Notifying parent of property expense changes (edit mode only)');
       onChange(propertyExpenses);
     }
-  }, [propertyExpenses, onChange]);
+  }, [propertyExpenses, onChange, isEditMode]);
   
   // Get expenses in UI-friendly format with display fields
   const displayExpenses = getPropertyExpensesForDisplay();
