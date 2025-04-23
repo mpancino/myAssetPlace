@@ -85,7 +85,6 @@ export function convertToComponentFormat(expenses: Record<string, Expense | any>
     result[key] = {
       ...standardized,
       // Add UI display field mappings
-      // Just pass through the categoryId for now - the component will look it up in categoryMap
       category: standardized.categoryId,
       description: standardized.name,
       // Calculate annual total for display
