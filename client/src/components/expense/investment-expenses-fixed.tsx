@@ -8,6 +8,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableFooter
 } from "@/components/ui/table";
 import {
   Card,
@@ -30,12 +31,14 @@ import {
   Edit, 
   Trash, 
   Plus, 
-  Loader2
+  Loader2,
+  Save
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAssetClassDetails } from "@/hooks/use-asset-class-details";
 import { formatCurrency } from "@/lib/utils";
 import { parseExpenses, calculateAnnualExpenses, FREQUENCY_MULTIPLIERS } from '@/lib/expense-utils';
+import type { Expense } from '@shared/schema';
 
 // Default expense categories as fallback
 const DEFAULT_EXPENSE_CATEGORIES = [
@@ -113,7 +116,7 @@ export function InvestmentExpenseAnalysis({
   );
 }
 
-interface InvestmentExpensesProps {
+interface InvestmentExpensesFixedProps {
   value: Record<string, InvestmentExpense> | string | null | undefined;
   onChange: (value: Record<string, InvestmentExpense>) => void;
   assetId?: number; // Asset ID for correctly storing expenses
@@ -122,18 +125,20 @@ interface InvestmentExpensesProps {
   isSaving?: boolean;
 }
 
-export function InvestmentExpenses({
+export function InvestmentExpensesFixed({
   value,
   onChange,
   assetId,
   assetClassId,
   isEditMode = true,
   isSaving = false,
-}: InvestmentExpensesProps) {
+}: InvestmentExpensesFixedProps) {
   const { toast } = useToast();
   const { 
     investmentExpenses: contextExpenses, 
-    setInvestmentExpenses: setContextExpenses 
+    setInvestmentExpenses: setContextExpenses,
+    setCurrentAssetId,
+    editorState
   } = useExpenses();
   
   // Fetch expense categories from the asset class
@@ -155,31 +160,58 @@ export function InvestmentExpenses({
   const [newAmount, setNewAmount] = useState<number | ''>('');
   const [newFrequency, setNewFrequency] = useState('monthly');
   
+  // Initialize the expense context with the current asset ID
+  useEffect(() => {
+    if (assetId) {
+      console.log('Setting current asset ID in investment expense context:', assetId);
+      setCurrentAssetId(assetId);
+    }
+  }, [assetId, setCurrentAssetId]);
+  
+  // Process incoming expense data and update context
+  useEffect(() => {
+    if (assetId && value !== undefined && value !== null) {
+      console.log(`[INV_EXPENSES_FIXED] Processing investment expenses for asset ${assetId}`);
+      setContextExpenses(value, assetId);
+    }
+  }, [value, assetId, setContextExpenses]);
+  
+  // Modified: Don't automatically notify parent form on every expense change
+  // This prevents triggering form-wide automatic saves when only expenses change
+  useEffect(() => {
+    if (isEditMode && onChange && Object.keys(contextExpenses).length > 0) {
+      console.log('[INV_EXPENSES_FIXED] Investment expenses changed in context, but NOT auto-updating parent form');
+      console.log('[INV_EXPENSES_FIXED] This prevents unnecessary automatic form saves');
+      // Removed onChange(contextExpenses) to prevent triggering parent form updates
+      // Parent form will get the values when explicitly saved or during form submission
+    }
+  }, [contextExpenses, isEditMode]);
+  
   // Process and normalize the input data
   useEffect(() => {
-    console.log(`[INV_EXPENSES:${Date.now()}] useEffect triggered with value:`, value);
-    console.log(`[INV_EXPENSES:${Date.now()}] Type of value:`, typeof value);
-    console.log(`[INV_EXPENSES:${Date.now()}] isEditMode:`, isEditMode);
-    console.log(`[INV_EXPENSES:${Date.now()}] assetId:`, assetId);
+    console.log(`[INV_EXPENSES_FIXED:${Date.now()}] useEffect triggered with value:`, value);
+    console.log(`[INV_EXPENSES_FIXED:${Date.now()}] Type of value:`, typeof value);
+    console.log(`[INV_EXPENSES_FIXED:${Date.now()}] isEditMode:`, isEditMode);
+    console.log(`[INV_EXPENSES_FIXED:${Date.now()}] assetId:`, assetId);
     
     // First, check if we have data in the context
     if (Object.keys(contextExpenses).length > 0) {
-      console.log(`[INV_EXPENSES:${Date.now()}] Using data from context with ${Object.keys(contextExpenses).length} items`);
+      console.log(`[INV_EXPENSES_FIXED:${Date.now()}] Using data from context with ${Object.keys(contextExpenses).length} items`);
       setExpenses(contextExpenses);
       return;
     }
     
     if (value === undefined || value === null) {
-      console.log(`[INV_EXPENSES:${Date.now()}] Value is null/undefined, returning early`);
+      console.log(`[INV_EXPENSES_FIXED:${Date.now()}] Value is null/undefined, returning early`);
       return;
     }
     
     try {
       // Parse input if needed
-      console.log(`[INV_EXPENSES:${Date.now()}] Attempting to parse expenses`);
+      console.log(`[INV_EXPENSES_FIXED:${Date.now()}] Attempting to parse expenses`);
       const parsedExpenses = parseExpenses(value);
-      console.log(`[INV_EXPENSES:${Date.now()}] Parsed expenses:`, parsedExpenses);
-      console.log(`[INV_EXPENSES:${Date.now()}] Number of parsed expenses:`, Object.keys(parsedExpenses).length);
+      console.log(`[INV_EXPENSES_FIXED:${Date.now()}] Parsed expenses:`, parsedExpenses);
+      console.log(`[INV_EXPENSES_FIXED:${Date.now()}] Number of parsed expenses:`, Object.keys(parsedExpenses).length);
       
       // Normalize the expense objects to ensure they have all required fields
       const normalizedExpenses: Record<string, InvestmentExpense> = {};
@@ -213,14 +245,14 @@ export function InvestmentExpenses({
       
       // Only update context if we got meaningful data and didn't already have context data
       if (Object.keys(normalizedExpenses).length > 0) {
-        console.log(`[INV_EXPENSES:${Date.now()}] Setting context with ${Object.keys(normalizedExpenses).length} expenses`);
+        console.log(`[INV_EXPENSES_FIXED:${Date.now()}] Setting context with ${Object.keys(normalizedExpenses).length} expenses`);
         
         // Make sure to associate these expenses with the correct asset ID if available
         if (assetId) {
-          console.log(`[INV_EXPENSES:${Date.now()}] Associating expenses with asset ID ${assetId}`);
+          console.log(`[INV_EXPENSES_FIXED:${Date.now()}] Associating expenses with asset ID ${assetId}`);
           setContextExpenses(normalizedExpenses, assetId);
         } else {
-          console.log(`[INV_EXPENSES:${Date.now()}] No asset ID available to associate expenses`);
+          console.log(`[INV_EXPENSES_FIXED:${Date.now()}] No asset ID available to associate expenses`);
           setContextExpenses(normalizedExpenses);
         }
       }
@@ -280,8 +312,8 @@ export function InvestmentExpenses({
     }
     
     try {
-      console.log('[INV_EXPENSES] Adding new expense');
-      console.log('[INV_EXPENSES] Current asset ID:', assetId);
+      console.log('[INV_EXPENSES_FIXED] Adding new expense');
+      console.log('[INV_EXPENSES_FIXED] Current asset ID:', assetId);
       
       // Create a new expense object
       const id = uuidv4();
@@ -307,17 +339,18 @@ export function InvestmentExpenses({
       
       // Update global context - explicitly pass the asset ID to ensure proper association
       if (assetId) {
-        console.log(`[INV_EXPENSES] Updating expenses context with asset ID: ${assetId}`);
+        console.log(`[INV_EXPENSES_FIXED] Updating expenses context with asset ID: ${assetId}`);
         setContextExpenses(updatedExpenses, assetId);
       } else {
-        console.log('[INV_EXPENSES] Warning: No asset ID available for context update');
+        console.log('[INV_EXPENSES_FIXED] Warning: No asset ID available for context update');
         setContextExpenses(updatedExpenses);
       }
       
-      // Notify parent component if in edit mode
+      // Modified: Do not automatically notify parent form to prevent triggering asset-wide saves
       if (isEditMode) {
-        console.log('[INV_EXPENSES] Notifying parent of expense changes (edit mode only)');
-        onChange(updatedExpenses);
+        console.log('[INV_EXPENSES_FIXED] Investment expenses changed, but NOT auto-updating parent form');
+        console.log('[INV_EXPENSES_FIXED] This prevents unnecessary automatic form saves');
+        // Removed onChange(updatedExpenses) to prevent triggering parent form updates
       }
       
       // Reset form
@@ -355,8 +388,8 @@ export function InvestmentExpenses({
     }
     
     try {
-      console.log('[INV_EXPENSES] Updating expense with id:', editingId);
-      console.log('[INV_EXPENSES] Using asset ID:', assetId);
+      console.log('[INV_EXPENSES_FIXED] Updating expense with id:', editingId);
+      console.log('[INV_EXPENSES_FIXED] Using asset ID:', assetId);
       
       // Get the existing expense
       const existingExpense = expenses[editingId];
@@ -387,17 +420,18 @@ export function InvestmentExpenses({
       
       // Update global context - explicitly pass the asset ID to ensure proper association
       if (assetId) {
-        console.log(`[INV_EXPENSES] Updating expenses context with asset ID: ${assetId}`);
+        console.log(`[INV_EXPENSES_FIXED] Updating expenses context with asset ID: ${assetId}`);
         setContextExpenses(updatedExpenses, assetId);
       } else {
-        console.log('[INV_EXPENSES] Warning: No asset ID available for context update');
+        console.log('[INV_EXPENSES_FIXED] Warning: No asset ID available for context update');
         setContextExpenses(updatedExpenses);
       }
       
-      // Notify parent component if in edit mode
+      // Modified: Do not automatically notify parent form to prevent triggering asset-wide saves
       if (isEditMode) {
-        console.log('[INV_EXPENSES] Notifying parent of expense changes (edit mode only)');
-        onChange(updatedExpenses);
+        console.log('[INV_EXPENSES_FIXED] Investment expenses changed, but NOT auto-updating parent form');
+        console.log('[INV_EXPENSES_FIXED] This prevents unnecessary automatic form saves');
+        // Removed onChange(updatedExpenses) to prevent triggering parent form updates
       }
       
       // Reset form
@@ -415,8 +449,8 @@ export function InvestmentExpenses({
   // Delete an expense
   const handleDeleteExpense = useCallback((id: string) => {
     try {
-      console.log('[INV_EXPENSES] Deleting expense with id:', id);
-      console.log('[INV_EXPENSES] Current asset ID:', assetId);
+      console.log('[INV_EXPENSES_FIXED] Deleting expense with id:', id);
+      console.log('[INV_EXPENSES_FIXED] Current asset ID:', assetId);
       
       // Check if expense exists
       if (!expenses[id]) {
@@ -431,17 +465,18 @@ export function InvestmentExpenses({
       
       // Update global context - explicitly pass the asset ID to ensure proper association
       if (assetId) {
-        console.log(`[INV_EXPENSES] Updating expenses context with asset ID: ${assetId}`);
+        console.log(`[INV_EXPENSES_FIXED] Updating expenses context with asset ID: ${assetId}`);
         setContextExpenses(updatedExpenses, assetId);
       } else {
-        console.log('[INV_EXPENSES] Warning: No asset ID available for context update');
+        console.log('[INV_EXPENSES_FIXED] Warning: No asset ID available for context update');
         setContextExpenses(updatedExpenses);
       }
       
-      // Notify parent component if in edit mode
+      // Modified: Do not automatically notify parent form to prevent triggering asset-wide saves
       if (isEditMode) {
-        console.log('[INV_EXPENSES] Notifying parent of expense changes (edit mode only)');
-        onChange(updatedExpenses);
+        console.log('[INV_EXPENSES_FIXED] Investment expenses changed, but NOT auto-updating parent form');
+        console.log('[INV_EXPENSES_FIXED] This prevents unnecessary automatic form saves');
+        // Removed onChange(updatedExpenses) to prevent triggering parent form updates
       }
     } catch (err) {
       console.error('Error deleting expense:', err);
@@ -457,9 +492,44 @@ export function InvestmentExpenses({
   const totalAnnualExpenses = Object.values(expenses).reduce(
     (total, expense) => total + expense.annualTotal, 0
   );
+
+  // Function to explicitly save expenses to the parent form
+  const handleSaveExpensesToParent = useCallback(() => {
+    if (isEditMode && onChange) {
+      console.log('[INV_EXPENSES_FIXED] Explicitly saving expenses to parent form');
+      console.log('[INV_EXPENSES_FIXED] Number of expenses being saved:', Object.keys(expenses).length);
+      
+      // Now we explicitly call onChange to update the parent form
+      onChange(expenses);
+      
+      toast({
+        title: "Expenses Updated",
+        description: "Investment expenses have been updated in the form",
+        duration: 2000,
+      });
+    }
+  }, [expenses, isEditMode, onChange, toast]);
   
   return (
     <div className="space-y-4">
+      {/* Debug and save controls - only show in edit mode */}
+      {isEditMode && (
+        <div className="flex justify-between items-center">
+          <div className="text-xs text-muted-foreground">
+            Debug: InvestmentExpensesFixed rendered with {Object.keys(expenses).length} expenses
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleSaveExpensesToParent}
+            disabled={isSaving}
+          >
+            <Save className="h-4 w-4 mr-2" />
+            Update Form
+          </Button>
+        </div>
+      )}
+      
       {/* Show loading indicator when saving */}
       {isSaving && (
         <div className="bg-blue-50 border border-blue-200 p-2 rounded flex items-center text-blue-700">
@@ -478,171 +548,173 @@ export function InvestmentExpenses({
               <TableHead>Amount</TableHead>
               <TableHead>Frequency</TableHead>
               <TableHead>Annual Total</TableHead>
-              {isEditMode && <TableHead className="w-[100px]">Actions</TableHead>}
+              {isEditMode && <TableHead className="text-right">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {Object.values(expenses).map((expense) => (
               <TableRow key={expense.id}>
                 <TableCell>{expense.category}</TableCell>
-                <TableCell>{expense.description || "-"}</TableCell>
+                <TableCell>{expense.description}</TableCell>
                 <TableCell>{formatCurrency(expense.amount)}</TableCell>
                 <TableCell className="capitalize">{expense.frequency}</TableCell>
                 <TableCell>{formatCurrency(expense.annualTotal)}</TableCell>
                 {isEditMode && (
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleStartEdit(expense)}
-                        disabled={isSaving}
-                      >
-                        <Edit className="h-4 w-4 text-primary" />
-                        <span className="sr-only">Edit</span>
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteExpense(expense.id)}
-                        disabled={isSaving}
-                      >
-                        <Trash className="h-4 w-4 text-destructive" />
-                        <span className="sr-only">Delete</span>
-                      </Button>
-                    </div>
+                  <TableCell className="text-right">
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => handleStartEdit(expense)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => handleDeleteExpense(expense.id)}
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
                   </TableCell>
                 )}
               </TableRow>
             ))}
-            
-            {/* Total row */}
-            <TableRow className="font-medium bg-muted/50">
-              <TableCell colSpan={4} className="text-right">Total Annual:</TableCell>
+          </TableBody>
+          <TableFooter>
+            <TableRow>
+              <TableCell colSpan={4}>Total Annual Expenses</TableCell>
               <TableCell colSpan={isEditMode ? 2 : 1}>{formatCurrency(totalAnnualExpenses)}</TableCell>
             </TableRow>
-          </TableBody>
+          </TableFooter>
         </Table>
       ) : (
-        <div className="text-center p-4 border rounded border-dashed">
-          <p className="text-muted-foreground">No expenses added yet.</p>
-          {isEditMode && <p className="text-sm mt-1">Use the form below to add expenses.</p>}
+        <div className="text-center py-10 border rounded-md">
+          <AlertTriangle className="h-10 w-10 mx-auto text-yellow-500 mb-2" />
+          <p>No expenses have been added yet.</p>
+          {isEditMode && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mt-2"
+              onClick={() => setIsAddingNew(true)}
+            >
+              <Plus className="h-4 w-4 mr-1" /> Add Expense
+            </Button>
+          )}
         </div>
       )}
       
-      {/* Add new expense form - only show in edit mode */}
-      {isEditMode && (
-        <div className="mt-4 space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="font-medium">
-              {editingId ? "Edit Expense" : (isAddingNew ? "Add New Expense" : "")}
-            </h3>
-            
-            {!isAddingNew && !editingId && (
-              <Button 
-                variant="outline" 
-                onClick={() => setIsAddingNew(true)}
-                disabled={isSaving}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Expense
-              </Button>
-            )}
-          </div>
-          
-          {(isAddingNew || editingId) && (
-            <div className="bg-muted rounded-md p-4 border">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Category</label>
-                  <Select 
-                    value={newCategory} 
-                    onValueChange={setNewCategory}
-                    disabled={isSaving}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableCategories.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Description (optional)</label>
-                  <Input
-                    placeholder="Brief description"
-                    value={newDescription}
-                    onChange={(e) => setNewDescription(e.target.value)}
-                    disabled={isSaving}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Amount</label>
-                  <Input
-                    type="number"
-                    placeholder="0.00"
-                    value={newAmount === '' ? '' : newAmount}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setNewAmount(val === '' ? '' : parseFloat(val));
-                    }}
-                    disabled={isSaving}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Frequency</label>
-                  <Select 
-                    value={newFrequency} 
-                    onValueChange={setNewFrequency}
-                    disabled={isSaving}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select frequency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                      <SelectItem value="quarterly">Quarterly</SelectItem>
-                      <SelectItem value="annually">Annually</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+      {/* Add/Edit expense form - only show in edit mode */}
+      {isEditMode && (editingId || isAddingNew) && (
+        <div className="border p-4 rounded-md bg-muted">
+          <h3 className="font-medium text-base mb-4">
+            {editingId ? "Edit Expense" : "Add New Expense"}
+          </h3>
+          <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="text-sm font-medium block mb-1" htmlFor="category">
+                  Category
+                </label>
+                <Select
+                  value={newCategory}
+                  onValueChange={setNewCategory}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableCategories.map((category) => (
+                      <SelectItem 
+                        key={typeof category === 'string' ? category : category.id} 
+                        value={typeof category === 'string' ? category : category.name}
+                      >
+                        {typeof category === 'string' ? category : category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              
-              <div className="flex justify-end space-x-2">
-                <Button
-                  variant="outline"
-                  onClick={resetForm}
-                  disabled={isSaving}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={editingId ? handleUpdateExpense : handleAddExpense}
-                  disabled={isSaving || !newCategory || !newAmount}
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Check className="mr-2 h-4 w-4" />
-                      {editingId ? "Update" : "Add"}
-                    </>
-                  )}
-                </Button>
+              <div>
+                <label className="text-sm font-medium block mb-1" htmlFor="description">
+                  Description
+                </label>
+                <Input
+                  id="description"
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
+                  placeholder="Expense description"
+                />
               </div>
             </div>
-          )}
+            
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="text-sm font-medium block mb-1" htmlFor="amount">
+                  Amount
+                </label>
+                <Input
+                  id="amount"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={newAmount}
+                  onChange={(e) => setNewAmount(e.target.value === '' ? '' : parseFloat(e.target.value))}
+                  placeholder="0.00"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium block mb-1" htmlFor="frequency">
+                  Frequency
+                </label>
+                <Select
+                  value={newFrequency}
+                  onValueChange={setNewFrequency}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="quarterly">Quarterly</SelectItem>
+                    <SelectItem value="annually">Annually</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-2">
+              <Button 
+                variant="outline" 
+                type="button"
+                onClick={() => {
+                  setEditingId(null);
+                  setIsAddingNew(false);
+                  resetForm();
+                }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                type="button"
+                onClick={editingId ? handleUpdateExpense : handleAddExpense}
+              >
+                {editingId ? 'Update' : 'Add'} Expense
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Expense management buttons when not in edit mode */}
+      {isEditMode && !editingId && !isAddingNew && (
+        <div className="flex justify-end">
+          <Button 
+            variant="outline" 
+            onClick={() => setIsAddingNew(true)}
+          >
+            <Plus className="h-4 w-4 mr-2" /> Add Expense
+          </Button>
         </div>
       )}
     </div>

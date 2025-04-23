@@ -20,7 +20,7 @@ import { MortgageDetails } from "@/components/property/mortgage-details";
 // Import just the analysis component from the refactored file
 import { PropertyExpenseAnalysis } from "@/components/property/property-expenses-refactored";
 import { PropertyExpensesNew } from "@/components/property/PropertyExpensesNew";
-import { InvestmentExpenses, InvestmentExpenseAnalysis } from "@/components/expense/investment-expenses";
+import { InvestmentExpensesFixed, InvestmentExpenseAnalysis } from "@/components/expense/investment-expenses-fixed";
 import { 
   ArrowLeft, 
   BarChart3,
