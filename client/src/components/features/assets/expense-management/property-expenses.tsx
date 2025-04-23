@@ -91,17 +91,34 @@ export function PropertyExpenses({
     if (assetId && initialExpenses !== undefined && initialExpenses !== null) {
       console.log(`[PropertyExpenses] Processing initial property expenses for asset ${assetId}`);
       setPropertyExpenses(initialExpenses, assetId, true); // true indicates initial load
-      
-      // Update local state with the converted expenses
-      if (initialExpenses) {
+    }
+  }, [initialExpenses, assetId, setPropertyExpenses]);
+  
+  // Initialize local state only when component mounts or assetId changes
+  // This prevents re-initialization when initialExpenses changes due to parent re-renders
+  useEffect(() => {
+    const traceId = Math.floor(Math.random() * 10000);
+    console.log(`[PropertyExpenses:${traceId}] Initializing local state for asset ${assetId}`);
+    
+    if (initialExpenses) {
+      try {
         const parsedExpenses = typeof initialExpenses === 'string'
           ? JSON.parse(initialExpenses)
           : initialExpenses;
           
-        setEditableExpenses(convertToComponentFormat(parsedExpenses));
+        const componentExpenses = convertToComponentFormat(parsedExpenses);
+        console.log(`[PropertyExpenses:${traceId}] Converted ${Object.keys(componentExpenses).length} expenses to component format`);
+        
+        setEditableExpenses(componentExpenses);
+      } catch (error) {
+        console.error(`[PropertyExpenses:${traceId}] Error initializing expenses:`, error);
+        setEditableExpenses({});
       }
+    } else {
+      console.log(`[PropertyExpenses:${traceId}] No initial expenses for asset ${assetId}, using empty object`);
+      setEditableExpenses({});
     }
-  }, [initialExpenses, assetId, setPropertyExpenses]);
+  }, [assetId]); // Only depends on assetId, not initialExpenses
   
   // Get expenses in UI-friendly format with display fields
   const displayExpenses = getPropertyExpensesForDisplay();
